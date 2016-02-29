@@ -17,6 +17,7 @@
 package org.apache.usergrid.java.client.utils;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
 
@@ -25,158 +26,211 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.*;
+
+
 import org.apache.usergrid.java.client.exception.ClientException;
+
+import javax.annotation.Nullable;
 
 public class JsonUtils {
 
 
-	static ObjectMapper mapper = new ObjectMapper();
+  static ObjectMapper mapper = new ObjectMapper();
 
-	public static String getStringProperty(Map<String, JsonNode> properties,
-			String name) {
-		JsonNode value = properties.get(name);
-		if (value != null) {
-			return value.asText();
-		}
-		return null;
-	}
+  @Nullable
+  public static String getStringProperty(final Map<String, JsonNode> properties,
+                                         final String name) {
 
-	public static void setStringProperty(Map<String, JsonNode> properties,
-			String name, String value) {
-		if (value == null) {
-			properties.remove(name);
-		} else {
-			properties.put(name, JsonNodeFactory.instance.textNode(value));
-		}
-	}
+    JsonNode value = properties.get(name);
 
-	public static Long getLongProperty(Map<String, JsonNode> properties,
-			String name) {
-		JsonNode value = properties.get(name);
-		if (value != null) {
-			return value.asLong(0);
-		}
-		return null;
-	}
+    if (value != null) {
+      return value.asText();
+    }
 
-	public static void setLongProperty(Map<String, JsonNode> properties,
-			String name, Long value) {
-		if (value == null) {
-			properties.remove(name);
-		} else {
-			properties.put(name, JsonNodeFactory.instance.numberNode(value));
-		}
-	}
+    return null;
+  }
 
-	public static void setFloatProperty(Map<String, JsonNode> properties, String name, Float value){
-	    if(value == null){
-	        properties.remove(name);
-	    }else{
-	        properties.put(name, JsonNodeFactory.instance.numberNode(value));
-	    }
-	}
+  public static void setStringProperty(final Map<String, JsonNode> properties,
+                                       final String name,
+                                       final String value) {
+    if (value == null) {
+      properties.remove(name);
+    } else {
+      properties.put(name, JsonNodeFactory.instance.textNode(value));
+    }
+  }
 
-	public static Boolean getBooleanProperty(Map<String, JsonNode> properties,
-			String name) {
-		JsonNode value = properties.get(name);
-		if (value != null) {
-			return value.asBoolean();
-		}
-		return false;
-	}
+  public static void setArrayProperty(final Map<String, JsonNode> properties,
+                                       final String name,
+                                       final ArrayList value) {
+    if (value == null) {
+      properties.remove(name);
+    } else {
+      properties.put(name,JsonNodeFactory.instance.POJONode(value));
+    }
+  }
 
-	public static void setBooleanProperty(Map<String, JsonNode> properties,
-			String name, Boolean value) {
-		if (value == null) {
-			properties.remove(name);
-		} else {
-			properties.put(name, JsonNodeFactory.instance.booleanNode(value));
-		}
-	}
 
-	public static UUID getUUIDProperty(Map<String, JsonNode> properties,
-			String name) {
-		JsonNode value = properties.get(name);
-		if (value != null) {
-			UUID uuid = null;
-			try {
-				uuid = UUID.fromString(value.asText());
-			} catch (Exception e) {
-			}
-			return uuid;
-		}
-		return null;
-	}
+  @Nullable
+  public static Long getLongProperty(final Map<String, JsonNode> properties,
+                                     final String name) {
+    JsonNode value = properties.get(name);
 
-	public static void setUUIDProperty(Map<String, JsonNode> properties,
-			String name, UUID value) {
-		if (value == null) {
-			properties.remove(name);
-		} else {
-			properties.put(name,
-					JsonNodeFactory.instance.textNode(value.toString()));
-		}
-	}
+    if (value != null) {
+      return value.asLong(0);
+    }
 
-	public static String toJsonString(Object obj) {
-		try {
-			return mapper.writeValueAsString(obj);
-		} catch (JsonGenerationException e) {
-			throw new ClientException("Unable to generate json", e);
-		} catch (JsonMappingException e) {
-		    throw new ClientException("Unable to map json", e);
-		} catch (IOException e) {
-		    throw new ClientException("IO error", e);
-		}
-	}
+    return null;
+  }
 
-	public static <T> T parse(String json, Class<T> c) {
-		try {
-			return mapper.readValue(json, c);
-		} catch (JsonGenerationException e) {
-            throw new ClientException("Unable to generate json", e);
-        } catch (JsonMappingException e) {
-            throw new ClientException("Unable to map json", e);
-        } catch (IOException e) {
-            throw new ClientException("IO error", e);
-        }
-	}
+  public static void setLongProperty(final Map<String, JsonNode> properties,
+                                     final String name,
+                                     final Long value) {
+    if (value == null) {
+      properties.remove(name);
+    } else {
+      properties.put(name, JsonNodeFactory.instance.numberNode(value));
+    }
+  }
 
-	public static JsonNode toJsonNode(Object obj) {
-		return mapper.convertValue(obj, JsonNode.class);
-	}
+  public static void setFloatProperty(final Map<String, JsonNode> properties,
+                                      final String name,
+                                      final Float value) {
+    if (value == null) {
+      properties.remove(name);
+    } else {
+      properties.put(name, JsonNodeFactory.instance.numberNode(value));
+    }
+  }
 
-	public static <T> T fromJsonNode(JsonNode json, Class<T> c) {
-		try {
-			JsonParser jp = json.traverse();
-			return mapper.readValue(jp, c);
-		} catch (JsonGenerationException e) {
-            throw new ClientException("Unable to generate json", e);
-        } catch (JsonMappingException e) {
-            throw new ClientException("Unable to map json", e);
-        } catch (IOException e) {
-            throw new ClientException("IO error", e);
-        }
-	}
+  public static Boolean getBooleanProperty(final Map<String, JsonNode> properties,
+                                           final String name) {
+    JsonNode value = properties.get(name);
+    return value != null && value.asBoolean();
+  }
 
-	public static <T> T getObjectProperty(Map<String, JsonNode> properties,
-			String name, Class<T> c) {
-		JsonNode value = properties.get(name);
-		if (value != null) {
-			return fromJsonNode(value, c);
-		}
-		return null;
-	}
+  public static void setBooleanProperty(final Map<String, JsonNode> properties,
+                                        final String name, Boolean value) {
+    if (value == null) {
+      properties.remove(name);
+    } else {
+      properties.put(name, JsonNodeFactory.instance.booleanNode(value));
+    }
+  }
 
-	public static void setObjectProperty(Map<String, JsonNode> properties,
-			String name, Object value) {
-		if (value == null) {
-			properties.remove(name);
-		} else {
-			properties.put(name,
-					JsonNodeFactory.instance.textNode(value.toString()));
-		}
-	}
+  @Nullable
+  public static UUID getUUIDProperty(final Map<String, JsonNode> properties,
+                                     final String name) {
+    JsonNode value = properties.get(name);
+    if (value != null) {
+      UUID uuid = null;
+      try {
+        uuid = UUID.fromString(value.asText());
+      } catch (Exception ignore) {
+      }
+      return uuid;
+    }
+    return null;
+  }
+
+  public static void setUUIDProperty(final Map<String, JsonNode> properties,
+                                     final String name,
+                                     final UUID value) {
+    if (value == null) {
+      properties.remove(name);
+    } else {
+      properties.put(name,
+          JsonNodeFactory.instance.textNode(value.toString()));
+    }
+  }
+
+  public static String toJsonString(final Object obj) {
+    try {
+      return mapper.writeValueAsString(obj);
+    } catch (JsonGenerationException e) {
+      throw new ClientException("Unable to generate json", e);
+    } catch (JsonMappingException e) {
+      throw new ClientException("Unable to map json", e);
+    } catch (IOException e) {
+      throw new ClientException("IO error", e);
+    }
+  }
+
+  public static <T> T parse(final String json,
+                            final Class<T> c) {
+    try {
+      return mapper.readValue(json, c);
+    } catch (JsonGenerationException e) {
+      throw new ClientException("Unable to generate json", e);
+    } catch (JsonMappingException e) {
+      throw new ClientException("Unable to map json", e);
+    } catch (IOException e) {
+      throw new ClientException("IO error", e);
+    }
+  }
+
+  public static JsonNode toJsonNode(final Object obj) {
+    return mapper.convertValue(obj, JsonNode.class);
+  }
+
+  public static <T> T fromJsonNode(final JsonNode json,
+                                   final Class<T> c) {
+    try {
+      JsonParser jp = json.traverse();
+      return mapper.readValue(jp, c);
+    } catch (JsonGenerationException e) {
+      throw new ClientException("Unable to generate json", e);
+    } catch (JsonMappingException e) {
+      throw new ClientException("Unable to map json", e);
+    } catch (IOException e) {
+      throw new ClientException("IO error", e);
+    }
+  }
+
+  @Nullable
+  public static <T> T getObjectProperty(final Map<String, JsonNode> properties,
+                                        final String name,
+                                        final Class<T> c) {
+    JsonNode value = properties.get(name);
+    if (value != null) {
+      return fromJsonNode(value, c);
+    }
+    return null;
+  }
+
+  public static void setObjectProperty(final Map<String, JsonNode> properties,
+                                       final String name,
+                                       final ObjectNode value) {
+    if (value == null) {
+      properties.remove(name);
+    } else {
+      properties.put(name, value);
+    }
+  }
+
+
+
+  public static <T> T getProperty(final Map<String, JsonNode> properties,
+                                  final String name) {
+    JsonNode value = properties.get(name);
+
+    if (value instanceof TextNode) {
+      return (T) value.asText();
+    } else if (value instanceof LongNode) {
+      Long valueLong = value.asLong();
+      return (T) valueLong;
+    } else if (value instanceof BooleanNode) {
+      Boolean valueBoolean = value.asBoolean();
+      return (T) valueBoolean;
+    } else if (value instanceof IntNode) {
+      Integer valueInteger = value.asInt();
+      return (T) valueInteger;
+    } else if (value instanceof FloatNode) {
+      return (T) Float.valueOf(value.toString());
+    } else {
+      return (T) value;
+    }
+  }
 
 }

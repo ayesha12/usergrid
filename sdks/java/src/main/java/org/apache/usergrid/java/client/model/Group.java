@@ -14,32 +14,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.usergrid.java.client.entities;
+package org.apache.usergrid.java.client.model;
 
 import static com.fasterxml.jackson.databind.annotation.JsonSerialize.Inclusion.NON_NULL;
-import static org.apache.usergrid.java.client.utils.JsonUtils.getStringProperty;
 import static org.apache.usergrid.java.client.utils.JsonUtils.setStringProperty;
 
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.apache.usergrid.java.client.utils.JsonUtils;
 
-public class Device extends Entity {
+public class Group extends UsergridEntity {
 
-	public final static String ENTITY_TYPE = "device";
+	public final static String ENTITY_TYPE = "group";
 
-	public final static String PROPERTY_NAME = "getName";
+	public final static String PROPERTY_PATH = "path";
+	public final static String PROPERTY_TITLE = "title";
 
-	public Device() {
+	public Group() {
 		super();
-		setType(ENTITY_TYPE);
+		changeType(ENTITY_TYPE);
 	}
 
-	public Device(Entity entity) {
+	public Group(UsergridEntity usergridEntity) {
 		super();
-		properties = entity.properties;
-		setType(ENTITY_TYPE);
+		properties = usergridEntity.properties;
+		changeType(ENTITY_TYPE);
 	}
 
 	@Override
@@ -52,17 +53,27 @@ public class Device extends Entity {
 	@JsonIgnore
 	public List<String> getPropertyNames() {
 		List<String> properties = super.getPropertyNames();
-		properties.add(PROPERTY_NAME);
+		properties.add(PROPERTY_PATH);
+		properties.add(PROPERTY_TITLE);
 		return properties;
 	}
 
 	@JsonSerialize(include = NON_NULL)
-	public String getName() {
-		return getStringProperty(properties, PROPERTY_NAME);
+	public String getPath() {
+		return JsonUtils.getStringProperty(properties, PROPERTY_PATH);
 	}
 
-	public void setName(String name) {
-		setStringProperty(properties, PROPERTY_NAME, name);
+	public void setPath(String path) {
+		setStringProperty(properties, PROPERTY_PATH, path);
+	}
+
+	@JsonSerialize(include = NON_NULL)
+	public String getTitle() {
+		return JsonUtils.getStringProperty(properties, PROPERTY_TITLE);
+	}
+
+	public void setTitle(String title) {
+		setStringProperty(properties, PROPERTY_TITLE, title);
 	}
 
 }

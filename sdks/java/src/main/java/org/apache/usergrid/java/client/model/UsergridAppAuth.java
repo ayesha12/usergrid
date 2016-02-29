@@ -14,42 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.usergrid.java.client.exception;
+package org.apache.usergrid.java.client.model;
 
-/**
- * Simple wrapper for client exceptions
- *
- * @author tnine
- */
-public class ClientException extends RuntimeException {
+import org.apache.usergrid.java.client.UsergridAuth;
 
-  private int responseCode;
+public class UsergridAppAuth extends UsergridAuth {
 
-  private static final long serialVersionUID = 1L;
+	public static String clientId = null;
+	public static String clientSecret = null;
 
-  /**
-   * @param message
-   * @param cause
-   */
-  public ClientException(String message, Throwable cause) {
-    super(message, cause);
-  }
 
-  public ClientException(String message, Throwable cause, int responseCode) {
-    super(message, cause);
-    this.responseCode = responseCode;
-  }
 
-  public ClientException(String message, int responseCode) {
-    super(message);
-    this.responseCode = responseCode;
-  }
+	public UsergridAppAuth(String client_id, String client_secret){
+		super();
+		this.clientId = client_id;
+		this.clientSecret = client_secret;
+	}
 
-  public ClientException(String s) {
-    super(s);
-  }
-
-  public int getResponseCode() {
-    return responseCode;
-  }
 }
