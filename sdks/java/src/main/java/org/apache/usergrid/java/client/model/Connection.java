@@ -79,5 +79,5 @@ public class Connection {
   public long getTimestamp() {
     return 0;
   }
-
+  
 }

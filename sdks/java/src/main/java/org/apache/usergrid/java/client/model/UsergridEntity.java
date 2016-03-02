@@ -148,6 +148,10 @@ public class UsergridEntity {
     return this;
   }
 
+  public UsergridEntity putproperty(String name, Boolean value){
+    setBooleanProperty(properties,name,value);
+    return this;
+  }
   /**
    * Set the property
    *
@@ -178,7 +182,6 @@ public class UsergridEntity {
    */
   public UsergridEntity putproperty(String name, Long value) {
     putproperty(name, value);
-
     return this;
   }
 
@@ -466,13 +469,13 @@ public class UsergridEntity {
    *
    * @param propertyName
    */
-  public void removeProperty(String propertyName) {
+  public void removeEntityProperty(String propertyName) {
     putproperty(propertyName, "");
   }
 
   public void removeProperties(ArrayList propertyList) {
     for (int i = 0; i < propertyList.size(); i++) {
-      removeProperty(propertyList.get(i).toString());
+      removeEntityProperty(propertyList.get(i).toString());
     }
   }
 

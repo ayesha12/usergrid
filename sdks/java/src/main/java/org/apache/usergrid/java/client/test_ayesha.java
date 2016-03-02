@@ -22,13 +22,13 @@ import java.util.Map;
  */
 public class test_ayesha {
 
-    public static final String APP_CLIENT_ID = "b3U66ne33W4OEeWXmAIj6QFb-Q";
-    public static final String APP_CLIENT_SECRET = "b3U6PxbpQiTrXKCWu0n1CjK1uTZXuG4";
-    public static final String USERGRID_URL = "https://ug21.e2e.apigee.net/";
-  public static final String ORG_NAME = "usergrid";
-  public static final String APP_NAME = "ayesha";
+    public static final String APP_CLIENT_ID = "b3U6ETo16hOkEeWr70FRIvzssA" ; // "b3U66ne33W4OEeWXmAIj6QFb-Q";
+    public static final String APP_CLIENT_SECRET = "b3U6fBkR5o4B9S5Lv93rPY5JYk17rDc";// "b3U6PxbpQiTrXKCWu0n1CjK1uTZXuG4";
+    public static final String USERGRID_URL = "https://api.usergrid.com/"; //"https://ug21.e2e.apigee.net/";
+  public static final String ORG_NAME = "ayesha";
+  public static final String APP_NAME = "sandbox";
   public static final String COLLECTION = "restaurants";
-  private static final String ACESS_TOKEN = "YWMtDr76uNmREeWNJnlLhjx02wAAAVMuQ0e7OjLidK0hb5bfAFLeuc2DxvNcj6w";
+  private static final String ACESS_TOKEN = "YWMteYwXyN8rEeWxN-HMPu76jAAAAVNS--Bwg4dnMIfRmFkZjqop6BkJKGuqOYM";
 
   public static void main(String[] args) throws JSONException {
 
@@ -45,23 +45,25 @@ public class test_ayesha {
     System.out.println(Usergrid.authorizeAppClient(APP_CLIENT_ID,APP_CLIENT_SECRET));
     System.out.println("////////");
 
-    UsergridClient c = new UsergridClient(ORG_NAME,APP_NAME);
+    UsergridClient c = Usergrid.getInstance();
+//    UsergridClient c = new UsergridClient(ORG_NAME,APP_NAME);
 
-    c.setBaseUrl(USERGRID_URL);
-    c.setAccessToken(ACESS_TOKEN);
+//    c.setBaseUrl(USERGRID_URL);
+//    c.setAccessToken(ACESS_TOKEN);
 //    System.out.println("access_token " + c.getAccessToken());
 //    System.out.println("baseurl " + c.getClientSecret());
 //    System.out.println("baseurl1 " );
+//
+//
+//    Map<String,Object>param = new HashMap<String, Object>();
+//    param.put("access_token",c.getAccessToken());
+//      System.out.println(c.apiRequest("GET",param,null,"management/me"));
 
 
-    Map<String,Object>param = new HashMap<String, Object>();
-    param.put("access_token",c.getAccessToken());
-      System.out.println(c.apiRequest("GET",param,null,"management/me"));
+    UsergridResponse r = c.apiRequest("GET",null,null,ORG_NAME,APP_NAME,"restaurants");
 
 
-//    UsergridResponse r = c.apiRequest("GET",null,null,ORG_NAME,APP_NAME,"users");
-
-//    System.out.println("has next page : " + r.hasNextPage() );
+    System.out.println("has next page : " + r.first() );
 //    System.out.println("has enity 1 : " + r);
 //    System.out.println("has next page : " + r.loadNextpage() );
 //    UsergridUser e1 = new UsergridUser("test4","Test@123r4678");
@@ -206,8 +208,8 @@ public class test_ayesha {
 ////    System.out.println(new UsergridQuery.Builder().collection("restaurants").ql("select *  where getName = 'blaze'").build().GET());
 //    System.out.println(c.GETFromQuery(q).getEntities());
 
-//    System.out.println(new UsergridQuery("restaurants").qfromString("select *  where distance = 500 or getName = 'amici1' ")); //correct
-//    System.out.println("////////");
+    System.out.println(new UsergridQuery("restaurants").qfromString("select *  where distance = 500 or getName = 'amici1' ")); //correct
+    System.out.println("////////");
 
 //
 //    // singleton operation

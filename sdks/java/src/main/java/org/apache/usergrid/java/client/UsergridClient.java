@@ -18,6 +18,7 @@ package org.apache.usergrid.java.client;
 
 import javax.annotation.Nullable;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.usergrid.java.client.filter.ErrorResponseFilter;
 import org.apache.usergrid.java.client.model.*;
@@ -62,6 +63,7 @@ public class UsergridClient {
     private static final Logger log = LoggerFactory.getLogger(UsergridClient.class);
     private static final String CONNECTIONS = "connections";
     private static final String CONNECTING = "connecting";
+    private static final String STRING_EXPIRES_IN = "expires_in";
 
     public static boolean FORCE_PUBLIC_API = false;
 
@@ -87,7 +89,9 @@ public class UsergridClient {
     private String currentOrganization = null;
     private javax.ws.rs.client.Client restClient;
     private UsergridAuth tempAuth;
-
+    private Long expiresIn = null;
+    private Long tokenExpiry = null;
+    private UsergridAuth appAuth;
 
     /**
      * Default constructor for instantiating a client.
@@ -406,6 +410,10 @@ public class UsergridClient {
         }
     }
 
+    public UsergridResponse authenticateUser(String username,String password) {
+        UsergridUserAuth auth = new UsergridUserAuth(username,password);
+        return authenticateUser(auth);
+    }
     /**
      * Log the user in and get a valid access token.
      *
@@ -440,6 +448,9 @@ public class UsergridClient {
         if (!isEmpty(response.getAccessToken()) && (response.currentUser() != null)) {
             setCurrentUser(response.currentUser());
             setAccessToken(response.getAccessToken());
+            auth.setAccessToken(response.getAccessToken());
+            auth.setTokenExpiry(response.getProperties().get(STRING_EXPIRES_IN).asLong() - 5);
+            this.appAuth = auth;
             currentOrganization = null; //TODO : should this be set to null ?
             log.info("Client.authenticateUser(): Access token: " + accessToken);
         } else {
@@ -601,18 +612,17 @@ public class UsergridClient {
         data.put("grant_type", "client_credentials");
         data.put("client_id", clientId);
         data.put("client_secret", clientSecret);
-        UsergridResponse response = apiRequest(HTTP_POST, null, data, organizationId, applicationId, "token");
+        UsergridResponse response = apiRequest(HTTP_POST, null, data , organizationId, applicationId, "token");
 
         if (response == null) {
             return null;
         }
 
         if (!isEmpty(response.getAccessToken())) {
-            loggedInUser = null; //todo : why null ? set it to current user?
-            accessToken = response.getAccessToken();
-            currentOrganization = null; //TODO : why null?
+            auth.setAccessToken(response.getAccessToken());
+            auth.setTokenExpiry(response.getProperties().get(STRING_EXPIRES_IN).asLong() - 5);
+            this.appAuth = auth;
             log.info("Client.authenticateApp(): Access token: " + accessToken);
-
         } else {
 
             log.info("Client.authenticateApp(): Response: " + response);
@@ -620,6 +630,7 @@ public class UsergridClient {
 
         return response;
     }
+
 
     private void validateNonEmptyParam(final Object param,
                                        final String paramName) {
