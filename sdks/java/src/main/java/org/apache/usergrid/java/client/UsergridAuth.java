@@ -14,9 +14,9 @@ import static org.apache.usergrid.java.client.utils.ObjectUtils.isEmpty;
  */
 public class UsergridAuth {
 
-  public static String accessToken = null;
-  public static boolean usingToken = false;
-  public static Long token_expiry;
+  public String accessToken = null;
+  public boolean usingToken = false;
+  public Long token_expiry;
 
 
   public UsergridAuth(){

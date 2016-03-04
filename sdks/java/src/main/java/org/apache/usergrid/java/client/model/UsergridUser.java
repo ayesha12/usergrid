@@ -51,6 +51,8 @@ public class UsergridUser extends UsergridEntity {
 	public final static String PROPERTY_DISABLED = "disabled";
 	private static final String PROPERTY_PASSWORD = "password";
 
+	public UsergridUserAuth userAuth = null;
+
 	public UsergridUser() {
 		super();
 		changeType(ENTITY_TYPE);

@@ -84,14 +84,29 @@ public class UsergridClient {
     private String applicationId;
     private String clientId;
     private String clientSecret;
-    private UsergridUser loggedInUser = null;
     private String accessToken = null;
     private String currentOrganization = null;
     private javax.ws.rs.client.Client restClient;
-    private UsergridAuth tempAuth;
     private Long expiresIn = null;
     private Long tokenExpiry = null;
-    private UsergridAuth appAuth;
+
+    private UsergridAuth tempAuth = null;
+    private UsergridAuth appAuth = null;
+    private UsergridUser loggedInUser = null;
+
+
+    public UsergridAuth authForRequests() {
+        UsergridAuth authForRequests = null;
+        if( tempAuth != null && tempAuth.isValidToken() ) {
+            authForRequests = tempAuth;
+            tempAuth = null;
+        } else if( this.loggedInUser != null && this.loggedInUser.userAuth.isValidToken() ) {
+            authForRequests = this.loggedInUser.userAuth;
+        } else if( this.appAuth != null ) {
+            authForRequests = this.appAuth;
+        }
+        return authForRequests;
+    }
 
     /**
      * Default constructor for instantiating a client.
@@ -370,8 +385,9 @@ public class UsergridClient {
         Invocation.Builder invocationBuilder = webTarget.request(contentType);
 
         // todo: need to evaluate other authentication options here as well
-        if (accessToken != null) {
-            String auth = BEARER + accessToken;
+        UsergridAuth authForRequest = this.authForRequests();
+        if (authForRequest.accessToken != null) {
+            String auth = BEARER + authForRequest.accessToken;
             invocationBuilder.header(HEADER_AUTHORIZATION, auth);
         }
 
@@ -446,11 +462,13 @@ public class UsergridClient {
 
 
         if (!isEmpty(response.getAccessToken()) && (response.currentUser() != null)) {
-            setCurrentUser(response.currentUser());
-            setAccessToken(response.getAccessToken());
+
             auth.setAccessToken(response.getAccessToken());
             auth.setTokenExpiry(response.getProperties().get(STRING_EXPIRES_IN).asLong() - 5);
-            this.appAuth = auth;
+            response.currentUser().userAuth = auth;
+
+            setCurrentUser(response.currentUser());
+
             currentOrganization = null; //TODO : should this be set to null ?
             log.info("Client.authenticateUser(): Access token: " + accessToken);
         } else {
