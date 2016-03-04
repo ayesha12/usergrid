@@ -424,7 +424,6 @@ public class UsergridResponse {
 
 
   public static UsergridResponse fromException(Exception ex) {
-    ex.printStackTrace();
 
     UsergridResponse response = new UsergridResponse();
     response.setError(ex.getMessage());

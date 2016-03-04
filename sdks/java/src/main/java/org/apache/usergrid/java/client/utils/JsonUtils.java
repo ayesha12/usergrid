@@ -63,7 +63,7 @@ public class JsonUtils {
 
   public static void setArrayProperty(final Map<String, JsonNode> properties,
                                        final String name,
-                                       final ArrayList value) {
+                                       final Object[] value) {
     if (value == null) {
       properties.remove(name);
     } else {

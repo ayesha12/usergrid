@@ -17,6 +17,7 @@ public class ConnectionTestSuite {
     Usergrid.authorizeAppClient(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
   }
 
+
   @Test
   public void testBasicConnection() {
     String ownerCollection = "owners" + System.currentTimeMillis();

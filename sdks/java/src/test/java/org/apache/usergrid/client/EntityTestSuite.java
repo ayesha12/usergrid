@@ -1,9 +1,11 @@
 package org.apache.usergrid.client;
 
+import org.apache.usergrid.java.client.Direction;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;
+import org.codehaus.jettison.json.JSONException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -33,10 +35,13 @@ public class EntityTestSuite {
     fields.put("color", "red");
     fields.put("shape", "square");
 
-    entityMap.put("redsquare", fields);
+    entityMap.put("testEntity1", fields);
 
-    UsergridEntity e = SDKTestUtils.createEntity(collectionName, "redsquare", fields);
-//    entity has been created
+    UsergridEntity e = SDKTestUtils.createEntity(collectionName, "testEntity1", fields);
+    UsergridEntity eLookUp = UsergridEntity.GET(collectionName,"testEntity1");
+    assertTrue("The returned entity is null!", eLookUp != null); //    entity has been created
+    assertTrue("The returned entity is redsquare!", eLookUp.getName().equals("testEntity1")); //    entity has been created
+
   }
 
   @Test
@@ -56,11 +61,11 @@ public class EntityTestSuite {
     fields.put("color", "red");
     fields.put("shape", "square");
 
-    entityMap.put("redsquare", fields);
+    entityMap.put("testEntity2", fields);
 
-    UsergridEntity e = SDKTestUtils.createEntity(collectionName, "redsquare", fields);
+    UsergridEntity e = SDKTestUtils.createEntity(collectionName, "testEntity2", fields);
 
-    UsergridEntity eLookup = UsergridEntity.GET(collectionName, "redsquare");
+    UsergridEntity eLookup = UsergridEntity.GET(collectionName, "testEntity2");
 
     assertTrue("The returned entity is null!", eLookup != null);
     assertTrue("The returned entity does not have the same UUID", e.getUuidString().equals(eLookup.getUuidString()));
@@ -77,9 +82,9 @@ public class EntityTestSuite {
     fields.put("color", "red");
     fields.put("shape", "square");
 
-    entityMap.put("redsquare", fields);
+    entityMap.put("testEntity3", fields);
 
-    UsergridEntity e = SDKTestUtils.createEntity(collectionName, "redsquare", fields);
+    UsergridEntity e = SDKTestUtils.createEntity(collectionName, "testEntity3", fields);
 
     e.POST(); //should work
 
@@ -96,7 +101,7 @@ public class EntityTestSuite {
     fields.put("color", "red");
     fields.put("shape", "square");
 
-    String entityName = "redsquare";
+    String entityName = "testEntity4";
 
     UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
 
@@ -114,7 +119,7 @@ public class EntityTestSuite {
     fields.put("color", "red");
     fields.put("shape", "square");
 
-    String entityName = "redsquare";
+    String entityName = "testEntity5";
 
     UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
 
@@ -132,7 +137,7 @@ public class EntityTestSuite {
     fields.put("color", "red");
     fields.put("shape", "square");
 
-    String entityName = "redsquare";
+    String entityName = "testEntity6";
 
     UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
 
@@ -151,7 +156,7 @@ public class EntityTestSuite {
 
     q = new UsergridQuery.Builder()
         .collection(collectionName)
-        .eq("getName", entityName).build();
+        .eq("name", entityName).build();
 
     eLookup = q.GET().first();
 
@@ -185,7 +190,7 @@ public class EntityTestSuite {
     fields.put("shape", "square");
     fields.put("orientation", "up");
 
-    String entityName = "redsquare";
+    String entityName = "testEntity7";
 
     UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
 
@@ -232,7 +237,7 @@ public class EntityTestSuite {
     fields.put("shape", "square");
     fields.put("orientation", "up");
 
-    String entityName = "redsquare";
+    String entityName = "testEntity8";
 
     UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
 
@@ -286,4 +291,230 @@ public class EntityTestSuite {
 
     assertTrue("The entity was not expected to be returned", eLookup == null);
   }
+
+  @Test
+  public void testEntityPutProperty() {
+    String collectionName = "testEntityPutProperty" + System.currentTimeMillis();
+
+    Map<String, String> fields = new HashMap<>(3);
+    fields.put("color", "red");
+    fields.put("shape", "square");
+
+    String entityName = "testEntity9";
+
+    UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
+    e.putproperty("orientation", "up");
+    e.putproperty("sides", Integer.valueOf(4));
+    e.save();
+
+    UsergridEntity eLookUp = UsergridEntity.GET(collectionName,"testEntity9");
+
+    //Check if the property was added correctly
+    assertTrue("The entity returned is not null.", eLookUp != null);
+    assertTrue("The entity putproperty() was successfull ", eLookUp.getStringProperty("orientation").equals("up"));
+    assertTrue("The entity putproperty() was successfull ", eLookUp.getProperties().get("sides").asInt() == 4 );
+
+    //Overwrite the property if it exists.
+    e.putproperty("orientation","horizontal");
+    e.save();
+    eLookUp = UsergridEntity.GET(collectionName,"testEntity9");
+    assertTrue("The entity putproperty() was successfull ", eLookUp.getStringProperty("orientation").equals("horizontal"));
+
+    //should not be able to set the name key (name is immutable)
+    e.setName("entityNew");
+    e.save();
+    eLookUp = UsergridEntity.GET(collectionName,"testEntity9");
+    assertTrue("The entity putproperty() was successfull ", eLookUp.getName().equals("testEntity9"));
+    eLookUp = UsergridEntity.GET(collectionName,"entityNew");
+    assertTrue("The entity putproperty() was successfull ", eLookUp == null);
+
+  }
+
+  @Test
+  public void testEntityPutProperties() throws JSONException {
+    String collectionName = "testEntityProperties" + System.currentTimeMillis();
+
+    Map<String, String> fields = new HashMap<>(3);
+    fields.put("color", "red");
+
+    String entityName = "testEntity9";
+
+    //should set properties for a given object, overwriting properties that exist and creating those that don\'t
+    UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
+    Map<String, Object> properties = new HashMap<>();
+    properties.put("shape", "square");
+    properties.put("orientation", "up");
+    properties.put("color","black");
+    e.putProperties(properties);
+    e.save();
+
+    UsergridEntity eLookUp = UsergridEntity.GET(collectionName, "testEntity9");
+    assertTrue("The entity returned is not null.", eLookUp != null);
+    assertTrue("The entity putproperty() was successfull ", eLookUp.getStringProperty("orientation").equals("up"));
+    assertTrue("overwrite existing property",eLookUp.getStringProperty("color").equals("black"));
+
+  }
+
+  @Test
+  public void testEntityRemovePropertiesAndSave() throws JSONException {
+    String collectionName = "testEntityProperties" + System.currentTimeMillis();
+
+    Map<String, String> fields = new HashMap<>(3);
+    fields.put("color", "red");
+
+    String entityName = "testEntity9";
+
+    //should set properties for a given object, overwriting properties that exist and creating those that don\'t
+    UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
+    Map<String, Object> properties = new HashMap<>();
+    properties.put("shape", "square");
+    properties.put("orientation", "up");
+    properties.put("color","black");
+    e.putProperties(properties);
+    e.save();
+
+    UsergridEntity eLookUp = UsergridEntity.GET(collectionName, "testEntity9");
+    assertTrue("The entity returned is not null.", eLookUp != null);
+
+    String[] removeProperties = {"shape", "color"};
+    e.removeProperties(removeProperties);
+    e.save();
+
+    eLookUp = UsergridEntity.GET(collectionName, "testEntity9");
+    assertTrue("The entity returned is not null.", eLookUp != null);
+    assertTrue("overwrite existing property",eLookUp.getStringProperty("color") == null);
+    assertTrue("overwrite existing property",eLookUp.getStringProperty("shape") == null);
+
+  }
+
+
+  @Test
+  public void testEntityRemoveProperty() throws JSONException {
+    String collectionName = "testEntityProperties" + System.currentTimeMillis();
+
+    Map<String, String> fields = new HashMap<>(3);
+    fields.put("color", "red");
+
+    String entityName = "testEntity11";
+
+    //should set properties for a given object, overwriting properties that exist and creating those that don\'t
+    UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
+    Map<String, Object> properties = new HashMap<>();
+    properties.put("shape", "square");
+    properties.put("orientation", "up");
+    properties.put("color","black");
+    e.putProperties(properties);
+    e.save();
+
+    UsergridEntity eLookUp = UsergridEntity.GET(collectionName, "testEntity11");
+    assertTrue("The entity returned is not null.", eLookUp != null);
+
+    e.removeEntityProperty("color");
+    e.removeEntityProperty("shape");
+    e.save();
+
+    eLookUp = UsergridEntity.GET(collectionName, "testEntity11");
+    assertTrue("The entity returned is not null.", eLookUp != null);
+    assertTrue("overwrite existing property",eLookUp.getStringProperty("color") == null);
+    assertTrue("overwrite existing property",eLookUp.getStringProperty("shape") == null);
+
+  }
+
+
+
+//  @Test
+//  public void testEntityInsertInArray() throws JSONException {
+//    String collectionName = "testEntityProperties" + System.currentTimeMillis();
+//
+//    Map<String, String> fields = new HashMap<>(3);
+//    fields.put("color", "red");
+//
+//    String entityName = "testEntity1";
+//
+//    //should set properties for a given object, overwriting properties that exist and creating those that don\'t
+//    UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
+//    Object[] lenArr = {1,2,3};
+//    e.putproperty("lenArray",lenArr);
+//    e.save();
+//
+//    e.insert("lenArray",1,6);
+//    e.save();
+//    UsergridEntity eLookUp = UsergridEntity.GET(collectionName, "testEntity1");
+//    assertTrue("The entity returned is not null.", eLookUp != null);
+//
+//    assertTrue("The entity returned is not null.", eLookUp != null);
+//    Object[] toCompare = {1,2,3,1};
+//
+//
+//  }
+
+  @Test
+  public void testEntityConnectDisConnectGetConnections() throws JSONException {
+    String collectionName = "testEntityProperties" + System.currentTimeMillis();
+
+    Map<String, String> fields = new HashMap<>(1);
+    fields.put("color", "red");
+
+    String entityName = "testEntity1";
+
+    //should set properties for a given object, overwriting properties that exist and creating those that don\'t
+    UsergridEntity e1 = SDKTestUtils.createEntity(collectionName, entityName, fields);
+    Map<String, Object> properties1 = new HashMap<>();
+    properties1.put("shape", "square");
+    e1.putProperties(properties1);
+    e1.save();
+
+    entityName = "testEntity2";
+    UsergridEntity e2 = SDKTestUtils.createEntity(collectionName, entityName, fields);
+    Map<String, Object> properties2 = new HashMap<>();
+    properties2.put("color","green");
+    properties2.put("shape", "circle");
+    e2.putProperties(properties2);
+    e2.save();
+
+    //should connect entities by passing a target UsergridEntity object as a parameter
+    e1.connect("likes",e2);
+    e1.save();
+    UsergridEntity eLookUp = UsergridEntity.GET(collectionName, "testEntity1");
+    assertTrue("The entity returned is not null.", eLookUp != null);
+    assertTrue("The entity returned is not null.", eLookUp.getConnections(Direction.OUT,"likes").get(0).getName().equals("testEntity2"));
+    UsergridEntity eLookUp2 = UsergridEntity.GET(collectionName, "testEntity2");
+    assertTrue("The entity returned is not null.", eLookUp2.getConnections(Direction.IN,"likes").get(0).getName().equals("testEntity1"));
+
+
+    e1.disconnect("likes",e2);
+    e1.save();
+    eLookUp = UsergridEntity.GET(collectionName, "testEntity1");
+    assertTrue("The entity returned is not null.", eLookUp != null);
+    assertTrue("The entity returned is not null.", eLookUp.getConnections(Direction.OUT,"likes").size() == 0);
+
+    //should connect entities by passing target uuid as a parameter
+    e1.connect("visited",e2.getUuid().toString());
+    e1.save();
+    eLookUp = UsergridEntity.GET(collectionName, "testEntity1");
+    assertTrue("The entity returned is not null.", eLookUp != null);
+    assertTrue("The entity returned is not null.", eLookUp.getConnections(Direction.OUT,"visited").get(0).getName().equals("testEntity2"));
+
+    e1.disconnect("visited",e2.getUuid().toString());
+    e1.save();
+    eLookUp = UsergridEntity.GET(collectionName, "testEntity1");
+    assertTrue("The entity returned is not null.", eLookUp != null);
+    assertTrue("The entity returned is not null.", eLookUp.getConnections(Direction.OUT,"visited").size() == 0);
+
+    //should connect entities by passing target type and name as parameters
+    e1.connect("revisit",e2.getType(),e2.getName());
+    e1.save();
+    eLookUp = UsergridEntity.GET(collectionName, "testEntity1");
+    assertTrue("The entity returned is not null.", eLookUp != null);
+    assertTrue("The entity returned is not null.", eLookUp.getConnections(Direction.OUT,"revisit").get(0).getName().equals("testEntity2"));
+
+    e1.disconnect("revisit",e2.getType(),e2.getName());
+    e1.save();
+    eLookUp = UsergridEntity.GET(collectionName, "testEntity1");
+    assertTrue("The entity returned is not null.", eLookUp != null);
+    assertTrue("The entity returned is not null.", eLookUp.getConnections(Direction.OUT,"revisit").size() == 0);
+
+  }
+
+
 }

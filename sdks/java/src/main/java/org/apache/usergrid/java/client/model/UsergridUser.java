@@ -62,7 +62,7 @@ public class UsergridUser extends UsergridEntity {
 		changeType(ENTITY_TYPE);
 	}
 
-	public UsergridUser(String name, HashMap<String, JsonNode> propertyMap) throws JSONException {
+	public UsergridUser(String name, HashMap<String, Object> propertyMap) throws JSONException {
 		super();
 		changeType(ENTITY_TYPE);
 		setName(name);

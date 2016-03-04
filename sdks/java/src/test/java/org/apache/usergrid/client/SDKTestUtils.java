@@ -11,7 +11,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Created by ApigeeCorporation on 9/10/15.
  */
-public class SDKTestUtils {
+public class    SDKTestUtils {
 
 
   public static Map<String, UsergridEntity> createColorShapes(String collection) {
@@ -58,7 +58,7 @@ public class SDKTestUtils {
                                             final Map<String, String> fields) {
 
     UsergridEntity e = new UsergridEntity(collection);
-    e.putproperty("getName", name);
+    e.putproperty("name", name);
 
     for (Map.Entry<String, String> field : fields.entrySet()) {
       e.putproperty(field.getKey(), field.getValue());

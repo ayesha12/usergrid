@@ -437,7 +437,7 @@ public class UsergridClient {
         formData.put("username", email);
         formData.put("password", password);
 
-        UsergridResponse response = apiRequest(HTTP_POST, formData, null, organizationId, applicationId, "token");
+        UsergridResponse response = apiRequest(HTTP_POST, null, formData, organizationId, applicationId, "token");
 
         if (response == null) {
             return null;
@@ -1187,6 +1187,25 @@ public class UsergridClient {
         return apiRequest(HTTP_DELETE, null, null, organizationId, applicationId, connectingEntityType, connectingEntityId, connectionType, connectedEntityId);
     }
 
+    /**
+     * Disconnect two entities.
+     *
+     * @param connectingEntityType
+     * @param connectingEntityId
+     * @param connectionType
+     * @param connectedEntitytype
+     * @param connectedEntityName
+     * @return
+     */
+    public UsergridResponse disconnect(final String connectingEntityType,
+                                       final String connectingEntityId,
+                                       final String connectionType,
+                                       final String connectedEntitytype,
+                                       final String connectedEntityName) {
+
+        return apiRequest(HTTP_DELETE, null, null, organizationId, applicationId, connectingEntityType, connectingEntityId, connectionType, connectedEntitytype,connectedEntityName);
+    }
+
 
     /**
      * @param sourceVertex
@@ -1337,7 +1356,7 @@ public class UsergridClient {
     public UsergridResponse POST(final @NonNull UsergridEntity e) {
 
         ValidateEntity(e);
-        return apiRequest(HTTP_POST, null, e.getProperties(), organizationId, applicationId, e.getType(), e.getUuidString() != null ? e.getUuidString() : e.getName());
+        return apiRequest(HTTP_POST, null, e, organizationId, applicationId, e.getType());
     }
 
 

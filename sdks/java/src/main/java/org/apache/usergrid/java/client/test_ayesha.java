@@ -27,8 +27,10 @@ public class test_ayesha {
     public static final String USERGRID_URL = "https://api.usergrid.com/"; //"https://ug21.e2e.apigee.net/";
   public static final String ORG_NAME = "ayesha";
   public static final String APP_NAME = "sandbox";
+  public static final String USER_NAME = "Blueprints_usergrid_0302";
+  public static final String USER_PASSWORD = "Blueprints_usergrid_0302";
   public static final String COLLECTION = "restaurants";
-  private static final String ACESS_TOKEN = "YWMteYwXyN8rEeWxN-HMPu76jAAAAVNS--Bwg4dnMIfRmFkZjqop6BkJKGuqOYM";
+  private static final String ACESS_TOKEN = "YWMtGTE_qOGMEeW69X-GHPBO4wAAAVNikI1rupOxmyYtv6xLeNRIR_foLcVswE0";
 
   public static void main(String[] args) throws JSONException {
 
@@ -42,10 +44,25 @@ public class test_ayesha {
 
     Usergrid.initSharedInstance(USERGRID_URL,ORG_NAME,APP_NAME);
     System.out.println(client.getAppId());
-    System.out.println(Usergrid.authorizeAppClient(APP_CLIENT_ID,APP_CLIENT_SECRET));
+//    UsergridResponse resp = Usergrid.authorizeAppUser(USER_NAME,USER_PASSWORD);
+
+
+     System.out.println(Usergrid.authorizeAppClient(APP_CLIENT_ID,APP_CLIENT_SECRET));
     System.out.println("////////");
 
+    UsergridEntity e = new UsergridEntity("people");
+    e.putproperty("getName", "entity1");
+
+    e.putproperty("location","sj");
+
+    UsergridResponse r = e.POST();
+    System.out.println("baseurl1 " + r.getError());
+
+
+
     UsergridClient c = Usergrid.getInstance();
+//    c.createEntity(e);
+
 //    UsergridClient c = new UsergridClient(ORG_NAME,APP_NAME);
 
 //    c.setBaseUrl(USERGRID_URL);
@@ -53,14 +70,14 @@ public class test_ayesha {
 //    System.out.println("access_token " + c.getAccessToken());
 //    System.out.println("baseurl " + c.getClientSecret());
 //    System.out.println("baseurl1 " );
-//
+////
 //
 //    Map<String,Object>param = new HashMap<String, Object>();
 //    param.put("access_token",c.getAccessToken());
 //      System.out.println(c.apiRequest("GET",param,null,"management/me"));
 
 
-    UsergridResponse r = c.apiRequest("GET",null,null,ORG_NAME,APP_NAME,"restaurants");
+//    UsergridResponse r = c.apiRequest("GET",null,null,ORG_NAME,APP_NAME,"restaurants");
 
 
     System.out.println("has next page : " + r.first() );
@@ -80,14 +97,22 @@ public class test_ayesha {
 //
 
 
+
+    System.out.println(c.apiRequest("GET",null,null,ORG_NAME,APP_NAME));
+    UsergridResponse resp = c.getEntity("restaurants","amici");
+    System.out.println("entity amici : " + resp.entity());
+    UsergridEntity amici = resp.entity();
+    amici.putproperty("menu","pasta");
+    amici.save();
+
+    resp = c.getEntity("restaurants","amici");
+    System.out.println("entity amici with menu : " + resp.entity());
+
+
+
+     e = c.getEntity("shoes","nike").first();
+    System.out.println("entity nike: " + e);
 //
-//    System.out.println(c.apiRequest("GET",null,null,ORG_NAME,APP_NAME));
-//    UsergridResponse resp = c.getEntity("restaurants","amici");
-//
-//
-//    UsergridEntity e = c.getEntity("shoes","nike").first();
-////    System.out.println("entity : " + e);
-////
 ////    int[] intarr = {3,4,5};
 //////    e.p
 //    ArrayList<Integer> arr = new ArrayList<Integer>();
@@ -208,8 +233,8 @@ public class test_ayesha {
 ////    System.out.println(new UsergridQuery.Builder().collection("restaurants").ql("select *  where getName = 'blaze'").build().GET());
 //    System.out.println(c.GETFromQuery(q).getEntities());
 
-    System.out.println(new UsergridQuery("restaurants").qfromString("select *  where distance = 500 or getName = 'amici1' ")); //correct
-    System.out.println("////////");
+//    System.out.println(new UsergridQuery("restaurants").qfromString("select *  where distance = 500 or getName = 'amici1' ")); //correct
+//    System.out.println("////////");
 
 //
 //    // singleton operation

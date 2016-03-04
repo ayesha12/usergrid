@@ -1,6 +1,7 @@
 package org.apache.usergrid.java.client;
 
 import org.apache.usergrid.java.client.model.UsergridAppAuth;
+import org.apache.usergrid.java.client.model.UsergridUserAuth;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 
 import java.util.HashMap;
@@ -100,6 +101,12 @@ public class Usergrid {
 
     UsergridAppAuth ugAppAuth = new UsergridAppAuth(appClientId,appClientSecret);
     return getInstance().authenticateApp(ugAppAuth);
+  }
+
+  public static UsergridResponse authorizeAppUser(String username, String password){
+    UsergridUserAuth ugUserAuth = new UsergridUserAuth(username,password);
+    return getInstance().authenticateUser(ugUserAuth);
+
   }
 
   public static void reset() {
