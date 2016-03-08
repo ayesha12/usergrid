@@ -2,6 +2,7 @@ package org.apache.usergrid.client;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.TextNode;
 import org.apache.usergrid.java.client.Direction;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.model.UsergridEntity;
@@ -297,7 +298,7 @@ public class EntityTestSuite {
   }
 
   @Test
-  public void testEntityPutProperty() {
+  public void testEntityPutPropertyAndSave() {
     String collectionName = "testEntityPutProperty" + System.currentTimeMillis();
 
     Map<String, String> fields = new HashMap<>(3);
@@ -424,9 +425,183 @@ public class EntityTestSuite {
 
   }
 
+  @Test
+  public void testEntityAppendInArray() throws JSONException {
+    String collectionName = "testEntityProperties" + System.currentTimeMillis();
+
+    Map<String, String> fields = new HashMap<>(3);
+    fields.put("color", "red");
+
+    String entityName = "testEntity1";
+
+    //should set properties for a given object, overwriting properties that exist and creating those that don\'t
+    UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
+    ArrayList<Object> lenArr = new ArrayList<>();
+//    {1,2,3};
+    lenArr.add(1);
+    lenArr.add(2);
+    lenArr.add(3);
+    lenArr.add(4);
+    e.putproperty("lenArray", lenArr);
+    e.save();
+
+    ArrayList<Object> lenArr2 = new ArrayList<>();
+
+    lenArr2.add(6);
+    lenArr2.add(7);
+
+    e.append("lenArray", lenArr2);
+    e.save();
+    UsergridEntity eLookUp = UsergridEntity.GET(collectionName, "testEntity1");
+    assertTrue("The entity returned is not null.", eLookUp != null);
+
+
+    assertTrue("The entity returned is not null.", eLookUp != null);
+    ArrayNode toCompare = new ArrayNode(JsonNodeFactory.instance);
+    toCompare.add(1).add(2).add(3).add(4).add(6).add(7);
+    assertTrue("The entity returned is not null.", eLookUp.getProperties().get("lenArray").equals(toCompare));
+
+  }
+
+  @Test
+  public void testEntityPrependInArray() throws JSONException {
+    String collectionName = "testEntityProperties" + System.currentTimeMillis();
+
+    Map<String, String> fields = new HashMap<>(3);
+    fields.put("color", "red");
+
+    String entityName = "testEntity1";
+
+    //should set properties for a given object, overwriting properties that exist and creating those that don\'t
+    UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
+    ArrayList<Object> lenArr = new ArrayList<>();
+//    {1,2,3};
+    lenArr.add(1);
+    lenArr.add(2);
+    lenArr.add(3);
+    lenArr.add(4);
+    e.putproperty("lenArray", lenArr);
+    e.save();
+
+    ArrayList<Object> lenArr2 = new ArrayList<>();
+
+    lenArr2.add(6);
+    lenArr2.add(7);
+
+    e.prepend("lenArray", lenArr2);
+    e.save();
+    UsergridEntity eLookUp = UsergridEntity.GET(collectionName, "testEntity1");
+    assertTrue("The entity returned is not null.", eLookUp != null);
+
+
+    assertTrue("The entity returned is not null.", eLookUp != null);
+    ArrayNode toCompare = new ArrayNode(JsonNodeFactory.instance);
+    toCompare.add(6).add(7).add(1).add(2).add(3).add(4);
+    assertTrue("The entity returned is not null.", eLookUp.getProperties().get("lenArray").equals(toCompare));
+
+  }
+
+  @Test
+  public void testEntityPopInArray() throws JSONException {
+    String collectionName = "testEntityProperties" + System.currentTimeMillis();
+    Map<String, String> fields = new HashMap<>(3);
+    fields.put("color", "red");
+    String entityName = "testEntity1";
+
+    //should remove the last value of an existing array
+    UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
+    ArrayList<Object> lenArr = new ArrayList<>();
+    lenArr.add(1);
+    lenArr.add(2);
+    lenArr.add(3);
+    e.putproperty("lenArray", lenArr);
+    e.save();
+    e.pop("lenArray");
+    e.save();
+    UsergridEntity eLookUp = UsergridEntity.GET(collectionName, "testEntity1");
+    assertTrue("The entity returned is not null.", eLookUp != null);
+
+
+    assertTrue("The entity returned is not null.", eLookUp != null);
+    ArrayNode toCompare = new ArrayNode(JsonNodeFactory.instance);
+    toCompare.add(1).add(2);
+    assertTrue("The entity returned is not null.", eLookUp.getProperties().get("lenArray").equals(toCompare));
+
+
+    //value should remain unchanged if it is not an array
+    e.putproperty("foo","test1");
+    e.save();
+    e.pop("foo");
+    eLookUp = UsergridEntity.GET(collectionName, "testEntity1");
+    assertTrue("The entity returned is not null.", eLookUp != null);
+    TextNode toCompare1 = new TextNode("test1");
+    assertTrue("The entity returned is not null.", eLookUp.getProperties().get("foo").equals(toCompare1));
+
+
+    //should gracefully handle empty arrays
+    ArrayList<Object> lenArr2 = new ArrayList<>();
+    e.putproperty("foo",lenArr2);
+    e.save();
+    e.pop("foo");
+    eLookUp = UsergridEntity.GET(collectionName, "testEntity1");
+    assertTrue("The entity returned is not null.", eLookUp != null);
+    toCompare = new ArrayNode(JsonNodeFactory.instance);
+    assertTrue("The entity returned is not null.", eLookUp.getProperties().get("foo").equals(toCompare));
+
+  }
 
 
   @Test
+  public void testEntityShiftInArray() throws JSONException {
+    String collectionName = "testEntityProperties" + System.currentTimeMillis();
+    Map<String, String> fields = new HashMap<>(3);
+    fields.put("color", "red");
+    String entityName = "testEntity1";
+
+    //should remove the last value of an existing array
+    UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
+    ArrayList<Object> lenArr = new ArrayList<>();
+    lenArr.add(1);
+    lenArr.add(2);
+    lenArr.add(3);
+    e.putproperty("lenArray", lenArr);
+    e.save();
+    e.shift("lenArray");
+    e.save();
+    UsergridEntity eLookUp = UsergridEntity.GET(collectionName, "testEntity1");
+    assertTrue("The entity returned is not null.", eLookUp != null);
+
+
+    assertTrue("The entity returned is not null.", eLookUp != null);
+    ArrayNode toCompare = new ArrayNode(JsonNodeFactory.instance);
+    toCompare.add(2).add(3);
+    assertTrue("The entity returned is not null.", eLookUp.getProperties().get("lenArray").equals(toCompare));
+
+
+    //value should remain unchanged if it is not an array
+    e.putproperty("foo","test1");
+    e.save();
+    e.shift("foo");
+    eLookUp = UsergridEntity.GET(collectionName, "testEntity1");
+    assertTrue("The entity returned is not null.", eLookUp != null);
+    TextNode toCompare1 = new TextNode("test1");
+    assertTrue("The entity returned is not null.", eLookUp.getProperties().get("foo").equals(toCompare1));
+
+
+    //should gracefully handle empty arrays
+    ArrayList<Object> lenArr2 = new ArrayList<>();
+    e.putproperty("foo",lenArr2);
+    e.save();
+    e.shift("foo");
+    eLookUp = UsergridEntity.GET(collectionName, "testEntity1");
+    assertTrue("The entity returned is not null.", eLookUp != null);
+    toCompare = new ArrayNode(JsonNodeFactory.instance);
+    assertTrue("The entity returned is not null.", eLookUp.getProperties().get("foo").equals(toCompare));
+
+  }
+
+
+    @Test
   public void testEntityInsertInArray() throws JSONException {
     String collectionName = "testEntityProperties" + System.currentTimeMillis();
 
@@ -463,6 +638,7 @@ public class EntityTestSuite {
     assertTrue("The entity returned is not null.", eLookUp.getProperties().get("lenArray").equals(toCompare));
 
 
+      //should merge an array of values into an existing array at the specified index
     lenArr = new ArrayList<>();
 //    {1,2,3};
     lenArr.add(1);
@@ -488,6 +664,7 @@ public class EntityTestSuite {
     toCompare.add(1).add(2).add(5).add(6).add(7).add(8).add(3).add(4);
     assertTrue("The entity returned is not null.", eLookUp.getProperties().get("lenArray").equals(toCompare));
 
+    //should convert an existing value into an array when inserting a second value
     e.putproperty("foo","test");
     e.save();
     e.insert("foo","test1",1);
@@ -499,7 +676,39 @@ public class EntityTestSuite {
 
     assertTrue("The entity returned is not null.", eLookUp.getProperties().get("foo").equals(toCompare));
 
-  }
+      //should create a new array when a property does not exist
+      e.insert("foo1","test2",1);
+      e.save();
+      eLookUp = UsergridEntity.GET(collectionName, "testEntity1");
+      assertTrue("The entity returned is not null.", eLookUp != null);
+      toCompare = new ArrayNode(JsonNodeFactory.instance);
+      toCompare.add("test2");
+
+      assertTrue("The entity returned is not null.", eLookUp.getProperties().get("foo1").equals(toCompare));
+
+    //should gracefully handle indexes out of range
+
+      e.putproperty("Arrindex","test1");
+      e.save();
+      e.insert("Arrindex","test2",1000);
+      e.save();
+      eLookUp = UsergridEntity.GET(collectionName, "testEntity1");
+      assertTrue("The entity returned is not null.", eLookUp != null);
+      toCompare = new ArrayNode(JsonNodeFactory.instance);
+      toCompare.add("test1").add("test2");
+      assertTrue("The entity returned is not null.", eLookUp.getProperties().get("Arrindex").equals(toCompare));
+
+      e.insert("Arrindex","test3",-1000);
+      e.save();
+      eLookUp = UsergridEntity.GET(collectionName, "testEntity1");
+      assertTrue("The entity returned is not null.", eLookUp != null);
+      toCompare = new ArrayNode(JsonNodeFactory.instance);
+      toCompare.add("test3").add("test1").add("test2");
+      assertTrue("The entity returned is not null.", eLookUp.getProperties().get("Arrindex").equals(toCompare));
+
+
+
+    }
 
   @Test
   public void testEntityConnectDisConnectGetConnections() throws JSONException {

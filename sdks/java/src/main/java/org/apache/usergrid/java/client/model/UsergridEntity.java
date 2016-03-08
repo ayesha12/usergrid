@@ -482,7 +482,7 @@ public class UsergridEntity {
         return Usergrid.getInstance().getEntity(collectionName, name).first();
     }
 
-    public UsergridEntity RELOAD() {
+    public UsergridEntity reload() {
         return GET(this.getType(), this.getName());
     }
 
@@ -503,15 +503,22 @@ public class UsergridEntity {
         }
     }
 
-    public void prepend(String propertyName, ArrayList arrToInsert) {
+
+    public void prepend(String propertyName, Object arrToInsert) {
         ArrayList<Object> initialArr = getArrayNode(getEntityProperty(propertyName));
-        ArrayList<Object> arrayToInsert = getArrayNode(arrToInsert);
-        initialArr.addAll(arrayToInsert);
-        putproperty(propertyName, initialArr);
+        this.insert(propertyName,arrToInsert,0);
+
+    }
+
+    public void append(String propertyName, ArrayList arrToInsert) {
+        ArrayList<Object> initialArr = getArrayNode(getEntityProperty(propertyName));
+        this.insert(propertyName,arrToInsert,initialArr.size()+10);
     }
 
 
     public void insert(String propertyName, Object arrToInsert, int indx) {
+        if(indx < 0)
+            indx = 0;
         ArrayList<Object> initialArr = getArrayNode(getEntityProperty(propertyName));
         ArrayList<Object> arrayToInsert = getArrayNode(arrToInsert);
         ArrayList<Object> aToAdd = insertIntoArray(initialArr, arrayToInsert, indx);
@@ -521,31 +528,29 @@ public class UsergridEntity {
 
     public void pop(String propertyName) {
         Object entityProperty = getEntityProperty(propertyName);
-        if (entityProperty.getClass() == ArrayNode.class) {
-            ArrayNode newArrNode = ((ArrayNode) entityProperty);
+        if (entityProperty.getClass() == POJONode.class) {
+            ArrayList<Object> newArrNode = (ArrayList) ((POJONode) entityProperty).getPojo();
+            if (newArrNode.size() == 0)
+                return;
             newArrNode.remove(newArrNode.size() - 1);
             putproperty(propertyName, newArrNode);
         }
+        //else if property s not an array, it retrieves the property as it is.
 //TODO : if the array is already empty.
     }
 
     public void shift(String propertyName) {
         Object entityProperty = getEntityProperty(propertyName);
-        if (entityProperty.getClass() == ArrayNode.class) {
-            ArrayNode newArrNode = ((ArrayNode) entityProperty);
+        if (entityProperty.getClass() ==POJONode.class) {
+            ArrayList<Object> newArrNode = (ArrayList) ((POJONode) entityProperty).getPojo();
+            if (newArrNode.size() == 0)
+                return;
             newArrNode.remove(0);
             putproperty(propertyName, newArrNode);
         }
 //TODO : if the array is already empty.
     }
 
-
-    public void append(String propertyName, Object arrToInsert) {
-        ArrayList<Object> initialArr = getArrayNode(getEntityProperty(propertyName));
-        ArrayList<Object> arrayToInsert = getArrayNode(arrToInsert);
-        arrayToInsert.addAll(initialArr);
-        putproperty(propertyName, arrayToInsert);
-    }
 
     private ArrayList<Object> getArrayNode(Object arrayToInsert) {
         if (arrayToInsert == null || arrayToInsert == "")
