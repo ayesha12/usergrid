@@ -898,6 +898,23 @@ public class UsergridClient {
 
 
     /**
+     * Create a connection between two entities
+     *
+     * @param sourceVertex  The source entity/vertex of the connection
+     * @param targetVertexUUid  The target entity/vertex UUID.
+     * @param connetionName The getName of the connection/edge
+     * @return
+     */
+    public UsergridResponse connect(final UsergridEntity sourceVertex,
+                                    final String connetionName,
+                                    final String targetVertexUUid
+    ) {
+        ValidateEntity(sourceVertex);
+        return this.connect(sourceVertex.getType(), sourceVertex.getUuid().toString(), connetionName, targetVertexUUid);
+    }
+
+
+    /**
      * Connect two entities together.
      *
      * @param connectingEntityType
