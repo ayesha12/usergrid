@@ -51,7 +51,7 @@ public class test_ayesha {
     System.out.println("////////");
 
     UsergridEntity e = new UsergridEntity("people");
-    e.putproperty("getName", "entity1");
+    e.putproperty("name", "entity1");
 
     e.putproperty("location","sj");
 
@@ -98,20 +98,20 @@ public class test_ayesha {
 
 
 
-    System.out.println(c.apiRequest("GET",null,null,ORG_NAME,APP_NAME));
-    UsergridResponse resp = c.getEntity("restaurants","amici");
-    System.out.println("entity amici : " + resp.entity());
-    UsergridEntity amici = resp.entity();
-    amici.putproperty("menu","pasta");
-    amici.save();
-
-    resp = c.getEntity("restaurants","amici");
-    System.out.println("entity amici with menu : " + resp.entity());
-
-
-
-     e = c.getEntity("shoes","nike").first();
-    System.out.println("entity nike: " + e);
+//    System.out.println(c.apiRequest("GET",null,null,ORG_NAME,APP_NAME));
+//    UsergridResponse resp = c.getEntity("restaurants","amici");
+//    System.out.println("entity amici : " + resp.entity());
+////    UsergridEntity amici = resp.entity();
+////    amici.putproperty("menu","pasta");
+////    amici.save();
+//
+//    resp = c.getEntity("restaurants","amici");
+//    System.out.println("entity amici with menu : " + resp.entity());
+//
+//
+//
+//     e = c.getEntity("shoes","nike").first();
+//    System.out.println("entity nike: " + e);
 //
 ////    int[] intarr = {3,4,5};
 //////    e.p

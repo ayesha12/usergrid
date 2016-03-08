@@ -1,5 +1,7 @@
 package org.apache.usergrid.client;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import org.apache.usergrid.java.client.Direction;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.model.UsergridEntity;
@@ -9,7 +11,9 @@ import org.codehaus.jettison.json.JSONException;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertTrue;
@@ -422,31 +426,80 @@ public class EntityTestSuite {
 
 
 
-//  @Test
-//  public void testEntityInsertInArray() throws JSONException {
-//    String collectionName = "testEntityProperties" + System.currentTimeMillis();
-//
-//    Map<String, String> fields = new HashMap<>(3);
-//    fields.put("color", "red");
-//
-//    String entityName = "testEntity1";
-//
-//    //should set properties for a given object, overwriting properties that exist and creating those that don\'t
-//    UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
-//    Object[] lenArr = {1,2,3};
-//    e.putproperty("lenArray",lenArr);
-//    e.save();
-//
-//    e.insert("lenArray",1,6);
-//    e.save();
-//    UsergridEntity eLookUp = UsergridEntity.GET(collectionName, "testEntity1");
-//    assertTrue("The entity returned is not null.", eLookUp != null);
-//
-//    assertTrue("The entity returned is not null.", eLookUp != null);
-//    Object[] toCompare = {1,2,3,1};
-//
-//
-//  }
+  @Test
+  public void testEntityInsertInArray() throws JSONException {
+    String collectionName = "testEntityProperties" + System.currentTimeMillis();
+
+    Map<String, String> fields = new HashMap<>(3);
+    fields.put("color", "red");
+
+    String entityName = "testEntity1";
+
+    //should set properties for a given object, overwriting properties that exist and creating those that don\'t
+    UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
+    ArrayList<Object> lenArr = new ArrayList<>();
+//    {1,2,3};
+    lenArr.add(1);
+    lenArr.add(2);
+    lenArr.add(3);
+    lenArr.add(4);
+    e.putproperty("lenArray",lenArr);
+    e.save();
+
+    ArrayList<Object> lenArr2 = new ArrayList<>();
+
+    lenArr2.add(6);
+    lenArr2.add(7);
+
+    e.insert("lenArray",lenArr2,6);
+    e.save();
+    UsergridEntity eLookUp = UsergridEntity.GET(collectionName, "testEntity1");
+    assertTrue("The entity returned is not null.", eLookUp != null);
+
+
+    assertTrue("The entity returned is not null.", eLookUp != null);
+    ArrayNode toCompare = new ArrayNode(JsonNodeFactory.instance);
+    toCompare.add(1).add(2).add(3).add(4).add(6).add(7);
+    assertTrue("The entity returned is not null.", eLookUp.getProperties().get("lenArray").equals(toCompare));
+
+
+    lenArr = new ArrayList<>();
+//    {1,2,3};
+    lenArr.add(1);
+    lenArr.add(2);
+    lenArr.add(3);
+    lenArr.add(4);
+
+    e.putproperty("lenArray",lenArr);
+    e.save();
+    lenArr2 = new ArrayList<>();
+
+//    {1,2,3};
+    lenArr2.add(5);
+    lenArr2.add(6);
+    lenArr2.add(7);
+    lenArr2.add(8);
+
+    e.insert("lenArray",lenArr2 ,2);
+    e.save();
+    eLookUp = UsergridEntity.GET(collectionName, "testEntity1");
+    assertTrue("The entity returned is not null.", eLookUp != null);
+    toCompare = new ArrayNode(JsonNodeFactory.instance);
+    toCompare.add(1).add(2).add(5).add(6).add(7).add(8).add(3).add(4);
+    assertTrue("The entity returned is not null.", eLookUp.getProperties().get("lenArray").equals(toCompare));
+
+    e.putproperty("foo","test");
+    e.save();
+    e.insert("foo","test1",1);
+    e.save();
+    eLookUp = UsergridEntity.GET(collectionName, "testEntity1");
+    assertTrue("The entity returned is not null.", eLookUp != null);
+    toCompare = new ArrayNode(JsonNodeFactory.instance);
+    toCompare.add("test").add("test1");
+
+    assertTrue("The entity returned is not null.", eLookUp.getProperties().get("foo").equals(toCompare));
+
+  }
 
   @Test
   public void testEntityConnectDisConnectGetConnections() throws JSONException {

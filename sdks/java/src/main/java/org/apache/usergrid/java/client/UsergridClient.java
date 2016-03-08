@@ -358,7 +358,7 @@ public class UsergridClient {
             if (segment != null)
                 webTarget = webTarget.path(segment);
 
-        if ((method.equals(HTTP_GET) || method.equals(HTTP_PUT) || method.equals(HTTP_DELETE)) && !isEmpty(params)) {
+        if ((method.equals(HTTP_GET) || method.equals(HTTP_PUT) || method.equals(HTTP_POST) || method.equals(HTTP_DELETE)) && !isEmpty(params)) {
             for (Map.Entry<String, Object> param : params.entrySet()) {
                 webTarget = webTarget.queryParam(param.getKey(), param.getValue());
             }
@@ -370,23 +370,23 @@ public class UsergridClient {
         // check to see if we need to do a FORM POST by checking the METHOD,
         // that there is NO DATA and that the params are not empty
 
-        Form form = new Form();
-        if (method.equals(HTTP_POST)
-                && isEmpty(data)
-                && !isEmpty(params)) {
-
-            //TODO: Uncomment once fixed
-            //for (Map.Entry<String, Object> param : params.entrySet()) {
-            //  form.param(param.getKey(), String.valueOf(param.getValue()));
-            //}
-            data = params;
-        }
+//        Form form = new Form();
+//        if (method.equals(HTTP_POST)
+//                && isEmpty(data)
+//                && !isEmpty(params)) {
+//
+//            //TODO: Uncomment once fixed
+//            //for (Map.Entry<String, Object> param : params.entrySet()) {
+//            //  form.param(param.getKey(), String.valueOf(param.getValue()));
+//            //}
+//            data = params;
+//        }
 
         Invocation.Builder invocationBuilder = webTarget.request(contentType);
 
         // todo: need to evaluate other authentication options here as well
         UsergridAuth authForRequest = this.authForRequests();
-        if (authForRequest.accessToken != null) {
+        if (authForRequest != null && authForRequest.accessToken != null) {
             String auth = BEARER + authForRequest.accessToken;
             invocationBuilder.header(HEADER_AUTHORIZATION, auth);
         }
@@ -657,47 +657,6 @@ public class UsergridClient {
         }
     }
 
-    /**
-     * Registers a device using the device's unique device ID.
-     *
-     * @param deviceId   the ID of the device
-     * @param properties the attributes of the device
-     * @return a Device object if success
-     */
-    public Device registerDevice(final UUID deviceId,
-                                 Map<String, Object> properties) {
-
-
-        if (properties == null) {
-            properties = new HashMap<>();
-        }
-
-        properties.put("refreshed", System.currentTimeMillis());
-        UsergridResponse response = apiRequest(HTTP_PUT, null, properties, organizationId, applicationId, "devices", deviceId.toString());
-
-        return response.getFirstEntity(Device.class);
-
-    }
-
-    /**
-     * Registers a device using the device's unique device ID.
-     *
-     * @param properties
-     * @return a Device object if success
-     */
-    public Device registerDeviceForPush(final UUID deviceId,
-                                        final String notifier,
-                                        final String token,
-                                        Map<String, Object> properties) {
-        if (properties == null) {
-            properties = new HashMap<>();
-        }
-
-        String notifierKey = notifier + ".notifier.id";
-        properties.put(notifierKey, token);
-
-        return registerDevice(deviceId, properties);
-    }
 
     /**
      * Create a new usergridEntity on the server.
@@ -732,219 +691,6 @@ public class UsergridClient {
     }
 
 
-    /**
-     * Creates a user.
-     *
-     * @param username required
-     * @param name
-     * @param email
-     * @param password
-     * @return
-     */
-    public UsergridResponse createUser(final String username,
-                                       final String name,
-                                       final String email,
-                                       final String password) {
-
-        Map<String, Object> properties = new HashMap<>();
-        properties.put("type", "user");
-
-        if (username != null) {
-            properties.put("username", username);
-        }
-
-        if (name != null) {
-            properties.put("getName", name);
-        }
-
-        if (email != null) {
-            properties.put("email", email);
-        }
-
-        if (password != null) {
-            properties.put("password", password);
-        }
-
-        return createEntity(properties);
-    }
-
-    /**
-     * Get the groups for the user.
-     *
-     * @param userId
-     * @return a map with the group path as the key and the Group entity as the
-     * value
-     */
-    public Map<String, Group> getGroupsForUser(final String userId) {
-
-        UsergridResponse response = apiRequest(HTTP_GET, null, null, organizationId, applicationId, STR_USERS, userId, STR_GROUPS);
-
-        Map<String, Group> groupMap = new HashMap<>();
-
-        if (response != null) {
-            List<Group> groups = response.getEntities(Group.class);
-
-            for (Group group : groups) {
-                groupMap.put(group.getPath(), group);
-            }
-
-        }
-
-        return groupMap;
-    }
-
-    /**
-     * Get a user's activity feed. Returned as a query to ease paging.
-     *
-     * @param userId
-     * @return
-     */
-    public LegacyQueryResult queryActivityFeedForUser(final String userId) {
-
-        return queryEntities(HTTP_GET, null, null, organizationId, applicationId, STR_USERS, userId, "feed");
-    }
-
-    /**
-     * Posts an activity to a user. Activity must already be created.
-     *
-     * @param userId
-     * @param activity
-     * @return
-     */
-    public UsergridResponse postUserActivity(final String userId, final Activity activity) {
-
-        return apiRequest(HTTP_POST, null, activity, organizationId, applicationId, STR_USERS, userId, "activities");
-    }
-
-    /**
-     * Creates and posts an activity to a user.
-     *
-     * @param verb
-     * @param title
-     * @param content
-     * @param category
-     * @param user
-     * @param object
-     * @param objectType
-     * @param objectName
-     * @param objectContent
-     * @return
-     */
-    public UsergridResponse postUserActivity(final String verb,
-                                             final String title,
-                                             final String content,
-                                             final String category,
-                                             final UsergridUser user,
-                                             final UsergridEntity object,
-                                             final String objectType,
-                                             final String objectName,
-                                             final String objectContent) {
-
-        Activity activity = Activity.newActivity(verb, title, content, category, user, object, objectType, objectName, objectContent);
-
-        return postUserActivity(user.getUuid().toString(), activity);
-    }
-
-    /**
-     * Posts an activity to a group. Activity must already be created.
-     *
-     * @param groupId
-     * @param activity
-     * @return
-     */
-    public UsergridResponse postGroupActivity(final String groupId,
-                                              final Activity activity) {
-
-        return apiRequest(HTTP_POST, null, activity, organizationId, applicationId, STR_GROUPS, groupId, "activities");
-    }
-
-    /**
-     * Creates and posts an activity to a group.
-     *
-     * @param groupId
-     * @param verb
-     * @param title
-     * @param content
-     * @param category
-     * @param user
-     * @param object
-     * @param objectType
-     * @param objectName
-     * @param objectContent
-     * @return
-     */
-    public UsergridResponse postGroupActivity(final String groupId,
-                                              final String verb,
-                                              final String title,
-                                              final String content,
-                                              final String category,
-                                              final UsergridUser user,
-                                              final UsergridEntity object,
-                                              final String objectType,
-                                              final String objectName,
-                                              final String objectContent) {
-
-        return postGroupActivity(groupId, Activity.newActivity(verb, title, content, category, user, object, objectType, objectName, objectContent));
-    }
-
-    /**
-     * Post an activity to the stream.
-     *
-     * @param activity
-     * @return
-     */
-    public UsergridResponse postActivity(final Activity activity) {
-        return createEntity(activity);
-    }
-
-    /**
-     * Creates and posts an activity to a group.
-     *
-     * @param verb
-     * @param title
-     * @param content
-     * @param category
-     * @param user
-     * @param object
-     * @param objectType
-     * @param objectName
-     * @param objectContent
-     * @return
-     */
-    public UsergridResponse postActivity(final String verb,
-                                         final String title,
-                                         final String content,
-                                         final String category,
-                                         final UsergridUser user,
-                                         final UsergridEntity object,
-                                         final String objectType,
-                                         final String objectName,
-                                         final String objectContent) {
-
-        return createEntity(Activity.newActivity(verb, title, content, category, user, object, objectType, objectName, objectContent));
-    }
-
-    /**
-     * Get a group's activity feed. Returned as a query to ease paging.
-     *
-     * @return
-     */
-    public LegacyQueryResult queryActivity() {
-
-        return queryEntities(HTTP_GET, null, null, organizationId, applicationId, "activities");
-    }
-
-
-    /**
-     * Get a group's activity feed. Returned as a query to ease paging.
-     *
-     * @param groupId
-     * @return
-     */
-    public LegacyQueryResult queryActivityFeedForGroup(final String groupId) {
-
-        return queryEntities(HTTP_GET, null, null, organizationId, applicationId, STR_GROUPS, groupId, "feed");
-    }
 
     /**
      * Perform a query request and return a query object. The QueryResult object

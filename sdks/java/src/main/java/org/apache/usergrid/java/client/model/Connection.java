@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.apache.usergrid.java.client.Client;
+import org.apache.usergrid.java.client.UsergridClient;
 
 
 /**
@@ -39,7 +39,7 @@ public class Connection {
   UsergridEntity source;
   UsergridEntity target;
 
-  Client client;
+  UsergridClient client;
 
   public Connection(UsergridEntity source, String label, UsergridEntity target) {
     this.source = source;
@@ -64,11 +64,11 @@ public class Connection {
   }
 
 
-  public void setClientConnection(Client client) {
+  public void setClientConnection(UsergridClient client) {
     this.client = client;
   }
 
-  public Client getClientConnection() {
+  public UsergridClient getClientConnection() {
     return this.client;
   }
 

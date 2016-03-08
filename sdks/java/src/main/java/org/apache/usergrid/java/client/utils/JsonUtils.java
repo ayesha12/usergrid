@@ -18,6 +18,7 @@ package org.apache.usergrid.java.client.utils;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -63,7 +64,7 @@ public class JsonUtils {
 
   public static void setArrayProperty(final Map<String, JsonNode> properties,
                                        final String name,
-                                       final Object[] value) {
+                                       final ArrayList<Object> value) {
     if (value == null) {
       properties.remove(name);
     } else {

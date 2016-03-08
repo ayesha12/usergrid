@@ -168,11 +168,10 @@ public class UsergridEntity {
 
     /**
      * Set the property
-     *
      * @param name
      * @param value
      */
-    public UsergridEntity putproperty(String name, Object[] value) {
+    public UsergridEntity putproperty(String name, ArrayList value) {
         setArrayProperty(properties, name, value);
         return this;
     }
@@ -397,17 +396,6 @@ public class UsergridEntity {
         //todo - what else?
     }
 
-    public Connection createConnection(final UsergridEntity target,
-                                       final String connectionType) throws ClientException {
-
-        // check for one of: getName, uuid, error if not found
-
-        UsergridResponse response = this.connect(connectionType, target);
-        //todo check to make sure it worked
-
-        return new Connection(this, connectionType, target);
-    }
-
     public UsergridResponse connect(String relation, String type, String name) {
         return Usergrid.getInstance().connect(this.getType(), this.getName(), relation, type, name);
     }
@@ -515,18 +503,18 @@ public class UsergridEntity {
         }
     }
 
-    public void prepend(String propertyName, Object arrToInsert) {
-        ArrayNode initialArr = getArrayNode(getEntityProperty(propertyName));
-        ArrayNode arrayToInsert = getArrayNode(arrToInsert);
-        ArrayNode aToAdd = insertIntoArray(initialArr, arrayToInsert, 0);
-        putproperty(propertyName, aToAdd);
+    public void prepend(String propertyName, ArrayList arrToInsert) {
+        ArrayList<Object> initialArr = getArrayNode(getEntityProperty(propertyName));
+        ArrayList<Object> arrayToInsert = getArrayNode(arrToInsert);
+        initialArr.addAll(arrayToInsert);
+        putproperty(propertyName, initialArr);
     }
 
 
     public void insert(String propertyName, Object arrToInsert, int indx) {
-        ArrayNode initialArr = getArrayNode(getEntityProperty(propertyName));
-        ArrayNode arrayToInsert = getArrayNode(arrToInsert);
-        ArrayNode aToAdd = insertIntoArray(initialArr, arrayToInsert, indx);
+        ArrayList<Object> initialArr = getArrayNode(getEntityProperty(propertyName));
+        ArrayList<Object> arrayToInsert = getArrayNode(arrToInsert);
+        ArrayList<Object> aToAdd = insertIntoArray(initialArr, arrayToInsert, indx);
         putproperty(propertyName, aToAdd);
 
     }
@@ -553,47 +541,31 @@ public class UsergridEntity {
 
 
     public void append(String propertyName, Object arrToInsert) {
-        ArrayNode initialArr = getArrayNode(getEntityProperty(propertyName));
-        ArrayNode arrayToInsert = getArrayNode(arrToInsert);
-        ArrayNode aToAdd = insertIntoArray(initialArr, arrayToInsert, initialArr.size());
-        putproperty(propertyName, aToAdd);
+        ArrayList<Object> initialArr = getArrayNode(getEntityProperty(propertyName));
+        ArrayList<Object> arrayToInsert = getArrayNode(arrToInsert);
+        arrayToInsert.addAll(initialArr);
+        putproperty(propertyName, arrayToInsert);
     }
 
-    private ArrayNode getArrayNode(Object arrayToInsert) {
+    private ArrayList<Object> getArrayNode(Object arrayToInsert) {
         if (arrayToInsert == null || arrayToInsert == "")
             return null;
 
-        ArrayNode arNode = new ArrayNode(JsonNodeFactory.instance);
-        if (arrayToInsert.getClass() == Integer.class)
-            return arNode.add((Integer) arrayToInsert);
+        ArrayList<Object> arrayList = new ArrayList<>();
 
-        ArrayList arrayList = null;
-        if (arrayToInsert.getClass() != ArrayNode.class) {
-            if (arrayToInsert.getClass() == POJONode.class) {
-                arrayList = (ArrayList) ((POJONode) arrayToInsert).getPojo();
-                for (int i = 0; i < arrayList.size(); i++) {
-                    arNode.add((Integer) arrayList.get(i));
-                }
-            } else {
-                boolean success = false;
-                try {
-                    arrayList = (ArrayList) arrayToInsert;
-                    success = true;
-                } catch (Exception e) {
-//          e.printStackTrace();
-                }
-                if (success)
-                    for (int i = 0; i < arrayList.size(); i++) {
-                        arNode.add((Integer) arrayList.get(i));
-                    }
-                else return arNode;
-            }
-        } else
-            return (ArrayNode) arrayToInsert;
-        return arNode;
+        if(arrayToInsert.getClass() == POJONode.class){
+            arrayList = (ArrayList) ((POJONode) arrayToInsert).getPojo();
+        }
+        else if (arrayToInsert.getClass() == ArrayList.class)
+            return (ArrayList<Object>) arrayToInsert;
+        else
+            arrayList.add(arrayToInsert);
+
+        return arrayList;
+
     }
 
-    private ArrayNode insertIntoArray(ArrayNode propertyArray, ArrayNode arrayToInsert, int indx) {
+    private ArrayList<Object> insertIntoArray(ArrayList<Object> propertyArray, ArrayList<Object> arrayToInsert, int indx) {
 
         if (propertyArray == null || propertyArray.size() == 0)
             return arrayToInsert;
@@ -605,9 +577,11 @@ public class UsergridEntity {
             arrayToInsert.addAll(propertyArray);
             return arrayToInsert;
         } else if (propertyArray.size() > 0 && indx > 0) {
-            ArrayNode mergedArray = new ArrayNode(JsonNodeFactory.instance);
-            if (indx > propertyArray.size())
-                return propertyArray.addAll(arrayToInsert);
+            if (indx > propertyArray.size()) {
+                propertyArray.addAll(arrayToInsert);
+                return propertyArray;
+            }
+            ArrayList<Object> mergedArray = new ArrayList<>();
             for (int i = 0; i < indx; i++) {
                 mergedArray.add(propertyArray.get(i));
             }

@@ -34,7 +34,6 @@ import javax.annotation.Nullable;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.model.UsergridEntity;
-import org.apache.usergrid.java.client.model.Message;
 import org.apache.usergrid.java.client.model.UsergridUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,7 +67,6 @@ public class UsergridResponse {
   private List<AggregateCounterSet> counters;
   private ClientCredentialsInfo credentials;
 
-  private List<Message> messages;
   private List<QueueInfo> queues;
   private UUID last;
   private UUID queue;

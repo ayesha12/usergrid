@@ -1,4 +1,3 @@
-import org.apache.usergrid.java.client.Client;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 

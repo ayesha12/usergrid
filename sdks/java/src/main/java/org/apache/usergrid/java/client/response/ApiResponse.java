@@ -30,9 +30,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize.Inclusion;
-import org.apache.usergrid.java.client.entities.Entity;
-import org.apache.usergrid.java.client.entities.Message;
-import org.apache.usergrid.java.client.entities.User;
+import org.apache.usergrid.java.client.model.UsergridEntity;
+import org.apache.usergrid.java.client.model.UsergridUser;
 
 public class ApiResponse {
 
@@ -48,7 +47,7 @@ public class ApiResponse {
 	private String status;
 	private long timestamp;
 	private UUID application;
-	private List<Entity> entities;
+	private List<UsergridEntity> entities;
 	private UUID next;
 	private String cursor;
 	private String action;
@@ -60,13 +59,12 @@ public class ApiResponse {
 	private List<AggregateCounterSet> counters;
 	private ClientCredentialsInfo credentials;
 
-	private List<Message> messages;
 	private List<QueueInfo> queues;
 	private UUID last;
 	private UUID queue;
 	private UUID consumer;
 
-	private User user;
+	private UsergridUser user;
 
 	private final Map<String, JsonNode> properties = new HashMap<String, JsonNode>();
 
@@ -179,11 +177,11 @@ public class ApiResponse {
 	}
 
 	@JsonSerialize(include = Inclusion.NON_NULL)
-	public List<Entity> getEntities() {
+	public List<UsergridEntity> getEntities() {
 		return entities;
 	}
 
-	public void setEntities(List<Entity> entities) {
+	public void setEntities(List<UsergridEntity> entities) {
 		this.entities = entities;
 	}
 
@@ -194,30 +192,30 @@ public class ApiResponse {
 		return entities.size();
 	}
 
-	public Entity getFirstEntity() {
+	public UsergridEntity getFirstEntity() {
 		if ((entities != null) && (entities.size() > 0)) {
 			return entities.get(0);
 		}
 		return null;
 	}
 
-	public <T extends Entity> T getFirstEntity(Class<T> t) {
-		return Entity.toType(getFirstEntity(), t);
+	public <T extends UsergridEntity> T getFirstEntity(Class<T> t) {
+		return UsergridEntity.toType(getFirstEntity(), t);
 	}
 
-	public Entity getLastEntity() {
+	public UsergridEntity getLastEntity() {
 		if ((entities != null) && (entities.size() > 0)) {
 			return entities.get(entities.size() - 1);
 		}
 		return null;
 	}
 
-	public <T extends Entity> T getLastEntity(Class<T> t) {
-		return Entity.toType(getLastEntity(), t);
+	public <T extends UsergridEntity> T getLastEntity(Class<T> t) {
+		return UsergridEntity.toType(getLastEntity(), t);
 	}
 
-	public <T extends Entity> List<T> getEntities(Class<T> t) {
-		return Entity.toType(entities, t);
+	public <T extends UsergridEntity> List<T> getEntities(Class<T> t) {
+		return UsergridEntity.toType(entities, t);
 	}
 
 	@JsonSerialize(include = Inclusion.NON_NULL)
@@ -311,11 +309,11 @@ public class ApiResponse {
 	}
 
 	@JsonSerialize(include = Inclusion.NON_NULL)
-	public User getUser() {
+	public UsergridUser getUser() {
 		return user;
 	}
 
-	public void setUser(User user) {
+	public void setUser(UsergridUser user) {
 		this.user = user;
 	}
 
@@ -324,38 +322,7 @@ public class ApiResponse {
 		return toJsonString(this);
 	}
 
-	@JsonSerialize(include = Inclusion.NON_NULL)
-	public List<Message> getMessages() {
-		return messages;
-	}
 
-	public void setMessages(List<Message> messages) {
-		this.messages = messages;
-	}
-
-	@JsonIgnore
-	public int getMessageCount() {
-		if (messages == null) {
-			return 0;
-		}
-		return messages.size();
-	}
-
-	@JsonIgnore
-	public Message getFirstMessage() {
-		if ((messages != null) && (messages.size() > 0)) {
-			return messages.get(0);
-		}
-		return null;
-	}
-
-	@JsonIgnore
-	public Entity getLastMessage() {
-		if ((messages != null) && (messages.size() > 0)) {
-			return messages.get(messages.size() - 1);
-		}
-		return null;
-	}
 
 	@JsonSerialize(include = Inclusion.NON_NULL)
 	public UUID getLast() {
