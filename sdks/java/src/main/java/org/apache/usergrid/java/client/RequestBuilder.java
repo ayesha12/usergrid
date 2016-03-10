@@ -59,9 +59,8 @@ public class RequestBuilder {
 
   public UsergridResponse GET() {
     String uri = buildURI();
-
-//    return Usergrid.getInstance().GET();
     return null;
+
   }
 
   public UsergridResponse GET(String uri) {

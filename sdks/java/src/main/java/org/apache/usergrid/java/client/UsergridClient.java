@@ -18,7 +18,6 @@ package org.apache.usergrid.java.client;
 
 import javax.annotation.Nullable;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.usergrid.java.client.filter.ErrorResponseFilter;
 import org.apache.usergrid.java.client.model.*;
@@ -26,6 +25,7 @@ import org.apache.usergrid.java.client.query.EntityQueryResult;
 import org.apache.usergrid.java.client.query.LegacyQueryResult;
 import org.apache.usergrid.java.client.query.QueryResult;
 import org.apache.usergrid.java.client.query.UsergridQuery;
+import org.apache.usergrid.java.client.UsergridEnums.UsergridAuthFallBack;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.slf4j.Logger;
@@ -35,7 +35,6 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MediaType;
 import java.util.*;
 
@@ -48,6 +47,12 @@ import static org.apache.usergrid.java.client.utils.ObjectUtils.isEmpty;
  */
 public class UsergridClient {
 
+    public  static String DEFAULT_BASE_URL = "http://localhost:8080";
+    public UsergridClientConfig config;
+    private UsergridUser currentUser = null;
+    private UsergridAuth tempAuth = null;
+    private UsergridAuth appAuth = null;
+
     public static final String HTTP_POST = "POST";
     public static final String HEADER_AUTHORIZATION = "Authorization";
     public static final String BEARER = "Bearer ";
@@ -56,7 +61,6 @@ public class UsergridClient {
     public static final String HTTP_DELETE = "DELETE";
     public static final String STR_GROUPS = "groups";
     public static final String STR_USERS = "users";
-
     public static final String STR_DEFAULT = "default";
     public static final String STR_BLANK = "";
 
@@ -65,48 +69,24 @@ public class UsergridClient {
     private static final String CONNECTING = "connecting";
     private static final String STRING_EXPIRES_IN = "expires_in";
 
-    public static boolean FORCE_PUBLIC_API = false;
-
-    // Public API
-    public static String PUBLIC_API_URL = "http://localhost:8080";
-
-    // Local API of standalone server
-    public static String LOCAL_STANDALONE_API_URL = "http://localhost:8080";
-
-    // Local API of Tomcat server in Eclipse
-    public static String LOCAL_TOMCAT_API_URL = "http://localhost:8080/ROOT";
-
-    // Local API
-    public static String LOCAL_API_URL = LOCAL_STANDALONE_API_URL;
-
-    private String apiUrl = PUBLIC_API_URL;
-    private String organizationId;
-    private String applicationId;
     private String clientId;
     private String clientSecret;
-    private String accessToken = null;
-    private String currentOrganization = null;
     private javax.ws.rs.client.Client restClient;
-    private Long expiresIn = null;
-    private Long tokenExpiry = null;
-
-    private UsergridAuth tempAuth = null;
-    private UsergridAuth appAuth = null;
-    private UsergridUser loggedInUser = null;
-
 
     public UsergridAuth authForRequests() {
         UsergridAuth authForRequests = null;
         if( tempAuth != null && tempAuth.isValidToken() ) {
             authForRequests = tempAuth;
             tempAuth = null;
-        } else if( this.loggedInUser != null && this.loggedInUser.userAuth.isValidToken() ) {
-            authForRequests = this.loggedInUser.userAuth;
-        } else if( this.appAuth != null ) {
+        } else if( this.currentUser != null && this.currentUser.userAuth.isValidToken() ) {
+            authForRequests = this.currentUser.userAuth;
+        } else if( this.appAuth != null && config.authFallBack == UsergridAuthFallBack.APP ) {
             authForRequests = this.appAuth;
         }
         return authForRequests;
     }
+
+
 
     /**
      * Default constructor for instantiating a client.
@@ -114,6 +94,13 @@ public class UsergridClient {
     public UsergridClient() {
         init();
     }
+
+    public UsergridClient(UsergridClientConfig usergridClientConfig) {
+        config = usergridClientConfig;
+        init();
+        //todo: getCurrentUserFromKeychain??
+    }
+
 
     /**
      * Instantiate client for a specific app
@@ -123,32 +110,45 @@ public class UsergridClient {
      */
     public UsergridClient(final String organizationId,
                           final String applicationId) {
-        init();
-        this.organizationId = organizationId;
-        this.applicationId = applicationId;
+        new UsergridClient(new UsergridClientConfig(organizationId,applicationId));
     }
 
+    /**
+     * Instantiate client for a specific app
+     *
+     * @param organizationId the organization id
+     * @param applicationId  the application id or getName
+     */
+    public UsergridClient(final String organizationId,
+                          final String applicationId,
+                          final String baseurl) {
+        new UsergridClient(new UsergridClientConfig(organizationId,applicationId,baseurl));
+    }
+
+    public UsergridClient(final String orgId, String appId, String baseurl, UsergridAuthFallBack authfallBack, UsergridAppAuth ugappAuth){
+        new UsergridClient(new UsergridClientConfig(orgId,appId,baseurl,authfallBack,ugappAuth));
+    }
 
     public void init() {
-
         restClient = ClientBuilder.newBuilder()
                 .register(JacksonFeature.class)
                 .register(new ErrorResponseFilter())
                 .build();
+
     }
 
     /**
      * @return the Usergrid API url (default: http://api.usergrid.com)
      */
     public String getBaseUrl() {
-        return apiUrl;
+        return config.baseUrl;
     }
 
     /**
      * @param apiUrl the Usergrid API url (default: http://api.usergrid.com)
      */
     public void setBaseUrl(final String apiUrl) {
-        this.apiUrl = apiUrl;
+        this.config.baseUrl = apiUrl;
     }
 
     /**
@@ -156,49 +156,34 @@ public class UsergridClient {
      * @return Client object for method call chaining
      */
     public UsergridClient withApiUrl(final String apiUrl) {
-        this.apiUrl = apiUrl;
+        this.config.baseUrl = apiUrl;
         return this;
     }
 
 
     /**
-     * the organizationId to set
+     * the orgId to set
      *
      * @param organizationId
      * @return
      */
     public UsergridClient withOrganizationId(final String organizationId) {
-        this.organizationId = organizationId;
+        this.config.orgId = organizationId;
         return this;
     }
 
-
     /**
-     * @return the organizationId
+     * @return the orgId
      */
     public String getOrgId() {
-        return organizationId;
-    }
-
-    /**
-     * @param organizationId the organizationId to set
-     */
-    public void setOrgId(final String organizationId) {
-        this.organizationId = organizationId;
+        return config.orgId;
     }
 
     /**
      * @return the application id or getName
      */
     public String getAppId() {
-        return applicationId;
-    }
-
-    /**
-     * @param applicationId the application id or getName
-     */
-    public void setAppId(final String applicationId) {
-        this.applicationId = applicationId;
+        return config.appId;
     }
 
 
@@ -207,69 +192,19 @@ public class UsergridClient {
      * @return Client object for method call chaining
      */
     public UsergridClient withApplicationId(final String applicationId) {
-        this.applicationId = applicationId;
+        this.config.appId = applicationId;
         return this;
     }
 
-    /**
-     * @return the client key id for making calls as the application-owner. Not
-     * safe for most mobile use.
-     */
-    public String getClientId() {
-        return clientId;
-    }
 
-    /**
-     * @param clientId the client key id for making calls as the application-owner.
-     *                 Not safe for most mobile use.
-     */
-    public void setClientId(final String clientId) {
-        this.clientId = clientId;
-    }
-
-    /**
-     * @param clientId the client key id for making calls as the application-owner.
-     *                 Not safe for most mobile use.
-     * @return Client object for method call chaining
-     */
-    public UsergridClient withClientId(final String clientId) {
-        this.clientId = clientId;
-        return this;
-    }
-
-    /**
-     * @return the client key id for making calls as the application-owner. Not
-     * safe for most mobile use.
-     */
-    public String getClientSecret() {
-        return clientSecret;
-    }
-
-    /**
-     * @param clientSecret the client key id for making calls as the application-owner.
-     *                     Not safe for most mobile use.
-     */
-    public void setClientSecret(final String clientSecret) {
-        this.clientSecret = clientSecret;
-    }
-
-    /**
-     * @param clientSecret the client key id for making calls as the application-owner.
-     *                     Not safe for most mobile use.
-     * @return Client object for method call chaining
-     */
-    public UsergridClient withClientSecret(final String clientSecret) {
-        this.clientSecret = clientSecret;
-        return this;
-    }
-
+    //TODO:     /// The currently logged in `UsergridUser`.
     /**
      * getCurrentUser -- curretnuser?
      *
      * @return the logged-in user after a successful authenticateUser request
      */
     public UsergridUser getCurrentUser() {
-        return loggedInUser;
+        return currentUser;
     }
 
     /**
@@ -277,56 +212,7 @@ public class UsergridClient {
      *                     //TODO: called by UsergridClient?
      */
     public void setCurrentUser(final UsergridUser loggedInUser) {
-        this.loggedInUser = loggedInUser;
-    }
-
-
-
-
-    /**
-     * @return the OAuth2 access token after a successful authorize request
-     */
-    public String getAccessToken() {
-        return accessToken;
-    }
-
-    /**
-     * @param accessToken an OAuth2 access token. Usually not set by host application
-     */
-    public void setAccessToken(final String accessToken) {
-        this.accessToken = accessToken;
-    }
-
-    /**
-     * @return the currentOrganization
-     */
-    public String getCurrentOrganization() {
-        return currentOrganization;
-    }
-
-
-    /**
-     * @param currentOrganization
-     */
-    public void setCurrentOrganization(final String currentOrganization) {
-        this.currentOrganization = currentOrganization;
-    }
-
-    /**
-     * High-level Usergrid API request.
-     *
-     * @param method   the HTTP Method
-     * @param params   a Map of query parameters
-     * @param data     the object to use in the body
-     * @param segments the segments/of/the/uri
-     * @return a UsergridResponse object
-     */
-    @Nullable
-    public UsergridResponse apiRequestWithSegmentArray(final String method,
-                                                       final Map<String, Object> params,
-                                                       Object data,
-                                                       final String... segments) {
-        return null;
+        this.currentUser = loggedInUser;
     }
 
     /**
@@ -343,17 +229,12 @@ public class UsergridClient {
                                        Object data,
                                        final String... segments) {
         appAuth();
-
-        // https://jersey.java.net/documentation/latest/client.html
-
         // default to JSON
         String contentType = MediaType.APPLICATION_JSON;
-
         Entity entity = Entity.entity(data == null ? STR_BLANK : data, contentType);
 
         // create the target from the base API URL
-        WebTarget webTarget = restClient.target(apiUrl);
-
+        WebTarget webTarget = restClient.target(config.baseUrl);
         for (String segment : segments)
             if (segment != null)
                 webTarget = webTarget.path(segment);
@@ -365,25 +246,7 @@ public class UsergridClient {
         }
 
         System.out.println(webTarget);
-
-
-        // check to see if we need to do a FORM POST by checking the METHOD,
-        // that there is NO DATA and that the params are not empty
-
-//        Form form = new Form();
-//        if (method.equals(HTTP_POST)
-//                && isEmpty(data)
-//                && !isEmpty(params)) {
-//
-//            //TODO: Uncomment once fixed
-//            //for (Map.Entry<String, Object> param : params.entrySet()) {
-//            //  form.param(param.getKey(), String.valueOf(param.getValue()));
-//            //}
-//            data = params;
-//        }
-
         Invocation.Builder invocationBuilder = webTarget.request(contentType);
-
         // todo: need to evaluate other authentication options here as well
         UsergridAuth authForRequest = this.authForRequests();
         if (authForRequest != null && authForRequest.accessToken != null) {
@@ -397,11 +260,9 @@ public class UsergridClient {
                 UsergridResponse response = invocationBuilder.method(method,
                         entity,
                         UsergridResponse.class);
-
                 return response;
 
             } else {
-
                 return invocationBuilder.method(method,
                         null,
                         UsergridResponse.class);
@@ -414,14 +275,11 @@ public class UsergridClient {
 
 
     public void appAuth() {
-
         //TODO: need to add any other checks? Return void ?
-
-        if (isEmpty(applicationId)) {
+        if (isEmpty(config.appId)) {
             throw new IllegalArgumentException("No application id specified");
         }
-
-        if (isEmpty(organizationId)) {
+        if (isEmpty(config.orgId)) {
             throw new IllegalArgumentException("No organization id specified");
         }
     }
@@ -430,6 +288,7 @@ public class UsergridClient {
         UsergridUserAuth auth = new UsergridUserAuth(username,password);
         return authenticateUser(auth);
     }
+
     /**
      * Log the user in and get a valid access token.
      *
@@ -439,27 +298,23 @@ public class UsergridClient {
      */
     @Nullable
     public UsergridResponse authenticateUser(UsergridUserAuth auth) {
+
         String email = auth.username;
         String password = auth.password;
-
         validateNonEmptyParam(email, "email");
         validateNonEmptyParam(password, "password");
 
-        loggedInUser = null;
-        accessToken = null;
-        currentOrganization = null;
         Map<String, Object> formData = new HashMap<>();
         formData.put("grant_type", "password");
         formData.put("username", email);
         formData.put("password", password);
 
-        UsergridResponse response = apiRequest(HTTP_POST, null, formData, organizationId, applicationId, "token");
+        UsergridResponse response = apiRequest(HTTP_POST, null, formData, config.orgId, config.appId, "token");
 
         if (response == null) {
             return null;
 
         }
-
 
         if (!isEmpty(response.getAccessToken()) && (response.currentUser() != null)) {
 
@@ -470,13 +325,10 @@ public class UsergridClient {
             setCurrentUser(response.currentUser());
 
             currentOrganization = null; //TODO : should this be set to null ?
-            log.info("Client.authenticateUser(): Access token: " + accessToken);
+            log.info("Client.authenticateUser(): Access token: " + this.appAuth.accessToken);
         } else {
             log.info("Client.authenticateUser(): Response: " + response);
         }
-
-        //TODO: UsergridClient.setCurrentUser(userObject); // UsergridUser
-//              UsergridClient.getCurrentUser.setAuth(token+ttl);
 
         return response;
     }
@@ -512,7 +364,7 @@ public class UsergridClient {
         data.put("newpassword", newPassword);
         data.put("oldpassword", oldPassword);
 
-        return apiRequest(HTTP_POST, null, data, organizationId, applicationId, STR_USERS, username, "password");
+        return apiRequest(HTTP_POST, null, data, config.orgId, config.appId, STR_USERS, username, "password");
 
     }
 
@@ -532,8 +384,7 @@ public class UsergridClient {
         validateNonEmptyParam(email, "email");
         validateNonEmptyParam(pin, "pin");
 
-        loggedInUser = null;
-        accessToken = null;
+        currentUser = null;
         currentOrganization = null;
 
         Map<String, Object> formData = new HashMap<>();
@@ -541,17 +392,17 @@ public class UsergridClient {
         formData.put("username", email);
         formData.put("pin", pin);
 
-        UsergridResponse response = apiRequest(HTTP_POST, formData, null, organizationId, applicationId, "token");
+        UsergridResponse response = apiRequest(HTTP_POST, formData, null, config.orgId, config.appId, "token");
 
         if (response == null) {
             return null;
         }
 
         if (!isEmpty(response.getAccessToken()) && (response.currentUser() != null)) {
-            loggedInUser = response.currentUser();
-            accessToken = response.getAccessToken();
+            currentUser = response.currentUser();
+            this.appAuth.setAccessToken(response.getAccessToken());
             currentOrganization = null;
-            log.info("Client.authenticateUser(): Access token: " + accessToken);
+            log.info("Client.authenticateUser(): Access token: " + this.appAuth.accessToken);
         } else {
             log.info("Client.authenticateUser(): Response: " + response);
         }
@@ -572,12 +423,11 @@ public class UsergridClient {
 
         validateNonEmptyParam(fb_access_token, "Facebook token");
 
-        loggedInUser = null;
-        accessToken = null;
+        currentUser = null;
         currentOrganization = null;
         Map<String, Object> formData = new HashMap<>();
         formData.put("fb_access_token", fb_access_token);
-        UsergridResponse response = apiRequest(HTTP_POST, formData, null, organizationId, applicationId, "auth", "facebook");
+        UsergridResponse response = apiRequest(HTTP_POST, formData, null, config.orgId, config.appId, "auth", "facebook");
 
         if (response == null) {
             return null;
@@ -585,10 +435,10 @@ public class UsergridClient {
 
         if (!isEmpty(response.getAccessToken()) && (response.currentUser() != null)) {
 
-            loggedInUser = response.currentUser();
-            accessToken = response.getAccessToken();
+            currentUser = response.currentUser();
+            this.appAuth.setAccessToken(response.getAccessToken());
             currentOrganization = null;
-            log.info("Client.authorizeAppUserViaFacebook(): Access token: " + accessToken);
+            log.info("Client.authorizeAppUserViaFacebook(): Access token: " + this.appAuth.accessToken);
 
         } else {
 
@@ -623,14 +473,13 @@ public class UsergridClient {
         validateNonEmptyParam(clientId, "client identifier");
         validateNonEmptyParam(clientSecret, "client secret");
 
-        loggedInUser = null;
-        accessToken = null;
+        currentUser = null;
         currentOrganization = null;
         Map<String, Object> data = new HashMap<>();
         data.put("grant_type", "client_credentials");
         data.put("client_id", clientId);
         data.put("client_secret", clientSecret);
-        UsergridResponse response = apiRequest(HTTP_POST, null, data , organizationId, applicationId, "token");
+        UsergridResponse response = apiRequest(HTTP_POST, null, data , config.orgId, config.appId, "token");
 
         if (response == null) {
             return null;
@@ -640,7 +489,7 @@ public class UsergridClient {
             auth.setAccessToken(response.getAccessToken());
             auth.setTokenExpiry(response.getProperties().get(STRING_EXPIRES_IN).asLong() - 5);
             this.appAuth = auth;
-            log.info("Client.authenticateApp(): Access token: " + accessToken);
+            log.info("Client.authenticateApp(): Access token: " + this.appAuth.accessToken);
         } else {
 
             log.info("Client.authenticateApp(): Response: " + response);
@@ -670,7 +519,7 @@ public class UsergridClient {
             throw new IllegalArgumentException("Missing usergridEntity type");
         }
 
-        return apiRequest(HTTP_POST, null, usergridEntity, organizationId, applicationId, usergridEntity.getType());
+        return apiRequest(HTTP_POST, null, usergridEntity, config.orgId, config.appId, usergridEntity.getType());
     }
 
     /**
@@ -687,7 +536,7 @@ public class UsergridClient {
             throw new IllegalArgumentException("Missing entity type");
         }
 
-        return apiRequest(HTTP_POST, null, properties, organizationId, applicationId, properties.get("type").toString());
+        return apiRequest(HTTP_POST, null, properties, config.orgId, config.appId, properties.get("type").toString());
     }
 
 
@@ -722,7 +571,7 @@ public class UsergridClient {
                 .desc("created")
                 .build();
 
-        return queryEntities(HTTP_GET, null, null, organizationId, applicationId, STR_USERS);
+        return queryEntities(HTTP_GET, null, null, config.orgId, config.appId, STR_USERS);
     }
 
     /**
@@ -737,7 +586,7 @@ public class UsergridClient {
         Map<String, Object> params = new HashMap<>();
         params.put("ql", ql);
 
-        return queryEntities(HTTP_GET, params, null, organizationId, applicationId, STR_USERS);
+        return queryEntities(HTTP_GET, params, null, config.orgId, config.appId, STR_USERS);
     }
 
     /**
@@ -755,12 +604,12 @@ public class UsergridClient {
         Map<String, Object> params = new HashMap<>();
         params.put("ql", this.makeLocationQL(distance, lattitude, longitude, ql));
 
-        return queryEntities(HTTP_GET, params, null, organizationId, applicationId, STR_USERS);
+        return queryEntities(HTTP_GET, params, null, config.orgId, config.appId, STR_USERS);
     }
 
     public UsergridResponse getEntity(final String type, final String id) {
 
-        return apiRequest(HTTP_GET, null, null, organizationId, applicationId, type, id);
+        return apiRequest(HTTP_GET, null, null, config.orgId, config.appId, type, id);
     }
 
     public UsergridResponse getConnections(Direction direction, UsergridEntity sourceVertex, String relationship){
@@ -768,10 +617,10 @@ public class UsergridClient {
         ValidateEntity(sourceVertex);
         switch (direction) {
             case OUT:
-                return apiRequest(HTTP_GET,null,null,organizationId,applicationId,
+                return apiRequest(HTTP_GET,null,null, config.orgId, config.appId,
                         sourceVertex.getType(),sourceVertex.getUuidString(),CONNECTIONS,relationship);
             case IN:
-               return apiRequest(HTTP_GET,null,null,organizationId,applicationId,
+               return apiRequest(HTTP_GET,null,null, config.orgId, config.appId,
                        sourceVertex.getType(),sourceVertex.getUuidString(),CONNECTING,relationship);
 
         }
@@ -782,7 +631,7 @@ public class UsergridClient {
     public UsergridResponse deleteEntity(final String type,
                                          final String id) {
 
-        return apiRequest(HTTP_DELETE, null, null, organizationId, applicationId, type, id);
+        return apiRequest(HTTP_DELETE, null, null, config.orgId, config.appId, type, id);
     }
 
     /**
@@ -793,7 +642,7 @@ public class UsergridClient {
      */
     public LegacyQueryResult queryUsersForGroup(final String groupId) {
 
-        return queryEntities(HTTP_GET, null, null, organizationId, applicationId, STR_GROUPS, groupId, STR_USERS);
+        return queryEntities(HTTP_GET, null, null, config.orgId, config.appId, STR_GROUPS, groupId, STR_USERS);
     }
 
     /**
@@ -807,7 +656,7 @@ public class UsergridClient {
                                            final String groupId) {
 
 
-        return apiRequest(HTTP_POST, null, null, organizationId, applicationId, STR_GROUPS, groupId, STR_USERS, userId);
+        return apiRequest(HTTP_POST, null, null, config.orgId, config.appId, STR_GROUPS, groupId, STR_USERS, userId);
     }
 
     /**
@@ -875,7 +724,7 @@ public class UsergridClient {
         Map<String, Object> params = new HashMap<>();
         params.put("ql", ql);
 
-        return queryEntities(HTTP_GET, params, null, organizationId, applicationId, STR_GROUPS);
+        return queryEntities(HTTP_GET, params, null, config.orgId, config.appId, STR_GROUPS);
     }
 
 
@@ -928,7 +777,7 @@ public class UsergridClient {
                                     final String connectionType,
                                     final String connectedEntityId) {
 
-        return apiRequest(HTTP_POST, null, null, organizationId, applicationId, connectingEntityType, connectingEntityId, connectionType, connectedEntityId);
+        return apiRequest(HTTP_POST, null, null, config.orgId, config.appId, connectingEntityType, connectingEntityId, connectionType, connectedEntityId);
     }
 
 
@@ -948,7 +797,7 @@ public class UsergridClient {
                                     final String connectedEntityType,
                                     final String connectedEntityName) {
 
-        return apiRequest(HTTP_POST, null, null, organizationId, applicationId, connectingEntityType, connectingEntityId, connectionType, connectedEntityType, connectedEntityName);
+        return apiRequest(HTTP_POST, null, null, config.orgId, config.appId, connectingEntityType, connectingEntityId, connectionType, connectedEntityType, connectedEntityName);
     }
 
     /**
@@ -965,7 +814,7 @@ public class UsergridClient {
                                        final String connectionType,
                                        final String connectedEntityId) {
 
-        return apiRequest(HTTP_DELETE, null, null, organizationId, applicationId, connectingEntityType, connectingEntityId, connectionType, connectedEntityId);
+        return apiRequest(HTTP_DELETE, null, null, config.orgId, config.appId, connectingEntityType, connectingEntityId, connectionType, connectedEntityId);
     }
 
     /**
@@ -984,7 +833,7 @@ public class UsergridClient {
                                        final String connectedEntitytype,
                                        final String connectedEntityName) {
 
-        return apiRequest(HTTP_DELETE, null, null, organizationId, applicationId, connectingEntityType, connectingEntityId, connectionType, connectedEntitytype,connectedEntityName);
+        return apiRequest(HTTP_DELETE, null, null, config.orgId, config.appId, connectingEntityType, connectingEntityId, connectionType, connectedEntitytype,connectedEntityName);
     }
 
 
@@ -1019,7 +868,7 @@ public class UsergridClient {
         Map<String, Object> params = new HashMap<>();
         params.put("ql", ql);
 
-        return queryEntities(HTTP_GET, params, null, organizationId, applicationId, connectingEntityType, connectingEntityId, connectionType);
+        return queryEntities(HTTP_GET, params, null, config.orgId, config.appId, connectingEntityType, connectingEntityId, connectionType);
     }
 
     protected String makeLocationQL(float distance, double lattitude,
@@ -1052,27 +901,27 @@ public class UsergridClient {
         Map<String, Object> params = new HashMap<>();
         params.put("ql", makeLocationQL(distance, latitude, longitude, ql));
 
-        return queryEntities(HTTP_GET, params, null, organizationId, applicationId, connectingEntityType, connectingEntityId, connectionType);
+        return queryEntities(HTTP_GET, params, null, config.orgId, config.appId, connectingEntityType, connectingEntityId, connectionType);
     }
 
 
     public UsergridResponse queryEdgesForVertex(final String srcType,
                                                 final String srcID) {
 
-        return apiRequest(HTTP_GET, null, null, organizationId, applicationId, srcType, srcID);
+        return apiRequest(HTTP_GET, null, null, config.orgId, config.appId, srcType, srcID);
     }
 
 
     public UsergridResponse queryCollections() {
 
-        return apiRequest(HTTP_GET, null, null, this.organizationId, this.applicationId);
+        return apiRequest(HTTP_GET, null, null, this.config.orgId, this.config.appId);
     }
 
     public UsergridResponse queryConnection(final String... segments) {
 
         String[] paramPath = new String[10];
-        paramPath[0] = this.organizationId;
-        paramPath[1] = this.applicationId;
+        paramPath[0] = this.config.orgId;
+        paramPath[1] = this.config.appId;
         System.arraycopy(segments, 0, paramPath, 2, segments.length);
 
         return apiRequest(HTTP_GET, null, null, paramPath);
@@ -1095,7 +944,7 @@ public class UsergridClient {
     public UsergridResponse PUT(final UsergridEntity e) {
 
         ValidateEntity(e);
-        return apiRequest(HTTP_PUT, null, e.getProperties(), organizationId, applicationId, e.getType(), e.getUuidString() != null ? e.getUuidString() : e.getName());
+        return apiRequest(HTTP_PUT, null, e.getProperties(), config.orgId, config.appId, e.getType(), e.getUuidString() != null ? e.getUuidString() : e.getName());
     }
 
     /**
@@ -1107,7 +956,7 @@ public class UsergridClient {
      */
     public UsergridResponse PUT(final String type,
                                 final String entityId) {
-        return apiRequest(HTTP_PUT, null, null, organizationId, applicationId, type, entityId);
+        return apiRequest(HTTP_PUT, null, null, config.orgId, config.appId, type, entityId);
     }
 
     //TODO: UsergridClient.PUT("<type>", bodyObject); // excluding uuid or getName will result in a new record being created
@@ -1137,7 +986,7 @@ public class UsergridClient {
     public UsergridResponse POST(final @NonNull UsergridEntity e) {
 
         ValidateEntity(e);
-        return apiRequest(HTTP_POST, null, e, organizationId, applicationId, e.getType());
+        return apiRequest(HTTP_POST, null, e, this.config.orgId, this.config.appId, e.getType());
     }
 
 
@@ -1150,7 +999,7 @@ public class UsergridClient {
      */
     public UsergridResponse POST(final String type,
                                  final String entityId) {
-        return apiRequest(HTTP_POST, null, null, organizationId, applicationId, type, entityId);
+        return apiRequest(HTTP_POST, null, null, config.orgId, config.appId, type, entityId);
     }
 
     //TODO: UsergridClient.POST("<type>", bodyObject); // excluding uuid or getName will result in a new record being created
@@ -1163,7 +1012,7 @@ public class UsergridClient {
      */
     public UsergridResponse DELETE(final UsergridEntity e) {
         ValidateEntity(e);
-        return apiRequest(HTTP_DELETE, null, null, organizationId, applicationId, e.getType(), e.getUuid() == null ? e.getName() : e.getUuidString());
+        return apiRequest(HTTP_DELETE, null, null, config.orgId, config.appId, e.getType(), e.getUuid() == null ? e.getName() : e.getUuidString());
     }
 
 
@@ -1184,12 +1033,12 @@ public class UsergridClient {
     public UsergridResponse DELETE(final String collection,
                                    final String entityId) {
 
-        return apiRequest(HTTP_DELETE, null, null, organizationId, applicationId, collection, entityId);
+        return apiRequest(HTTP_DELETE, null, null, config.orgId, config.appId, collection, entityId);
     }
 
     public UsergridResponse DELETE(final UUID uuid) {
 
-        return apiRequest(HTTP_DELETE, null, null, organizationId, applicationId, uuid.toString());
+        return apiRequest(HTTP_DELETE, null, null, config.orgId, config.appId, uuid.toString());
     }
 
 
@@ -1203,7 +1052,7 @@ public class UsergridClient {
     public UsergridResponse GET(final String collection,
                                 final String entityId) {
 
-        return apiRequest(HTTP_GET, null, null, organizationId, applicationId, collection, entityId);
+        return apiRequest(HTTP_GET, null, null, config.orgId, config.appId, collection, entityId);
     }
 
     /**
@@ -1214,7 +1063,7 @@ public class UsergridClient {
      */
 
     public UsergridResponse GET(final UUID uuid) {
-        return apiRequest(HTTP_GET, null, null, organizationId, applicationId, uuid.toString());
+        return apiRequest(HTTP_GET, null, null, config.orgId, config.appId, uuid.toString());
     }
 
 
@@ -1237,7 +1086,7 @@ public class UsergridClient {
 
         return new QueryResult(this,
                 HTTP_PUT,
-                apiRequest(HTTP_PUT, q.params(), fields, organizationId, applicationId, q.getCollectionName()),
+                apiRequest(HTTP_PUT, q.params(), fields, config.orgId, config.appId, q.getCollectionName()),
                 q,
                 fields);
     }
@@ -1252,7 +1101,7 @@ public class UsergridClient {
 
         return new QueryResult(this,
                 HTTP_GET,
-                apiRequest(HTTP_GET, q.params(), null, organizationId, applicationId, q.getCollectionName()),
+                apiRequest(HTTP_GET, q.params(), null, config.orgId, config.appId, q.getCollectionName()),
                 q);
     }
 
@@ -1260,7 +1109,7 @@ public class UsergridClient {
 
         return new QueryResult(this,
                 HTTP_GET,
-                apiRequest(HTTP_GET, q.params(), null, organizationId, applicationId, q.getCollectionName()),
+                apiRequest(HTTP_GET, q.params(), null, config.orgId, config.appId, q.getCollectionName()),
                 q);
     }
 
@@ -1275,7 +1124,7 @@ public class UsergridClient {
 
         return new QueryResult(this,
                 HTTP_DELETE,
-                apiRequest(HTTP_DELETE, q.params(), null, organizationId, applicationId, q.getCollectionName()),
+                apiRequest(HTTP_DELETE, q.params(), null, config.orgId, config.appId, q.getCollectionName()),
                 q);
     }
 

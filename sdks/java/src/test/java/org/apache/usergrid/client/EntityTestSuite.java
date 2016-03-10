@@ -27,6 +27,7 @@ public class EntityTestSuite {
   @Before
   public void before() {
     Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME);
+    Usergrid.getInstance().config.authFallBack = SDKTestConfiguration.authFallBack;
     Usergrid.authorizeAppClient(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
   }
 

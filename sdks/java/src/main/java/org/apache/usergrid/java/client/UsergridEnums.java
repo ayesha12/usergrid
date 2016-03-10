@@ -14,20 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.usergrid.java.client.model;
-
-import org.apache.usergrid.java.client.UsergridAuth;
-
-public class UsergridAppAuth extends UsergridAuth {
-
-	public static String clientId = null;
-	public static String clientSecret = null;
+package org.apache.usergrid.java.client;
 
 
-	public UsergridAppAuth(String client_id, String client_secret){
-		super();
-		this.clientId = client_id;
-		this.clientSecret = client_secret;
-	}
+/**
+ * The Client class for accessing the Usergrid API. Start by instantiating this
+ * class though the appropriate constructor.
+ */
+public class UsergridEnums {
+    public enum UsergridAuthFallBack {
+        NONE,
+        ugAuthFallBack, APP
+    }
 
 }
