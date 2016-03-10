@@ -44,9 +44,9 @@ public class UsergridAuth {
     return  isExpired;
   }
 
-  //TODO
   public boolean isValidToken(){
-//        String tkn = this.getAccessToken();
+    if(hasToken() && !isexprired())
+      return true;
     return false;
   }
 

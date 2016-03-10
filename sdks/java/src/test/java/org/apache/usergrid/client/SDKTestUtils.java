@@ -66,7 +66,7 @@ public class    SDKTestUtils {
 
     UsergridResponse r = e.POST();
 
-    if (r.getError() != null) {
+    if (r.responseError != null) {
       assertTrue("UUID should not be null", e.getUuidString() != null);
 
       for (Map.Entry<String, String> field : fields.entrySet()) {

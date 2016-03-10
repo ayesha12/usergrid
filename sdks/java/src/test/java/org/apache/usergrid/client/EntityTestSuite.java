@@ -96,7 +96,7 @@ public class EntityTestSuite {
 
     UsergridResponse r = e.POST(); //should fail
 
-    assertTrue("Second entity create should not succeed!", r.getError() != null);
+    assertTrue("Second entity create should not succeed!", r.responseError != null);
   }
 
   @Test

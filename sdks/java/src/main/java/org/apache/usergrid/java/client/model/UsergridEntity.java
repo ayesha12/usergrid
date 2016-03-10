@@ -347,7 +347,7 @@ public class UsergridEntity {
 
         if (response != null) {
 
-            if (response.getError() == null) {
+            if (response.responseError == null) {
 
                 UsergridEntity first = response.first();
 

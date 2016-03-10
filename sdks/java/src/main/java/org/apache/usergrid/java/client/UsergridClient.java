@@ -51,7 +51,6 @@ public class UsergridClient {
     public UsergridClientConfig config;
     private UsergridUser currentUser = null;
     private UsergridAuth tempAuth = null;
-    private UsergridAuth appAuth = null;
 
     public static final String HTTP_POST = "POST";
     public static final String HEADER_AUTHORIZATION = "Authorization";
@@ -80,8 +79,8 @@ public class UsergridClient {
             tempAuth = null;
         } else if( this.currentUser != null && this.currentUser.userAuth.isValidToken() ) {
             authForRequests = this.currentUser.userAuth;
-        } else if( this.appAuth != null && config.authFallBack == UsergridAuthFallBack.APP ) {
-            authForRequests = this.appAuth;
+        } else if( this.config.appAuth != null && config.authFallBack == UsergridAuthFallBack.APP ) {
+            authForRequests = this.config.appAuth;
         }
         return authForRequests;
     }
@@ -228,6 +227,7 @@ public class UsergridClient {
                                        final Map<String, Object> params,
                                        Object data,
                                        final String... segments) {
+
         appAuth();
         // default to JSON
         String contentType = MediaType.APPLICATION_JSON;
@@ -324,7 +324,7 @@ public class UsergridClient {
 
             setCurrentUser(response.currentUser());
 
-            log.info("Client.authenticateUser(): Access token: " + this.appAuth.accessToken);
+            log.info("Client.authenticateUser(): Access token: " + this.config.appAuth.accessToken);
         } else {
             log.info("Client.authenticateUser(): Response: " + response);
         }
@@ -398,8 +398,8 @@ public class UsergridClient {
 
         if (!isEmpty(response.getAccessToken()) && (response.currentUser() != null)) {
             currentUser = response.currentUser();
-            this.appAuth.setAccessToken(response.getAccessToken());
-            log.info("Client.authenticateUser(): Access token: " + this.appAuth.accessToken);
+            this.config.appAuth.setAccessToken(response.getAccessToken());
+            log.info("Client.authenticateUser(): Access token: " + this.config.appAuth.accessToken);
         } else {
             log.info("Client.authenticateUser(): Response: " + response);
         }
@@ -432,8 +432,8 @@ public class UsergridClient {
         if (!isEmpty(response.getAccessToken()) && (response.currentUser() != null)) {
 
             currentUser = response.currentUser();
-            this.appAuth.setAccessToken(response.getAccessToken());
-            log.info("Client.authorizeAppUserViaFacebook(): Access token: " + this.appAuth.accessToken);
+            this.config.appAuth.setAccessToken(response.getAccessToken());
+            log.info("Client.authorizeAppUserViaFacebook(): Access token: " + this.config.appAuth.accessToken);
 
         } else {
 
@@ -482,10 +482,9 @@ public class UsergridClient {
         if (!isEmpty(response.getAccessToken())) {
             auth.setAccessToken(response.getAccessToken());
             auth.setTokenExpiry(response.getProperties().get(STRING_EXPIRES_IN).asLong() - 5);
-            this.appAuth = auth;
-            log.info("Client.authenticateApp(): Access token: " + this.appAuth.accessToken);
+            this.config.appAuth = auth; //todo: config.appauth
+            log.info("Client.authenticateApp(): Access token: " + this.config.appAuth.accessToken);
         } else {
-
             log.info("Client.authenticateApp(): Response: " + response);
         }
 

@@ -39,16 +39,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.BadRequestException;
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.Response;
 
 public class UsergridResponse {
 
   private String accessToken;
 
-  private String error;
-  private String errorDescription;
-  private String errorUri;
-  private String exception;
+  public UsergridResponseError responseError = null;
 
   private String path;
   private String uri;
@@ -79,11 +77,6 @@ public class UsergridResponse {
   private Map<String, JsonNode> header;
   private static final Logger log = LoggerFactory.getLogger(UsergridEntity.class);
 
-  public UsergridResponse() {
-  }
-
-  // TODO : public init();
-
   @JsonAnyGetter
   public Map<String, JsonNode> getProperties() {
     return properties;
@@ -103,46 +96,6 @@ public class UsergridResponse {
   @JsonProperty("access_token")
   public void setAccessToken(String accessToken) {
     this.accessToken = accessToken;
-  }
-
-  @JsonSerialize(include = Inclusion.NON_NULL)
-  public String getError() {
-    return error;
-  }
-
-  public void setError(String error) {
-    this.error = error;
-  }
-
-  @JsonSerialize(include = Inclusion.NON_NULL)
-  @JsonProperty("error_description")
-  public String getErrorDescription() {
-    return errorDescription;
-  }
-
-  @JsonProperty("error_description")
-  public void setErrorDescription(String errorDescription) {
-    this.errorDescription = errorDescription;
-  }
-
-  @JsonSerialize(include = Inclusion.NON_NULL)
-  @JsonProperty("error_uri")
-  public String getErrorUri() {
-    return errorUri;
-  }
-
-  @JsonProperty("error_uri")
-  public void setErrorUri(String errorUri) {
-    this.errorUri = errorUri;
-  }
-
-  @JsonSerialize(include = Inclusion.NON_NULL)
-  public String getException() {
-    return exception;
-  }
-
-  public void setException(String exception) {
-    this.exception = exception;
   }
 
   @JsonSerialize(include = Inclusion.NON_NULL)
@@ -422,17 +375,14 @@ public class UsergridResponse {
 
 
   public static UsergridResponse fromException(Exception ex) {
-
     UsergridResponse response = new UsergridResponse();
-    response.setError(ex.getMessage());
-
-    if (ex instanceof BadRequestException) {
-      BadRequestException bre = (BadRequestException) ex;
-      Response r = bre.getResponse();
-
-      response.setStatus(String.valueOf(r.getStatus()));
+    if(ex instanceof ClientErrorException){
+      ClientErrorException clientError = (ClientErrorException) ex;
+      response.responseError = new UsergridResponseError(clientError.getResponse().getStatusInfo().toString(),clientError.getResponse().getStatus(),
+              clientError.getResponse().toString(),clientError.getClass().toString());
     }
-
+    else
+    response.responseError = new UsergridResponseError(ex.getClass().toString(),0,ex.getMessage(),ex.getClass().toString());
     return response;
   }
 

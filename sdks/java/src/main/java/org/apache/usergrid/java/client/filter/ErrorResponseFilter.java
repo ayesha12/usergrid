@@ -28,7 +28,7 @@ public class ErrorResponseFilter implements ClientResponseFilter {
 
         UsergridResponse error = _MAPPER.readValue(responseContext.getEntityStream(), UsergridResponse.class);
 
-        String message = String.format("HTTP %s: (%s) %s", responseCode, error.getError(), error.getErrorDescription());
+        String message = String.format("HTTP %s: (%s) %s", responseCode, error.responseError.getError(), error.responseError.getErrorDescription());
 
         Response.Status status = Response.Status.fromStatusCode(responseContext.getStatus());
         WebApplicationException webAppException;

@@ -118,40 +118,40 @@ public class Usergrid {
         instances_.put(STR_DEFAULT, new UsergridClient());
     }
 
-    public UsergridClient usingAuth(UsergridAuth ugAuth) {
+    public static UsergridClient usingAuth(UsergridAuth ugAuth) {
         return Usergrid.getInstance().usingAuth(ugAuth);
     }
 
-    public UsergridAuth authForRequests() {
+    public static UsergridAuth authForRequests() {
         return Usergrid.getInstance().authForRequests();
     }
 
-    public UsergridResponse authenticateApp(final String clientId, final String clientSecret) {
+    public static UsergridResponse authenticateApp(final String clientId, final String clientSecret) {
         return Usergrid.getInstance().authenticateApp(clientId, clientSecret);
     }
 
-    public UsergridResponse authenticateApp(final UsergridAppAuth auth) {
+    public static UsergridResponse authenticateApp(final UsergridAppAuth auth) {
         return Usergrid.getInstance().authenticateApp(auth);
     }
 
-    public UsergridResponse authenticateUser(String username, String password) {
+    public static UsergridResponse authenticateUser(String username, String password) {
         return Usergrid.getInstance().authenticateUser(username, password);
     }
 
-    public UsergridResponse authenticateUser(UsergridUserAuth auth) {
+    public static UsergridResponse authenticateUser(UsergridUserAuth auth) {
         return Usergrid.getInstance().authenticateUser(auth);
     }
 
-    public UsergridResponse createEntity(final UsergridEntity usergridEntity) {
+    public static UsergridResponse createEntity(final UsergridEntity usergridEntity) {
         return Usergrid.getInstance().createEntity(usergridEntity);
     }
 
-    public UsergridResponse createEntity(Map<String, Object> properties) {
+    public static UsergridResponse createEntity(Map<String, Object> properties) {
         return Usergrid.getInstance().createEntity(properties);
     }
 
 
-    public LegacyQueryResult queryEntities(final String method,
+    public static LegacyQueryResult queryEntities(final String method,
                                            final Map<String, Object> params,
                                            final Object data,
                                            final String... segments) {
@@ -159,44 +159,44 @@ public class Usergrid {
         return Usergrid.getInstance().queryEntities(method, params, data, segments);
     }
 
-    public LegacyQueryResult queryUsers() {
+    public static LegacyQueryResult queryUsers() {
         return Usergrid.getInstance().queryUsers();
     }
 
 
-    public LegacyQueryResult queryUsers(String ql) {
+    public static LegacyQueryResult queryUsers(String ql) {
         return Usergrid.getInstance().queryUsers(ql);
     }
 
 
-    public LegacyQueryResult queryUsersWithinLocation(final float distance,
+    public static LegacyQueryResult queryUsersWithinLocation(final float distance,
                                                       final float lattitude,
                                                       final float longitude,
                                                       final String ql) {
         return Usergrid.getInstance().queryUsersWithinLocation(distance, lattitude, longitude, ql);
     }
 
-    public UsergridResponse getEntity(final String type, final String id) {
+    public static UsergridResponse getEntity(final String type, final String id) {
         return Usergrid.getInstance().getEntity(type, id);
     }
 
-    public UsergridResponse getConnections(Direction direction, UsergridEntity sourceVertex, String relationship) {
+    public static UsergridResponse getConnections(Direction direction, UsergridEntity sourceVertex, String relationship) {
         return Usergrid.getInstance().getConnections(direction, sourceVertex, relationship);
     }
 
-    public UsergridResponse deleteEntity(final String type,
+    public static UsergridResponse deleteEntity(final String type,
                                          final String id) {
         return Usergrid.getInstance().deleteEntity(type, id);
     }
 
-    public UsergridResponse connect(final UsergridEntity sourceVertex,
+    public static UsergridResponse connect(final UsergridEntity sourceVertex,
                                     final String connetionName,
                                     final UsergridEntity targetVertex
     ) {
         return Usergrid.getInstance().connect(sourceVertex, connetionName, targetVertex);
     }
 
-    public UsergridResponse connect(final UsergridEntity sourceVertex,
+    public static UsergridResponse connect(final UsergridEntity sourceVertex,
                                     final String connetionName,
                                     final String targetVertexUUid
     ) {
@@ -204,7 +204,7 @@ public class Usergrid {
     }
 
 
-    public UsergridResponse connect(final String connectingEntityType,
+    public static UsergridResponse connect(final String connectingEntityType,
                                     final String connectingEntityId,
                                     final String connectionType,
                                     final String connectedEntityId) {
@@ -223,7 +223,7 @@ public class Usergrid {
      * @param connectedEntityType
      * @return
      */
-    public UsergridResponse connect(final String connectingEntityType,
+    public static UsergridResponse connect(final String connectingEntityType,
                                     final String connectingEntityId,
                                     final String connectionType,
                                     final String connectedEntityType,
@@ -232,7 +232,7 @@ public class Usergrid {
         return Usergrid.getInstance().connect(connectingEntityType, connectingEntityId, connectionType, connectedEntityType, connectedEntityName);
     }
 
-    public UsergridResponse disconnect(final String connectingEntityType,
+    public static UsergridResponse disconnect(final String connectingEntityType,
                                        final String connectingEntityId,
                                        final String connectionType,
                                        final String connectedEntityId) {
@@ -240,7 +240,7 @@ public class Usergrid {
         return disconnect(connectingEntityType, connectingEntityId, connectionType, connectedEntityId);
     }
 
-    public UsergridResponse disconnect(final String connectingEntityType,
+    public static UsergridResponse disconnect(final String connectingEntityType,
                                        final String connectingEntityId,
                                        final String connectionType,
                                        final String connectedEntitytype,
@@ -250,21 +250,21 @@ public class Usergrid {
     }
 
 
-    public UsergridResponse disconnect(final UsergridEntity sourceVertex,
+    public static UsergridResponse disconnect(final UsergridEntity sourceVertex,
                                        final String connetionName,
                                        final UsergridEntity targetVertex) {
         return Usergrid.getInstance().disconnect(sourceVertex, connetionName, targetVertex);
     }
 
 
-    public LegacyQueryResult queryEntityConnections(final String connectingEntityType,
+    public static LegacyQueryResult queryEntityConnections(final String connectingEntityType,
                                                     final String connectingEntityId,
                                                     final String connectionType, String ql) {
 
         return queryEntityConnections(connectingEntityType, connectingEntityId, connectionType, ql);
     }
 
-    protected String makeLocationQL(float distance, double lattitude,
+    protected static String makeLocationQL(float distance, double lattitude,
                                     double longitude, String ql) {
         String within = String.format("within %d of %d , %d", distance, lattitude, longitude);
         ql = ql == null ? within : within + " and " + ql;
@@ -272,7 +272,7 @@ public class Usergrid {
         return ql;
     }
 
-    public LegacyQueryResult queryEntityConnectionsWithinLocation(final String connectingEntityType,
+    public static LegacyQueryResult queryEntityConnectionsWithinLocation(final String connectingEntityType,
                                                                   final String connectingEntityId,
                                                                   final String connectionType,
                                                                   final float distance,
@@ -284,69 +284,69 @@ public class Usergrid {
     }
 
 
-    public UsergridResponse queryEdgesForVertex(final String srcType,
+    public static UsergridResponse queryEdgesForVertex(final String srcType,
                                                 final String srcID) {
 
         return Usergrid.getInstance().queryEdgesForVertex(srcType, srcID);
     }
 
-    public UsergridResponse queryCollections() {
+    public static UsergridResponse queryCollections() {
         return Usergrid.getInstance().queryCollections();
     }
 
-    public UsergridResponse queryConnection(final String... segments) {
+    public static UsergridResponse queryConnection(final String... segments) {
         return Usergrid.getInstance().queryConnection(segments);
     }
 
-    public UsergridResponse PUT(final String type,
+    public static UsergridResponse PUT(final String type,
                                 final String entityId) {
         return Usergrid.getInstance().PUT(type, entityId);
     }
 
-    public UsergridResponse POST(final UsergridEntity e) {
+    public static UsergridResponse POST(final UsergridEntity e) {
         return Usergrid.getInstance().POST(e);
     }
 
-    public UsergridResponse POST(final String type,
+    public static UsergridResponse POST(final String type,
                                  final String entityId) {
         return Usergrid.getInstance().POST(type, entityId);
     }
 
 
-    public UsergridResponse DELETE(final UsergridEntity e) {
+    public static UsergridResponse DELETE(final UsergridEntity e) {
         return Usergrid.getInstance().DELETE(e);
     }
 
-    public UsergridResponse DELETE(final String collection,
+    public static UsergridResponse DELETE(final String collection,
                                    final String entityId) {
 
         return Usergrid.getInstance().DELETE(collection, entityId);
     }
 
-    public UsergridResponse DELETE(final UUID uuid) {
+    public static UsergridResponse DELETE(final UUID uuid) {
         return Usergrid.getInstance().DELETE(uuid);
     }
 
-    public UsergridResponse GET(final UUID uuid) {
+    public static UsergridResponse GET(final UUID uuid) {
         return Usergrid.getInstance().GET(uuid);
     }
 
-    public QueryResult PUT(final UsergridQuery q, Map<String, Object> fields) {
+    public static QueryResult PUT(final UsergridQuery q, Map<String, Object> fields) {
 
         return Usergrid.getInstance().PUT(q, fields);
     }
 
-    public QueryResult GET(final UsergridQuery q) {
+    public static QueryResult GET(final UsergridQuery q) {
 
         return Usergrid.getInstance().GET(q);
     }
 
-    public QueryResult GETFromQuery(final UsergridQuery q) {
+    public static QueryResult GETFromQuery(final UsergridQuery q) {
 
         return Usergrid.getInstance().GETFromQuery(q);
     }
 
-    public QueryResult DELETE(final UsergridQuery q) {
+    public static QueryResult DELETE(final UsergridQuery q) {
 
         return Usergrid.getInstance().DELETE(q);
     }

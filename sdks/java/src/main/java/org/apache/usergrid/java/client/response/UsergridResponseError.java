@@ -41,9 +41,10 @@ import static org.apache.usergrid.java.client.utils.JsonUtils.toJsonString;
 
 public class UsergridResponseError {
 
-  private String errorName;
-  private String errorDescription;
-  private String errorException;
+  public static String errorName;
+  public static String errorDescription;
+  public static String errorException;
+  public static int code;
 
   private final Map<String, JsonNode> properties = new HashMap<String, JsonNode>();
   private int statuscode;
@@ -54,8 +55,9 @@ public class UsergridResponseError {
   }
 
   // TODO : public init();
-  public UsergridResponseError(String name, String description,String errorException){
+  public UsergridResponseError(String name, int code, String description,String errorException){
     this.errorName = name;
+    this.code = code;
     this.errorDescription = description;
     this.errorException = errorException;
 
@@ -91,21 +93,6 @@ public class UsergridResponseError {
     this.errorDescription = errorDescription;
   }
 
-
-  public static UsergridResponseError fromException(Exception ex) {
-
-    UsergridResponseError response = new UsergridResponseError();
-    response.setError(ex.getMessage());
-
-    if (ex instanceof BadRequestException) {
-      BadRequestException bre = (BadRequestException) ex;
-      Response r = bre.getResponse();
-
-      response.setStatusCode(r.getStatus());
-    }
-
-    return response;
-  }
 
   public int getStatusCode(){
     return this.statuscode;

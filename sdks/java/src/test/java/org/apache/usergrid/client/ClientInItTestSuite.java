@@ -33,9 +33,10 @@ public class ClientInItTestSuite {
     public void clientInit() throws JSONException {
         //should fail to initialize without an orgId and appId
         UsergridClient client1 = new UsergridClient(null,null);
+
         try{
             UsergridResponse response = client1.authenticateApp(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
-            assertTrue("no error thrown", response.getError() == null);
+            assertTrue("no error thrown", response.responseError.getError() == null);
 
         }
         catch (NullPointerException e){
@@ -47,7 +48,7 @@ public class ClientInItTestSuite {
         client2.config.authFallBack = SDKTestConfiguration.authFallBack;
         try{
             UsergridResponse response = client2.authenticateApp(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
-            assertTrue("no error thrown", response.getError() == null);
+            assertTrue("no error thrown", response.responseError == null);
         }
         catch (IllegalArgumentException e){
         }

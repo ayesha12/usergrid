@@ -54,10 +54,10 @@ public class ClientRestTestSuite {
         UsergridClient client = Usergrid.getInstance();
 
         //Retrieve the entity.
-        UsergridResponse response = client.GET("sample","john");
+        UsergridResponse response = client.GET(collectionName,"john");
 
         //response.ok should be true
-        assertTrue("no error thrown", response.getError() == null);
+        assertTrue("no error thrown", response.responseError == null);
 
         //response.entities should be an array
         assertTrue("reponse entities is an Array", response.getEntities().getClass() == ArrayList.class);

@@ -37,9 +37,6 @@ public class UsergridClientConfig {
     // The `UsergridAuthFallback` value used to determine what type of token will be sent, if any.
     public UsergridAuthFallBack authFallBack = UsergridAuthFallBack.NONE;
 
-    // Whether or not the `UsergridClient` current user will be saved and restored from the keychain.
-    public boolean persistCurrentUserInKeychain = true;
-
     public UsergridAppAuth appAuth;
 
     public UsergridClientConfig(String orgId, String appId) {
@@ -60,6 +57,5 @@ public class UsergridClientConfig {
         this.authFallBack = authFallback;
         this.appAuth = appAuth;
     }
-
 
 }
