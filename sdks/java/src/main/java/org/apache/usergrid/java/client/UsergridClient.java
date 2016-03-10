@@ -324,7 +324,6 @@ public class UsergridClient {
 
             setCurrentUser(response.currentUser());
 
-            currentOrganization = null; //TODO : should this be set to null ?
             log.info("Client.authenticateUser(): Access token: " + this.appAuth.accessToken);
         } else {
             log.info("Client.authenticateUser(): Response: " + response);
@@ -385,7 +384,6 @@ public class UsergridClient {
         validateNonEmptyParam(pin, "pin");
 
         currentUser = null;
-        currentOrganization = null;
 
         Map<String, Object> formData = new HashMap<>();
         formData.put("grant_type", "pin");
@@ -401,7 +399,6 @@ public class UsergridClient {
         if (!isEmpty(response.getAccessToken()) && (response.currentUser() != null)) {
             currentUser = response.currentUser();
             this.appAuth.setAccessToken(response.getAccessToken());
-            currentOrganization = null;
             log.info("Client.authenticateUser(): Access token: " + this.appAuth.accessToken);
         } else {
             log.info("Client.authenticateUser(): Response: " + response);
@@ -424,7 +421,6 @@ public class UsergridClient {
         validateNonEmptyParam(fb_access_token, "Facebook token");
 
         currentUser = null;
-        currentOrganization = null;
         Map<String, Object> formData = new HashMap<>();
         formData.put("fb_access_token", fb_access_token);
         UsergridResponse response = apiRequest(HTTP_POST, formData, null, config.orgId, config.appId, "auth", "facebook");
@@ -437,7 +433,6 @@ public class UsergridClient {
 
             currentUser = response.currentUser();
             this.appAuth.setAccessToken(response.getAccessToken());
-            currentOrganization = null;
             log.info("Client.authorizeAppUserViaFacebook(): Access token: " + this.appAuth.accessToken);
 
         } else {
@@ -474,7 +469,6 @@ public class UsergridClient {
         validateNonEmptyParam(clientSecret, "client secret");
 
         currentUser = null;
-        currentOrganization = null;
         Map<String, Object> data = new HashMap<>();
         data.put("grant_type", "client_credentials");
         data.put("client_id", clientId);
