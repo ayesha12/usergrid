@@ -1,19 +1,10 @@
 package org.apache.usergrid.client;
 
-import org.apache.commons.lang.NullArgumentException;
-import org.apache.usergrid.java.client.Direction;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
-import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.codehaus.jettison.json.JSONException;
-import org.junit.Before;
 import org.junit.Test;
-
-import javax.jws.soap.SOAPBinding;
-import java.util.HashMap;
-import java.util.IllegalFormatException;
-import java.util.Map;
 
 import static org.junit.Assert.assertTrue;
 
@@ -45,7 +36,7 @@ public class ClientInItTestSuite {
         //should initialize using properties defined in config.json
         Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL,SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME);
         UsergridClient client2 =Usergrid.getInstance();
-        client2.config.authFallBack = SDKTestConfiguration.authFallBack;
+        client2.config.authMode = SDKTestConfiguration.authFallBack;
         try{
             UsergridResponse response = client2.authenticateApp(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
             assertTrue("no error thrown", response.responseError == null);

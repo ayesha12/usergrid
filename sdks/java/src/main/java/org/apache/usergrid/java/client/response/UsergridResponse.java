@@ -31,8 +31,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize.Inclusion;
 import javax.annotation.Nullable;
 
-import org.apache.usergrid.java.client.Usergrid;
-import org.apache.usergrid.java.client.UsergridClient;
+import org.apache.usergrid.java.client.*;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.model.UsergridUser;
 import org.slf4j.Logger;
@@ -40,6 +39,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 public class UsergridResponse {
@@ -366,7 +366,12 @@ public class UsergridResponse {
       Map<String, Object> paramsMap = new HashMap<String,Object>();
       paramsMap.put("cursor",getCursor());
       UsergridClient client = Usergrid.getInstance();
-      UsergridResponse resp = client.apiRequest("GET",paramsMap,null,client.getOrgId(),client.getAppId(),this.first().getType());
+
+      String[] segments = {client.getOrgId(),client.getAppId(),this.first().getType()};
+
+      UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
+              client.config.baseUrl,paramsMap,null,segments);
+      UsergridResponse resp = UsergridRequestmanager.performRequest(request); //client.apiRequest("GET",paramsMap,null,client.getOrgId(),client.getAppId(),this.first().getType());
       return resp.entities;
     }
     log.info("there are no more enetities to load. Cursor is empty.");

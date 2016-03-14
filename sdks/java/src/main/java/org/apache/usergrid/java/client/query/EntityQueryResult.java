@@ -1,9 +1,13 @@
 package org.apache.usergrid.java.client.query;
 
 import org.apache.usergrid.java.client.UsergridClient;
+import org.apache.usergrid.java.client.UsergridEnums;
+import org.apache.usergrid.java.client.UsergridRequest;
+import org.apache.usergrid.java.client.UsergridRequestmanager;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 
+import javax.ws.rs.core.MediaType;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -87,7 +91,12 @@ public class EntityQueryResult implements LegacyQueryResult {
 
       nextParams.put("cursor", lastResponse.getCursor());
 
-      UsergridResponse nextResponse = this.usergrid.apiRequest(method, nextParams, data, segments);
+
+      UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.valueOf(method), MediaType.APPLICATION_JSON_TYPE,
+              this.usergrid.config.baseUrl,nextParams,data,segments);
+
+
+      UsergridResponse nextResponse = UsergridRequestmanager.performRequest(request); //this.usergrid.apiRequest(method, nextParams, data, segments);
 
       return new EntityQueryResult(this.usergrid, nextResponse, this);
     }

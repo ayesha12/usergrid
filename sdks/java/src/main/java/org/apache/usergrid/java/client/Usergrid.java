@@ -1,6 +1,5 @@
 package org.apache.usergrid.java.client;
 
-import com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.BIConversion;
 import org.apache.usergrid.java.client.model.UsergridAppAuth;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.model.UsergridUserAuth;
@@ -8,8 +7,8 @@ import org.apache.usergrid.java.client.query.LegacyQueryResult;
 import org.apache.usergrid.java.client.query.QueryResult;
 import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;
+import org.apache.usergrid.java.client.UsergridEnums.UsergridAuthMode;
 
-import javax.jws.soap.SOAPBinding;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -61,6 +60,19 @@ public class Usergrid {
         } else {
             UsergridClient client = getInstance(STR_DEFAULT);
             UsergridClientConfig conf = new UsergridClientConfig(orgName, appName, apiUrl, null, null);
+            client.config = conf;
+            initialized = true;
+        }
+
+    }
+
+    public static void initSharedInstance(final String apiUrl, final String orgName, final String appName, final UsergridAuthMode authMode, final UsergridAppAuth appAuth ) {
+
+        if (isEmpty(appName) || isEmpty(orgName) || isEmpty(apiUrl)) {
+            throw new IllegalArgumentException("One of the input arguments is empty.");
+        } else {
+            UsergridClient client = getInstance(STR_DEFAULT);
+            UsergridClientConfig conf = new UsergridClientConfig(orgName, appName, apiUrl, authMode, appAuth);
             client.config = conf;
             initialized = true;
         }

@@ -22,9 +22,40 @@ package org.apache.usergrid.java.client;
  * class though the appropriate constructor.
  */
 public class UsergridEnums {
-    public enum UsergridAuthFallBack {
+    public enum UsergridAuthMode {
         NONE,
-        ugAuthFallBack, APP
+        User,
+        APP
+    }
+
+    /**
+     An enumeration for defining the HTTP methods used by Usergrid.
+     */
+    public enum UsergridHttpMethod {
+        GET {
+            @Override
+            public String toString() {
+                return "GET";
+            }
+        },
+        POST {
+            @Override
+            public String toString() {
+                return "POST";
+            }
+        },
+        PUT {
+            @Override
+            public String toString() {
+                return "PUT";
+            }
+        },
+        DELETE {
+            @Override
+            public String toString() {
+                return "DELETE";
+            }
+        }
     }
 
 }

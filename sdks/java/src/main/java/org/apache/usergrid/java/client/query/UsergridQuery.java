@@ -1,10 +1,10 @@
 package org.apache.usergrid.java.client.query;
 
-import org.apache.usergrid.java.client.Usergrid;
-import org.apache.usergrid.java.client.UsergridClient;
+import org.apache.usergrid.java.client.*;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.core.MediaType;
 import java.net.URLEncoder;
 import java.util.*;
 
@@ -72,7 +72,13 @@ public class UsergridQuery {
     Map<String, Object> params = new HashMap<>();
     params.put("ql",query);
     UsergridClient ug = Usergrid.getInstance();
-    return ug.apiRequest("GET",params,null,ug.getOrgId(),ug.getAppId(),this.qCollection);
+
+    String[] segments = {ug.getOrgId(),ug.getAppId(),this.qCollection};
+
+    UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
+            ug.config.baseUrl,params,null,segments);
+
+    return UsergridRequestmanager.performRequest(request); //ug.apiRequest("GET",params,null,ug.getOrgId(),ug.getAppId(),this.qCollection);
   }
 
 

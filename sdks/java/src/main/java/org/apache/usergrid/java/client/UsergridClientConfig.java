@@ -16,8 +16,9 @@
  */
 package org.apache.usergrid.java.client;
 
-import org.apache.usergrid.java.client.UsergridEnums.UsergridAuthFallBack;
+import org.apache.usergrid.java.client.UsergridEnums.UsergridAuthMode;
 import org.apache.usergrid.java.client.model.UsergridAppAuth;
+import org.apache.usergrid.java.client.model.UsergridUserAuth;
 
 /**
  * The Client class for accessing the Usergrid API. Start by instantiating this
@@ -35,9 +36,11 @@ public class UsergridClientConfig {
     public String baseUrl = null;
 
     // The `UsergridAuthFallback` value used to determine what type of token will be sent, if any.
-    public UsergridAuthFallBack authFallBack = UsergridAuthFallBack.NONE;
+    public UsergridAuthMode authMode = UsergridAuthMode.NONE;
 
     public UsergridAppAuth appAuth;
+
+    public UsergridUserAuth userAuth;
 
     public UsergridClientConfig(String orgId, String appId) {
         this.orgId = orgId;
@@ -50,11 +53,11 @@ public class UsergridClientConfig {
         this.baseUrl = baseUrl;
     }
 
-    public UsergridClientConfig(String orgId, String appId, String baseUrl, UsergridAuthFallBack authFallback, UsergridAppAuth appAuth) {
+    public UsergridClientConfig(String orgId, String appId, String baseUrl, UsergridAuthMode authFallback, UsergridAppAuth appAuth) {
         this.orgId = orgId;
         this.appId = appId;
         this.baseUrl = baseUrl;
-        this.authFallBack = authFallback;
+        this.authMode = authFallback;
         this.appAuth = appAuth;
     }
 

@@ -1,6 +1,6 @@
 package org.apache.usergrid.client;
 
-import org.apache.usergrid.java.client.UsergridEnums;
+import org.apache.usergrid.java.client.UsergridEnums.UsergridAuthMode;
 
 /**
  * Created by ApigeeCorporation on 9/9/15.
@@ -12,7 +12,7 @@ public class SDKTestConfiguration {
   public static final String ORG_NAME = "ayesha";
   public static final String APP_NAME = "sandbox";
 
-  public static UsergridEnums.UsergridAuthFallBack authFallBack = UsergridEnums.UsergridAuthFallBack.APP;
+  public static UsergridAuthMode authFallBack = UsergridAuthMode.APP;
 
 //  public static final String APP_CLIENT_ID = "YXA61n2kpFffEeWs9QLknKqhHw";
 //  public static final String APP_CLIENT_SECRET = "YXA69_aRW1IHLgMTUUYSitsGwOLY8uQ";
