@@ -59,7 +59,7 @@ public class Usergrid {
             throw new IllegalArgumentException("One of the input arguments is empty.");
         } else {
             UsergridClient client = getInstance(STR_DEFAULT);
-            UsergridClientConfig conf = new UsergridClientConfig(orgName, appName, apiUrl, null, null);
+            UsergridClientAppConfig conf = new UsergridClientAppConfig(orgName, appName, apiUrl, null, null);
             client.config = conf;
             initialized = true;
         }
@@ -72,7 +72,7 @@ public class Usergrid {
             throw new IllegalArgumentException("One of the input arguments is empty.");
         } else {
             UsergridClient client = getInstance(STR_DEFAULT);
-            UsergridClientConfig conf = new UsergridClientConfig(orgName, appName, apiUrl, authMode, appAuth);
+            UsergridClientAppConfig conf = new UsergridClientAppConfig(orgName, appName, apiUrl, authMode, appAuth);
             client.config = conf;
             initialized = true;
         }

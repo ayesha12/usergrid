@@ -28,8 +28,6 @@ public class UsergridRequest {
   public Object data;
   public String[] segments;
 
-
-
   public UsergridRequest(final UsergridHttpMethod method,final MediaType contentType,final String url,
                          Map<String, Object> params, Object data,
                          Map<String, Object> headers,UsergridQuery ql,final String... segments ){
@@ -58,10 +56,6 @@ public class UsergridRequest {
 
   }
 
-
-
-
-
   public String buildURI() {
     return "";
   }
@@ -88,16 +82,10 @@ public class UsergridRequest {
     return this;
   }
 
-//  public UsergridRequest headers(final Map<String, String> headers) {
-//    this.headers = headers;
-//    return this;
-//  }
-
 
   public UsergridResponse GET() {
     String uri = buildURI();
     return null;
-
   }
 
   public UsergridResponse GET(String uri) {

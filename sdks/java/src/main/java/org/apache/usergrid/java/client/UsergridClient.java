@@ -33,9 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.Invocation;
-import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import java.util.*;
 
@@ -49,7 +46,7 @@ import static org.apache.usergrid.java.client.utils.ObjectUtils.isEmpty;
 public class UsergridClient {
 
     public  static String DEFAULT_BASE_URL = "http://localhost:8080";
-    public UsergridClientConfig config;
+    public UsergridClientAppConfig config;
     private UsergridUser currentUser = null;
     private UsergridAuth tempAuth = null;
 
@@ -79,7 +76,6 @@ public class UsergridClient {
     }
 
 
-
     /**
      * Default constructor for instantiating a client.
      */
@@ -87,7 +83,7 @@ public class UsergridClient {
         init();
     }
 
-    public UsergridClient(UsergridClientConfig usergridClientConfig) {
+    public UsergridClient(UsergridClientAppConfig usergridClientConfig) {
         config = usergridClientConfig;
         init();
         //todo: getCurrentUserFromKeychain??
@@ -102,7 +98,7 @@ public class UsergridClient {
      */
     public UsergridClient(final String organizationId,
                           final String applicationId) {
-        new UsergridClient(new UsergridClientConfig(organizationId,applicationId));
+        new UsergridClient(new UsergridClientAppConfig(organizationId,applicationId));
     }
 
     /**
@@ -114,11 +110,11 @@ public class UsergridClient {
     public UsergridClient(final String organizationId,
                           final String applicationId,
                           final String baseurl) {
-        new UsergridClient(new UsergridClientConfig(organizationId,applicationId,baseurl));
+        new UsergridClient(new UsergridClientAppConfig(organizationId,applicationId,baseurl));
     }
 
     public UsergridClient(final String orgId, String appId, String baseurl, UsergridAuthMode authfallBack, UsergridAppAuth ugappAuth){
-        new UsergridClient(new UsergridClientConfig(orgId,appId,baseurl,authfallBack,ugappAuth));
+        new UsergridClient(new UsergridClientAppConfig(orgId,appId,baseurl,authfallBack,ugappAuth));
     }
 
     public void init() {
@@ -232,6 +228,8 @@ public class UsergridClient {
      */
     @Nullable
     public UsergridResponse authenticateUser(UsergridUserAuth auth) {
+        this.currentUser = new UsergridUser(auth.username,auth.password);
+        currentUser.userAuth = auth;
         config.userAuth = auth;
         UsergridRequestmanager rqManager = new UsergridRequestmanager(this);
         UsergridResponse response = rqManager.AuthenticateUser();

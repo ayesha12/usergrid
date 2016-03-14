@@ -2,6 +2,7 @@ package org.apache.usergrid.client;
 
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
+import org.apache.usergrid.java.client.UsergridEnums;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.codehaus.jettison.json.JSONException;
 import org.junit.Test;
@@ -21,7 +22,7 @@ public class ClientInItTestSuite {
 //    }
 
     @Test
-    public void clientInit() throws JSONException {
+    public void clientAppInit() throws JSONException {
         //should fail to initialize without an orgId and appId
         UsergridClient client1 = new UsergridClient(null,null);
 
@@ -42,7 +43,39 @@ public class ClientInItTestSuite {
             assertTrue("no error thrown", response.responseError == null);
         }
         catch (IllegalArgumentException e){
+            assertTrue("no error thrown", e != null);
         }
+
+
+    }
+
+    @Test
+    public void clientUserInit() {
+        UsergridClient client1 = new UsergridClient(null,null);
+
+        try{
+            UsergridResponse response = client1.authenticateUser(SDKTestConfiguration.APP_UserName,SDKTestConfiguration.APP_Password);
+            assertTrue("no error thrown", response.responseError.getError() == null);
+        }
+        catch(NullPointerException e){
+            assertTrue("no error thrown", e != null);
+        }
+//
+        Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME);
+//        Usergrid.authorizeAppUser(SDKTestConfiguration.APP_UserName,SDKTestConfiguration.APP_Password);
+
+        UsergridClient client2 =Usergrid.getInstance();
+        client2.config.authMode = UsergridEnums.UsergridAuthMode.NONE;
+        try{
+            UsergridResponse response = client2.authenticateUser(SDKTestConfiguration.APP_UserName,SDKTestConfiguration.APP_Password);
+            assertTrue("no error thrown", response.responseError == null);
+        }
+        catch (IllegalArgumentException e){
+            assertTrue("no error thrown", e == null);
+        }
+
+
+
 
     }
 

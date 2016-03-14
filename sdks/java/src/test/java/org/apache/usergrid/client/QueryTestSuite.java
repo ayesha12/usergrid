@@ -24,7 +24,7 @@ public class QueryTestSuite {
 
   @Before
   public void before() {
-    Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME);
+    Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME,SDKTestConfiguration.authFallBack,null);
     Usergrid.authorizeAppClient(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
   }
 
@@ -136,32 +136,32 @@ public class QueryTestSuite {
 
     UsergridEntity e = new UsergridEntity(collectionName);
     e.setLocation(37.334115, -121.894340);
-    e.putproperty("getName", "Apigee Office");
+    e.putproperty("name", "Apigee Office");
     e.POST();
 
     UsergridEntity amicis = new UsergridEntity(collectionName);
     amicis.setLocation(37.335616, -121.894168);
-    amicis.putproperty("getName", "Amicis");
+    amicis.putproperty("name", "Amicis");
     amicis.POST();
 
     UsergridEntity sanPedroMarket = new UsergridEntity(collectionName);
     sanPedroMarket.setLocation(37.336499, -121.894356);
-    sanPedroMarket.putproperty("getName", "SanPedroMarket");
+    sanPedroMarket.putproperty("name", "SanPedroMarket");
     sanPedroMarket.POST();
 
     UsergridEntity saintJamesPark = new UsergridEntity(collectionName);
     saintJamesPark.setLocation(37.339079, -121.891422);
-    saintJamesPark.putproperty("getName", "saintJamesPark");
+    saintJamesPark.putproperty("name", "saintJamesPark");
     saintJamesPark.POST();
 
     UsergridEntity sanJoseNews = new UsergridEntity(collectionName);
     sanJoseNews.setLocation(37.337812, -121.890784);
-    sanJoseNews.putproperty("getName", "sanJoseNews");
+    sanJoseNews.putproperty("name", "sanJoseNews");
     sanJoseNews.POST();
 
     UsergridEntity deAnza = new UsergridEntity(collectionName);
     deAnza.setLocation(37.334370, -121.895081);
-    deAnza.putproperty("getName", "deAnza");
+    deAnza.putproperty("name", "deAnza");
     deAnza.POST();
 
     SDKTestUtils.indexSleep();

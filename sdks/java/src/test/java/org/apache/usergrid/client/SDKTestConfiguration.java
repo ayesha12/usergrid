@@ -8,6 +8,11 @@ import org.apache.usergrid.java.client.UsergridEnums.UsergridAuthMode;
 public class SDKTestConfiguration {
   public static final String APP_CLIENT_ID =  "b3U6ETo16hOkEeWr70FRIvzssA";//"b3U66ne33W4OEeWXmAIj6QFb-Q";
   public static final String APP_CLIENT_SECRET = "b3U6fBkR5o4B9S5Lv93rPY5JYk17rDc";//"b3U6PxbpQiTrXKCWu0n1CjK1uTZXuG4";
+
+
+  public static final String APP_Email =  "b3U6ETo16hOkEeWr70FRIvzssA";//"b3U66ne33W4OEeWXmAIj6QFb-Q";
+  public static final String APP_UserName =  "ayesha.amrin@gmail.com";//"b3U66ne33W4OEeWXmAIj6QFb-Q";
+  public static final String APP_Password = "Blueprints_usergrid_0302";//"b3U6PxbpQiTrXKCWu0n1CjK1uTZXuG4";
   public static final String USERGRID_URL = "https://api.usergrid.com/";  //https://ug21.e2e.apigee.net";
   public static final String ORG_NAME = "ayesha";
   public static final String APP_NAME = "sandbox";
