@@ -53,24 +53,16 @@ public class UsergridClient {
     private UsergridUser currentUser = null;
     private UsergridAuth tempAuth = null;
 
-    public static final String HTTP_POST = "POST";
-    public static final String HEADER_AUTHORIZATION = "Authorization";
-    public static final String BEARER = "Bearer ";
     public static final String HTTP_PUT = "PUT";
     public static final String HTTP_GET = "GET";
     public static final String HTTP_DELETE = "DELETE";
     public static final String STR_GROUPS = "groups";
     public static final String STR_USERS = "users";
-    public static final String STR_DEFAULT = "default";
-    public static final String STR_BLANK = "";
 
     private static final Logger log = LoggerFactory.getLogger(UsergridClient.class);
     private static final String CONNECTIONS = "connections";
     private static final String CONNECTING = "connecting";
-    private static final String STRING_EXPIRES_IN = "expires_in";
 
-    protected String clientId;
-    protected String clientSecret;
     public javax.ws.rs.client.Client restClient;
 
     public UsergridAuth authForRequests() {
@@ -214,65 +206,7 @@ public class UsergridClient {
     public void setCurrentUser(final UsergridUser loggedInUser) {
         this.currentUser = loggedInUser;
     }
-//
-//    /**
-//     * High-level Usergrid API request.
-//     *
-//     * @param method   the HTTP Method
-//     * @param params   a Map of query parameters
-//     * @param data     the object to use in the body
-//     * @param segments the segments/of/the/uri
-//     * @return a UsergridResponse object
-//     */
-//    public UsergridResponse apiRequest(final String method,
-//                                       final Map<String, Object> params,
-//                                       Object data,
-//                                       final String... segments) {
-//
-//        ValidAppArguments();
-//        // default to JSON
-//        String contentType = MediaType.APPLICATION_JSON;
-//        Entity entity = Entity.entity(data == null ? STR_BLANK : data, contentType);
-//
-//        // create the target from the base API URL
-//        WebTarget webTarget = restClient.target(config.baseUrl);
-//        for (String segment : segments)
-//            if (segment != null)
-//                webTarget = webTarget.path(segment);
-//
-//        if ((method.equals(HTTP_GET) || method.equals(HTTP_PUT) || method.equals(HTTP_POST) || method.equals(HTTP_DELETE)) && !isEmpty(params)) {
-//            for (Map.Entry<String, Object> param : params.entrySet()) {
-//                webTarget = webTarget.queryParam(param.getKey(), param.getValue());
-//            }
-//        }
-//
-//        System.out.println(webTarget);
-//        Invocation.Builder invocationBuilder = webTarget.request(contentType);
-//        // todo: need to evaluate other authentication options here as well
-//        UsergridAuth authForRequest = this.authForRequests();
-//        if (authForRequest != null && authForRequest.accessToken != null) {
-//            String auth = BEARER + authForRequest.accessToken;
-//            invocationBuilder.header(HEADER_AUTHORIZATION, auth);
-//        }
-//
-//        try {
-//            if (Objects.equals(method, HTTP_POST) || Objects.equals(method, HTTP_PUT)) {
-//
-//                UsergridResponse response = invocationBuilder.method(method,
-//                        entity,
-//                        UsergridResponse.class);
-//                return response;
-//
-//            } else {
-//                return invocationBuilder.method(method,
-//                        null,
-//                        UsergridResponse.class);
-//            }
-//        } catch (Exception badRequestException) {
-//            return UsergridResponse.fromException(badRequestException);
-//        }
-//
-//    }
+
 
     public void ValidAppArguments() {
         //TODO: need to add any other checks? Return void ?
@@ -444,8 +378,6 @@ public class UsergridClient {
      */
     @Nullable
     public UsergridResponse authenticateApp(UsergridAppAuth auth){
-//    final String clientId,
-//                                            final String clientSecret)
 
         this.config.appAuth = auth;
         UsergridRequestmanager rqManager = new UsergridRequestmanager(this);
@@ -576,7 +508,6 @@ public class UsergridClient {
     public UsergridResponse getEntity(final String type, final String id) {
 
         String[] segments = {config.orgId, config.appId,  type, id};
-
         UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET,MediaType.APPLICATION_JSON_TYPE,
                 config.baseUrl,null,null,segments);
         return UsergridRequestmanager.performRequest(request);
