@@ -22,87 +22,79 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize.Inclusion;
-import org.apache.usergrid.java.client.Usergrid;
-import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.model.UsergridEntity;
-import org.apache.usergrid.java.client.model.UsergridUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.core.Response;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-
-import static org.apache.usergrid.java.client.utils.JsonUtils.toJsonString;
 
 public class UsergridResponseError {
 
-  public static String errorName;
-  public static String errorDescription;
-  public static String errorException;
-  public static int code;
+    public static String errorName;
+    public static String errorDescription;
+    public static String errorException;
+    public static int code;
 
-  private final Map<String, JsonNode> properties = new HashMap<String, JsonNode>();
-  private int statuscode;
-  private Map<String, JsonNode> header;
-  private static final Logger log = LoggerFactory.getLogger(UsergridEntity.class);
+    private final Map<String, JsonNode> properties = new HashMap<String, JsonNode>();
+    private int statuscode;
+    private Map<String, JsonNode> header;
+    private static final Logger log = LoggerFactory.getLogger(UsergridEntity.class);
 
-  public UsergridResponseError() {
-  }
+    public UsergridResponseError() {
+    }
 
-  // TODO : public init();
-  public UsergridResponseError(String name, int code, String description,String errorException){
-    this.errorName = name;
-    this.code = code;
-    this.errorDescription = description;
-    this.errorException = errorException;
+    // TODO : public init();
+    public UsergridResponseError(String name, int code, String description, String errorException) {
+        this.errorName = name;
+        this.code = code;
+        this.errorDescription = description;
+        this.errorException = errorException;
 
-  }
+    }
 
-  @JsonAnyGetter
-  public Map<String, JsonNode> getProperties() {
-    return properties;
-  }
+    @JsonAnyGetter
+    public Map<String, JsonNode> getProperties() {
+        return properties;
+    }
 
-  @JsonAnySetter
-  public void setProperty(String key, JsonNode value) {
-    properties.put(key, value);
-  }
+    @JsonAnySetter
+    public void setProperty(String key, JsonNode value) {
+        properties.put(key, value);
+    }
 
-  @JsonSerialize(include = Inclusion.NON_NULL)
-  public String getError() {
-    return errorException;
-  }
+    @JsonSerialize(include = Inclusion.NON_NULL)
+    public String getError() {
+        return errorException;
+    }
 
-  public void setError(String error) {
-    this.errorException = error;
-  }
+    public void setError(String error) {
+        this.errorException = error;
+    }
 
-  @JsonSerialize(include = Inclusion.NON_NULL)
-  @JsonProperty("error_description")
-  public String getErrorDescription() {
-    return errorDescription;
-  }
+    @JsonSerialize(include = Inclusion.NON_NULL)
+    @JsonProperty("error_description")
+    public String getErrorDescription() {
+        return errorDescription;
+    }
 
-  @JsonProperty("error_description")
-  public void setErrorDescription(String errorDescription) {
-    this.errorDescription = errorDescription;
-  }
+    @JsonProperty("error_description")
+    public void setErrorDescription(String errorDescription) {
+        this.errorDescription = errorDescription;
+    }
 
 
-  public int getStatusCode(){
-    return this.statuscode;
-  }
+    public int getStatusCode() {
+        return this.statuscode;
+    }
 
-  public void setStatusCode(int status) { this.statuscode = status; }
+    public void setStatusCode(int status) {
+        this.statuscode = status;
+    }
 
-  public boolean ok(){
-    if (this.statuscode < 400 )
-      return true;
-    return false;
-  }
+    public boolean ok() {
+        if (this.statuscode < 400)
+            return true;
+        return false;
+    }
 }

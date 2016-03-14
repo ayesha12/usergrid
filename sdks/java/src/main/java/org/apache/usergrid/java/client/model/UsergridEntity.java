@@ -21,7 +21,8 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.*;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.POJONode;
 import org.apache.usergrid.java.client.Direction;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
@@ -168,6 +169,7 @@ public class UsergridEntity {
 
     /**
      * Set the property
+     *
      * @param name
      * @param value
      */
@@ -429,13 +431,13 @@ public class UsergridEntity {
 
     public UsergridResponse disconnect(final String connectionType,
                                        final String targetuuid) throws ClientException {
-        return Usergrid.getInstance().disconnect(this.getType(),this.getName(),connectionType,targetuuid);
+        return Usergrid.getInstance().disconnect(this.getType(), this.getName(), connectionType, targetuuid);
 
     }
 
     public UsergridResponse disconnect(final String connectionType,
-                                       final String type,final String name) throws ClientException {
-        return Usergrid.getInstance().disconnect(this.getType(),this.getName(),connectionType,type,name);
+                                       final String type, final String name) throws ClientException {
+        return Usergrid.getInstance().disconnect(this.getType(), this.getName(), connectionType, type, name);
 
     }
 
@@ -506,18 +508,18 @@ public class UsergridEntity {
 
     public void prepend(String propertyName, Object arrToInsert) {
         ArrayList<Object> initialArr = getArrayNode(getEntityProperty(propertyName));
-        this.insert(propertyName,arrToInsert,0);
+        this.insert(propertyName, arrToInsert, 0);
 
     }
 
     public void append(String propertyName, ArrayList arrToInsert) {
         ArrayList<Object> initialArr = getArrayNode(getEntityProperty(propertyName));
-        this.insert(propertyName,arrToInsert,initialArr.size()+10);
+        this.insert(propertyName, arrToInsert, initialArr.size() + 10);
     }
 
 
     public void insert(String propertyName, Object arrToInsert, int indx) {
-        if(indx < 0)
+        if (indx < 0)
             indx = 0;
         ArrayList<Object> initialArr = getArrayNode(getEntityProperty(propertyName));
         ArrayList<Object> arrayToInsert = getArrayNode(arrToInsert);
@@ -541,7 +543,7 @@ public class UsergridEntity {
 
     public void shift(String propertyName) {
         Object entityProperty = getEntityProperty(propertyName);
-        if (entityProperty.getClass() ==POJONode.class) {
+        if (entityProperty.getClass() == POJONode.class) {
             ArrayList<Object> newArrNode = (ArrayList) ((POJONode) entityProperty).getPojo();
             if (newArrNode.size() == 0)
                 return;
@@ -558,10 +560,9 @@ public class UsergridEntity {
 
         ArrayList<Object> arrayList = new ArrayList<>();
 
-        if(arrayToInsert.getClass() == POJONode.class){
+        if (arrayToInsert.getClass() == POJONode.class) {
             arrayList = (ArrayList) ((POJONode) arrayToInsert).getPojo();
-        }
-        else if (arrayToInsert.getClass() == ArrayList.class)
+        } else if (arrayToInsert.getClass() == ArrayList.class)
             return (ArrayList<Object>) arrayToInsert;
         else
             arrayList.add(arrayToInsert);

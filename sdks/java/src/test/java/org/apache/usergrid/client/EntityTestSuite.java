@@ -29,7 +29,11 @@ public class EntityTestSuite {
   @Before
   public void before() {
     UsergridAppAuth appAuth = new UsergridAppAuth(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
-    Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME,SDKTestConfiguration.authFallBack,appAuth);
+
+    Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME,
+            SDKTestConfiguration.APP_NAME,SDKTestConfiguration.authFallBack);
+
+
     Usergrid.authorizeAppClient(Usergrid.getInstance().config.appAuth.clientId,Usergrid.getInstance().config.appAuth.clientSecret);
   }
 

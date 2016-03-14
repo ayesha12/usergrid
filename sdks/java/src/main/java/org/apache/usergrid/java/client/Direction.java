@@ -11,7 +11,7 @@ public enum Direction {
     }
 
     public Direction opposite() {
-        return this.equals(OUT)?IN:(this.equals(IN)?OUT:BOTH);
+        return this.equals(OUT) ? IN : (this.equals(IN) ? OUT : BOTH);
     }
 
     static {

@@ -16,36 +16,17 @@
  */
 package org.apache.usergrid.java.client.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridAuth;
-import org.apache.usergrid.java.client.UsergridClient;
-import org.apache.usergrid.java.client.query.UsergridQuery;
-import org.apache.usergrid.java.client.response.UsergridResponse;
-import org.apache.usergrid.java.client.utils.JsonUtils;
-import org.codehaus.jettison.json.JSONException;
-
-import java.util.HashMap;
-import java.util.List;
-
-import static com.fasterxml.jackson.databind.annotation.JsonSerialize.Inclusion.NON_NULL;
-import static org.apache.usergrid.java.client.utils.JsonUtils.*;
 
 public class UsergridUserAuth extends UsergridAuth {
 
-	public final static String ENTITY_TYPE = "user";
+    public final static String ENTITY_TYPE = "user";
+    public static String username = null;
+    public static String password = null;
 
-	public static String username = null;
-	public static String password = null;
-
-
-	public UsergridUserAuth(String username,String password){
-		super();
-		this.username = username;
-		this.password = password;
-	}
-
-
+    public UsergridUserAuth(String username, String password) {
+        super();
+        this.username = username;
+        this.password = password;
+    }
 }

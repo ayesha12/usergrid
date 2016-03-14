@@ -16,8 +16,7 @@
  */
 package org.apache.usergrid.java.client.utils;
 
-import static java.net.URLEncoder.encode;
-import static org.apache.usergrid.java.client.utils.ObjectUtils.isEmpty;
+import org.apache.usergrid.java.client.exception.ClientException;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
@@ -26,7 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.usergrid.java.client.exception.ClientException;
+import static java.net.URLEncoder.encode;
+import static org.apache.usergrid.java.client.utils.ObjectUtils.isEmpty;
 
 public class UrlUtils {
 

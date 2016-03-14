@@ -25,37 +25,37 @@ import java.io.IOException;
  */
 public class UsergridException extends IOException {
 
-  private int responseCode;
+    private int responseCode;
 
-  private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-  /**
-   * @param message
-   * @param cause
-   */
-  public UsergridException(final String message,
-                           final Throwable cause) {
-    super(message, cause);
-  }
+    /**
+     * @param message
+     * @param cause
+     */
+    public UsergridException(final String message,
+                             final Throwable cause) {
+        super(message, cause);
+    }
 
-  public UsergridException(final String message,
-                           final Throwable cause,
-                           final int responseCode) {
-    super(message, cause);
-    this.responseCode = responseCode;
-  }
+    public UsergridException(final String message,
+                             final Throwable cause,
+                             final int responseCode) {
+        super(message, cause);
+        this.responseCode = responseCode;
+    }
 
-  public UsergridException(final String message,
-                           final int responseCode) {
-    super(message);
-    this.responseCode = responseCode;
-  }
+    public UsergridException(final String message,
+                             final int responseCode) {
+        super(message);
+        this.responseCode = responseCode;
+    }
 
-  public UsergridException(final String s) {
-    super(s);
-  }
+    public UsergridException(final String s) {
+        super(s);
+    }
 
-  public int getResponseCode() {
-    return responseCode;
-  }
+    public int getResponseCode() {
+        return responseCode;
+    }
 }

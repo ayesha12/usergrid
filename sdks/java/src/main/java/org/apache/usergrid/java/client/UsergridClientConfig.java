@@ -24,7 +24,7 @@ import org.apache.usergrid.java.client.model.UsergridUserAuth;
  * The Client class for accessing the Usergrid API. Start by instantiating this
  * class though the appropriate constructor.
  */
-public class UsergridClientAppConfig {
+public class UsergridClientConfig {
 
     // The organization identifier.
     public String orgId = null;
@@ -42,23 +42,22 @@ public class UsergridClientAppConfig {
 
     public UsergridUserAuth userAuth;
 
-    public UsergridClientAppConfig(String orgId, String appId) {
+    public UsergridClientConfig(String orgId, String appId) {
         this.orgId = orgId;
         this.appId = appId;
     }
 
-    public UsergridClientAppConfig(String appId, String orgId, String baseUrl) {
+    public UsergridClientConfig(String appId, String orgId, String baseUrl) {
         this.orgId = orgId;
         this.appId = appId;
         this.baseUrl = baseUrl;
     }
 
-    public UsergridClientAppConfig(String orgId, String appId, String baseUrl, UsergridAuthMode authFallback, UsergridAppAuth appAuth) {
+    public UsergridClientConfig(String orgId, String appId, String baseUrl, UsergridAuthMode authFallback) {
         this.orgId = orgId;
         this.appId = appId;
         this.baseUrl = baseUrl;
         this.authMode = authFallback;
-        this.appAuth = appAuth;
     }
 
 }

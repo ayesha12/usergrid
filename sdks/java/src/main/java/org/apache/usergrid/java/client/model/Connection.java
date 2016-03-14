@@ -16,14 +16,14 @@
  */
 package org.apache.usergrid.java.client.model;
 
-import static org.apache.usergrid.java.client.utils.JsonUtils.setStringProperty;
-import static org.apache.usergrid.java.client.utils.JsonUtils.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.usergrid.java.client.UsergridClient;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import org.apache.usergrid.java.client.UsergridClient;
+import static org.apache.usergrid.java.client.utils.JsonUtils.getStringProperty;
+import static org.apache.usergrid.java.client.utils.JsonUtils.setStringProperty;
 
 
 /**
@@ -31,53 +31,53 @@ import org.apache.usergrid.java.client.UsergridClient;
  */
 public class Connection {
 
-  public final static String LABEL = "label";
-  public final static String PROPERTY_ID = "connectionId";
+    public final static String LABEL = "label";
+    public final static String PROPERTY_ID = "connectionId";
 
-  protected Map<String, JsonNode> properties = new HashMap<String, JsonNode>();
+    protected Map<String, JsonNode> properties = new HashMap<String, JsonNode>();
 
-  UsergridEntity source;
-  UsergridEntity target;
+    UsergridEntity source;
+    UsergridEntity target;
 
-  UsergridClient client;
+    UsergridClient client;
 
-  public Connection(UsergridEntity source, String label, UsergridEntity target) {
-    this.source = source;
-    this.target = target;
-    this.setLabel(label);
-  }
+    public Connection(UsergridEntity source, String label, UsergridEntity target) {
+        this.source = source;
+        this.target = target;
+        this.setLabel(label);
+    }
 
-  protected Connection() {
+    protected Connection() {
 
-  }
+    }
 
-  public void setLabel(String label) {
-    setStringProperty(properties, LABEL, label);
-  }
+    public void setLabel(String label) {
+        setStringProperty(properties, LABEL, label);
+    }
 
-  public void setConnectionID(String connID) {
-    setStringProperty(properties, PROPERTY_ID, connID);
-  }
+    public void setConnectionID(String connID) {
+        setStringProperty(properties, PROPERTY_ID, connID);
+    }
 
-  public String getLabel() {
-    return getStringProperty(properties, LABEL);
-  }
+    public String getLabel() {
+        return getStringProperty(properties, LABEL);
+    }
 
 
-  public void setClientConnection(UsergridClient client) {
-    this.client = client;
-  }
+    public void setClientConnection(UsergridClient client) {
+        this.client = client;
+    }
 
-  public UsergridClient getClientConnection() {
-    return this.client;
-  }
+    public UsergridClient getClientConnection() {
+        return this.client;
+    }
 
-  public String getPropertyId() {
-    return getStringProperty(properties, PROPERTY_ID);
-  }
+    public String getPropertyId() {
+        return getStringProperty(properties, PROPERTY_ID);
+    }
 
-  public long getTimestamp() {
-    return 0;
-  }
+    public long getTimestamp() {
+        return 0;
+    }
 
 }

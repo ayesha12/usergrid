@@ -8,12 +8,12 @@ import org.apache.usergrid.java.client.response.UsergridResponse;
  */
 public interface LegacyQueryResult {
 
-  UsergridResponse getLastResponse();
+    UsergridResponse getLastResponse();
 
-  boolean more();
+    boolean more();
 
-  LegacyQueryResult next();
+    LegacyQueryResult next();
 
-  UsergridEntity first();
+    UsergridEntity first();
 }
 

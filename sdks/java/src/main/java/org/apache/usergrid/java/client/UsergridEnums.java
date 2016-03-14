@@ -29,7 +29,7 @@ public class UsergridEnums {
     }
 
     /**
-     An enumeration for defining the HTTP methods used by Usergrid.
+     * An enumeration for defining the HTTP methods used by Usergrid.
      */
     public enum UsergridHttpMethod {
         GET {

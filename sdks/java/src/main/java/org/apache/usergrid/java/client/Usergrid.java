@@ -1,5 +1,6 @@
 package org.apache.usergrid.java.client;
 
+import org.apache.usergrid.java.client.UsergridEnums.UsergridAuthMode;
 import org.apache.usergrid.java.client.model.UsergridAppAuth;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.model.UsergridUserAuth;
@@ -7,7 +8,6 @@ import org.apache.usergrid.java.client.query.LegacyQueryResult;
 import org.apache.usergrid.java.client.query.QueryResult;
 import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;
-import org.apache.usergrid.java.client.UsergridEnums.UsergridAuthMode;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -59,24 +59,22 @@ public class Usergrid {
             throw new IllegalArgumentException("One of the input arguments is empty.");
         } else {
             UsergridClient client = getInstance(STR_DEFAULT);
-            UsergridClientAppConfig conf = new UsergridClientAppConfig(orgName, appName, apiUrl, null, null);
+            UsergridClientConfig conf = new UsergridClientConfig(orgName, appName, apiUrl, null);
             client.config = conf;
             initialized = true;
         }
 
     }
 
-    public static void initSharedInstance(final String apiUrl, final String orgName, final String appName, final UsergridAuthMode authMode, final UsergridAppAuth appAuth ) {
-
+    public static void initSharedInstance(final String apiUrl, final String orgName, final String appName, final UsergridAuthMode authMode) {
         if (isEmpty(appName) || isEmpty(orgName) || isEmpty(apiUrl)) {
             throw new IllegalArgumentException("One of the input arguments is empty.");
         } else {
             UsergridClient client = getInstance(STR_DEFAULT);
-            UsergridClientAppConfig conf = new UsergridClientAppConfig(orgName, appName, apiUrl, authMode, appAuth);
+            UsergridClientConfig conf = new UsergridClientConfig(orgName, appName, apiUrl, authMode);
             client.config = conf;
             initialized = true;
         }
-
     }
 
 
@@ -164,9 +162,9 @@ public class Usergrid {
 
 
     public static LegacyQueryResult queryEntities(final String method,
-                                           final Map<String, Object> params,
-                                           final Object data,
-                                           final String... segments) {
+                                                  final Map<String, Object> params,
+                                                  final Object data,
+                                                  final String... segments) {
 
         return Usergrid.getInstance().queryEntities(method, params, data, segments);
     }
@@ -182,9 +180,9 @@ public class Usergrid {
 
 
     public static LegacyQueryResult queryUsersWithinLocation(final float distance,
-                                                      final float lattitude,
-                                                      final float longitude,
-                                                      final String ql) {
+                                                             final float lattitude,
+                                                             final float longitude,
+                                                             final String ql) {
         return Usergrid.getInstance().queryUsersWithinLocation(distance, lattitude, longitude, ql);
     }
 
@@ -197,29 +195,29 @@ public class Usergrid {
     }
 
     public static UsergridResponse deleteEntity(final String type,
-                                         final String id) {
+                                                final String id) {
         return Usergrid.getInstance().deleteEntity(type, id);
     }
 
     public static UsergridResponse connect(final UsergridEntity sourceVertex,
-                                    final String connetionName,
-                                    final UsergridEntity targetVertex
+                                           final String connetionName,
+                                           final UsergridEntity targetVertex
     ) {
         return Usergrid.getInstance().connect(sourceVertex, connetionName, targetVertex);
     }
 
     public static UsergridResponse connect(final UsergridEntity sourceVertex,
-                                    final String connetionName,
-                                    final String targetVertexUUid
+                                           final String connetionName,
+                                           final String targetVertexUUid
     ) {
         return Usergrid.getInstance().connect(sourceVertex, connetionName, targetVertexUUid);
     }
 
 
     public static UsergridResponse connect(final String connectingEntityType,
-                                    final String connectingEntityId,
-                                    final String connectionType,
-                                    final String connectedEntityId) {
+                                           final String connectingEntityId,
+                                           final String connectionType,
+                                           final String connectedEntityId) {
 
         return Usergrid.getInstance().connect(connectingEntityType, connectingEntityId, connectionType, connectedEntityId);
     }
@@ -236,48 +234,48 @@ public class Usergrid {
      * @return
      */
     public static UsergridResponse connect(final String connectingEntityType,
-                                    final String connectingEntityId,
-                                    final String connectionType,
-                                    final String connectedEntityType,
-                                    final String connectedEntityName) {
+                                           final String connectingEntityId,
+                                           final String connectionType,
+                                           final String connectedEntityType,
+                                           final String connectedEntityName) {
 
         return Usergrid.getInstance().connect(connectingEntityType, connectingEntityId, connectionType, connectedEntityType, connectedEntityName);
     }
 
     public static UsergridResponse disconnect(final String connectingEntityType,
-                                       final String connectingEntityId,
-                                       final String connectionType,
-                                       final String connectedEntityId) {
+                                              final String connectingEntityId,
+                                              final String connectionType,
+                                              final String connectedEntityId) {
 
         return disconnect(connectingEntityType, connectingEntityId, connectionType, connectedEntityId);
     }
 
     public static UsergridResponse disconnect(final String connectingEntityType,
-                                       final String connectingEntityId,
-                                       final String connectionType,
-                                       final String connectedEntitytype,
-                                       final String connectedEntityName) {
+                                              final String connectingEntityId,
+                                              final String connectionType,
+                                              final String connectedEntitytype,
+                                              final String connectedEntityName) {
 
         return Usergrid.getInstance().disconnect(connectingEntityType, connectingEntityId, connectionType, connectedEntitytype, connectedEntityName);
     }
 
 
     public static UsergridResponse disconnect(final UsergridEntity sourceVertex,
-                                       final String connetionName,
-                                       final UsergridEntity targetVertex) {
+                                              final String connetionName,
+                                              final UsergridEntity targetVertex) {
         return Usergrid.getInstance().disconnect(sourceVertex, connetionName, targetVertex);
     }
 
 
     public static LegacyQueryResult queryEntityConnections(final String connectingEntityType,
-                                                    final String connectingEntityId,
-                                                    final String connectionType, String ql) {
+                                                           final String connectingEntityId,
+                                                           final String connectionType, String ql) {
 
         return queryEntityConnections(connectingEntityType, connectingEntityId, connectionType, ql);
     }
 
     protected static String makeLocationQL(float distance, double lattitude,
-                                    double longitude, String ql) {
+                                           double longitude, String ql) {
         String within = String.format("within %d of %d , %d", distance, lattitude, longitude);
         ql = ql == null ? within : within + " and " + ql;
 
@@ -285,19 +283,19 @@ public class Usergrid {
     }
 
     public static LegacyQueryResult queryEntityConnectionsWithinLocation(final String connectingEntityType,
-                                                                  final String connectingEntityId,
-                                                                  final String connectionType,
-                                                                  final float distance,
-                                                                  float latitude,
-                                                                  final float longitude,
-                                                                  final String ql) {
+                                                                         final String connectingEntityId,
+                                                                         final String connectionType,
+                                                                         final float distance,
+                                                                         float latitude,
+                                                                         final float longitude,
+                                                                         final String ql) {
 
         return Usergrid.getInstance().queryEntityConnectionsWithinLocation(connectingEntityType, connectingEntityId, connectionType, distance, latitude, longitude, ql);
     }
 
 
     public static UsergridResponse queryEdgesForVertex(final String srcType,
-                                                final String srcID) {
+                                                       final String srcID) {
 
         return Usergrid.getInstance().queryEdgesForVertex(srcType, srcID);
     }
@@ -311,7 +309,7 @@ public class Usergrid {
     }
 
     public static UsergridResponse PUT(final String type,
-                                final String entityId) {
+                                       final String entityId) {
         return Usergrid.getInstance().PUT(type, entityId);
     }
 
@@ -320,7 +318,7 @@ public class Usergrid {
     }
 
     public static UsergridResponse POST(final String type,
-                                 final String entityId) {
+                                        final String entityId) {
         return Usergrid.getInstance().POST(type, entityId);
     }
 
@@ -330,7 +328,7 @@ public class Usergrid {
     }
 
     public static UsergridResponse DELETE(final String collection,
-                                   final String entityId) {
+                                          final String entityId) {
 
         return Usergrid.getInstance().DELETE(collection, entityId);
     }

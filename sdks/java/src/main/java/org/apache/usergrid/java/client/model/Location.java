@@ -8,31 +8,31 @@ import java.io.Serializable;
 /**
  * Created by Jeff West @ ApigeeCorporation on 9/3/15.
  */
-public class Location implements Serializable{
-  float latitude, longitude;
+public class Location implements Serializable {
+    float latitude, longitude;
 
-  public Location(float latitude, float longitude) {
-    this.latitude = latitude;
-    this.longitude = longitude;
-  }
+    public Location(float latitude, float longitude) {
+        this.latitude = latitude;
+        this.longitude = longitude;
+    }
 
-  @JsonSerialize
-  public float getLatitude() {
-    return latitude;
-  }
+    @JsonSerialize
+    public float getLatitude() {
+        return latitude;
+    }
 
-  @JsonProperty("latitude")
-  public void setLatitude(float latitude) {
-    this.latitude = latitude;
-  }
+    @JsonProperty("latitude")
+    public void setLatitude(float latitude) {
+        this.latitude = latitude;
+    }
 
-  @JsonSerialize
-  public float getLongitude() {
-    return longitude;
-  }
+    @JsonSerialize
+    public float getLongitude() {
+        return longitude;
+    }
 
-  @JsonProperty("longitude")
-  public void setLongitude(float longitude) {
-    this.longitude = longitude;
-  }
+    @JsonProperty("longitude")
+    public void setLongitude(float longitude) {
+        this.longitude = longitude;
+    }
 }

@@ -2,6 +2,7 @@ package org.apache.usergrid.client;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.DoubleNode;
 import org.apache.usergrid.java.client.Usergrid;
+import org.apache.usergrid.java.client.model.UsergridAppAuth;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.query.QueryResult;
 import org.apache.usergrid.java.client.query.UsergridQuery;
@@ -24,7 +25,7 @@ public class QueryTestSuite {
 
   @Before
   public void before() {
-    Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME,SDKTestConfiguration.authFallBack,null);
+    Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME,SDKTestConfiguration.authFallBack);
     Usergrid.authorizeAppClient(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
   }
 

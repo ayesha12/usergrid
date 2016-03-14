@@ -20,33 +20,33 @@ import static org.apache.usergrid.java.client.utils.JsonUtils.toJsonString;
 
 public class AggregateCounter {
 
-	private long timestamp;
-	private long value;
+    private long timestamp;
+    private long value;
 
-	public AggregateCounter(long timestamp, long value) {
-		this.timestamp = timestamp;
-		this.value = value;
-	}
+    public AggregateCounter(long timestamp, long value) {
+        this.timestamp = timestamp;
+        this.value = value;
+    }
 
-	public long getTimestamp() {
-		return timestamp;
-	}
+    public long getTimestamp() {
+        return timestamp;
+    }
 
-	public void setTimestamp(long timestamp) {
-		this.timestamp = timestamp;
-	}
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
 
-	public long getValue() {
-		return value;
-	}
+    public long getValue() {
+        return value;
+    }
 
-	public void setValue(long value) {
-		this.value = value;
-	}
+    public void setValue(long value) {
+        this.value = value;
+    }
 
-	@Override
-	public String toString() {
-		return toJsonString(this);
-	}
+    @Override
+    public String toString() {
+        return toJsonString(this);
+    }
 
 }

@@ -23,33 +23,33 @@ package org.apache.usergrid.java.client.exception;
  */
 public class ClientException extends RuntimeException {
 
-  private int responseCode;
+    private int responseCode;
 
-  private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-  /**
-   * @param message
-   * @param cause
-   */
-  public ClientException(String message, Throwable cause) {
-    super(message, cause);
-  }
+    /**
+     * @param message
+     * @param cause
+     */
+    public ClientException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-  public ClientException(String message, Throwable cause, int responseCode) {
-    super(message, cause);
-    this.responseCode = responseCode;
-  }
+    public ClientException(String message, Throwable cause, int responseCode) {
+        super(message, cause);
+        this.responseCode = responseCode;
+    }
 
-  public ClientException(String message, int responseCode) {
-    super(message);
-    this.responseCode = responseCode;
-  }
+    public ClientException(String message, int responseCode) {
+        super(message);
+        this.responseCode = responseCode;
+    }
 
-  public ClientException(String s) {
-    super(s);
-  }
+    public ClientException(String s) {
+        super(s);
+    }
 
-  public int getResponseCode() {
-    return responseCode;
-  }
+    public int getResponseCode() {
+        return responseCode;
+    }
 }

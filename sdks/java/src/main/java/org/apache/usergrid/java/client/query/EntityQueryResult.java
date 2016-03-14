@@ -16,97 +16,97 @@ import java.util.Map;
  */
 public class EntityQueryResult implements LegacyQueryResult {
 
-  final String method;
-  final Map<String, Object> params;
-  final Object data;
-  final String[] segments;
-  final UsergridResponse lastResponse;
-  final UsergridClient usergrid;
+    final String method;
+    final Map<String, Object> params;
+    final Object data;
+    final String[] segments;
+    final UsergridResponse lastResponse;
+    final UsergridClient usergrid;
 
 
+    public EntityQueryResult(final UsergridClient usergrid,
+                             final UsergridResponse lastResponse,
+                             final String method,
+                             final Map<String, Object> params,
+                             final Object data,
+                             final String[] segments) {
 
-  public EntityQueryResult(final UsergridClient usergrid,
-                           final UsergridResponse lastResponse,
-                           final String method,
-                           final Map<String, Object> params,
-                           final Object data,
-                           final String[] segments) {
-
-    this.usergrid = usergrid;
-    this.lastResponse = lastResponse;
-    this.method = method;
-    this.params = params;
-    this.data = data;
-    this.segments = segments;
-  }
-
-  private EntityQueryResult(final UsergridClient usergrid,
-                            final UsergridResponse lastResponse,
-                            final EntityQueryResult q) {
-
-    this.usergrid = usergrid;
-    this.lastResponse = lastResponse;
-    method = q.method;
-    params = q.params;
-    data = q.data;
-    segments = q.segments;
-  }
-
-  /**
-   * @return the api lastResponse of the last request
-   */
-  public UsergridResponse getLastResponse() {
-    return lastResponse;
-  }
-
-  /**
-   * @return true if the server indicates more results are available
-   */
-  public boolean more() {
-
-    return (lastResponse != null)
-        && (lastResponse.getCursor() != null)
-        && (lastResponse.getCursor().length() > 0);
-  }
-
-  /**
-   * Performs a request for the next set of results
-   *
-   * @return query that contains results and where to get more from.
-   */
-  public LegacyQueryResult next() {
-
-    if (more()) {
-
-      Map<String, Object> nextParams = null;
-
-      if (params != null) {
-
-        nextParams = new HashMap<>(params);
-
-      } else {
-
-        nextParams = new HashMap<>();
-      }
-
-      nextParams.put("cursor", lastResponse.getCursor());
-
-
-      UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.valueOf(method), MediaType.APPLICATION_JSON_TYPE,
-              this.usergrid.config.baseUrl,nextParams,data,segments);
-
-
-      UsergridResponse nextResponse = UsergridRequestmanager.performRequest(request); //this.usergrid.apiRequest(method, nextParams, data, segments);
-
-      return new EntityQueryResult(this.usergrid, nextResponse, this);
+        this.usergrid = usergrid;
+        this.lastResponse = lastResponse;
+        this.method = method;
+        this.params = params;
+        this.data = data;
+        this.segments = segments;
     }
 
-    return null;
-  }
+    private EntityQueryResult(final UsergridClient usergrid,
+                              final UsergridResponse lastResponse,
+                              final EntityQueryResult q) {
 
-  @Override
-  public UsergridEntity first() {
-    return null;
-  }
+        this.usergrid = usergrid;
+        this.lastResponse = lastResponse;
+        method = q.method;
+        params = q.params;
+        data = q.data;
+        segments = q.segments;
+    }
+
+    /**
+     * @return the api lastResponse of the last request
+     */
+    public UsergridResponse getLastResponse() {
+        return lastResponse;
+    }
+
+    /**
+     * @return true if the server indicates more results are available
+     */
+    public boolean more() {
+
+        return (lastResponse != null)
+                && (lastResponse.getCursor() != null)
+                && (lastResponse.getCursor().length() > 0);
+    }
+
+    /**
+     * Performs a request for the next set of results
+     *
+     * @return query that contains results and where to get more from.
+     */
+    public LegacyQueryResult next() {
+
+        if (more()) {
+
+            Map<String, Object> nextParams = null;
+
+            if (params != null) {
+
+                nextParams = new HashMap<>(params);
+
+            } else {
+
+                nextParams = new HashMap<>();
+            }
+
+            nextParams.put("cursor", lastResponse.getCursor());
+
+
+            UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.valueOf(method), MediaType.APPLICATION_JSON_TYPE,
+                    this.usergrid.config.baseUrl, nextParams, data, segments);
+
+
+            UsergridRequestmanager reqManager = new UsergridRequestmanager(this.usergrid);
+            UsergridResponse nextResponse = reqManager.performRequest(request); //this.usergrid.apiRequest(method, nextParams, data, segments);
+
+            return new EntityQueryResult(this.usergrid, nextResponse, this);
+        }
+
+        return null;
+    }
+
+    @Override
+    public UsergridEntity first() {
+        return null;
+    }
 
 }

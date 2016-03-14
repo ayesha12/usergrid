@@ -20,14 +20,14 @@ import org.apache.usergrid.java.client.UsergridAuth;
 
 public class UsergridAppAuth extends UsergridAuth {
 
-	public static String clientId = null;
-	public static String clientSecret = null;
+    public static String clientId = null;
+    public static String clientSecret = null;
 
 
-	public UsergridAppAuth(String client_id, String client_secret){
-		super();
-		this.clientId = client_id;
-		this.clientSecret = client_secret;
-	}
+    public UsergridAppAuth(String client_id, String client_secret) {
+        super();
+        this.clientId = client_id;
+        this.clientSecret = client_secret;
+    }
 
 }
