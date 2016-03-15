@@ -49,6 +49,23 @@ public class Usergrid {
     /**
      * Instantiate a new instance of usergrid.
      *
+     * @param ugConfig
+     */
+    public static void initSharedInstance(final UsergridClientConfig ugConfig) {
+        if (isEmpty(ugConfig.appId) || isEmpty(ugConfig.orgId) || isEmpty(ugConfig.baseUrl)) {
+            throw new IllegalArgumentException("One of the input arguments is empty.");
+        } else {
+            UsergridClient client = getInstance(STR_DEFAULT);
+            client.config = ugConfig;
+            initialized = true;
+        }
+    }
+
+
+
+    /**
+     * Instantiate a new instance of usergrid.
+     *
      * @param apiUrl
      * @param orgName
      * @param appName
