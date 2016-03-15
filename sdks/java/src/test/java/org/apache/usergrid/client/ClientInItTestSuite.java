@@ -5,6 +5,8 @@ import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.UsergridEnums;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.codehaus.jettison.json.JSONException;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
@@ -14,12 +16,15 @@ import static org.junit.Assert.assertTrue;
  */
 public class ClientInItTestSuite {
 
-//    @Before
-//    public void before() {
-//        Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME);
-//        Usergrid.authorizeAppClient(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
-//
-//    }
+    @Before
+    public void before() {
+        Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL,SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.authFallBack);
+    }
+
+    @After
+    public void after() {
+        Usergrid.reset();
+    }
 
     @Test
     public void clientAppInit() throws JSONException {
@@ -35,7 +40,7 @@ public class ClientInItTestSuite {
         }
 
         //should initialize using properties defined in config.json
-        Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL,SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME);
+
         UsergridClient client2 =Usergrid.getInstance();
         client2.config.authMode = SDKTestConfiguration.authFallBack;
         try{
@@ -60,11 +65,8 @@ public class ClientInItTestSuite {
         catch(NullPointerException e){
             assertTrue("no error thrown", e != null);
         }
-//
-        Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME);
-//        Usergrid.authorizeAppUser(SDKTestConfiguration.APP_UserName,SDKTestConfiguration.APP_Password);
 
-        UsergridClient client2 =Usergrid.getInstance();
+        UsergridClient client2 = Usergrid.getInstance();
         client2.config.authMode = UsergridEnums.UsergridAuthMode.NONE;
         try{
             UsergridResponse response = client2.authenticateUser(SDKTestConfiguration.APP_UserName,SDKTestConfiguration.APP_Password);

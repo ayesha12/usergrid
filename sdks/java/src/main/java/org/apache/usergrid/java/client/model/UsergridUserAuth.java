@@ -20,9 +20,8 @@ import org.apache.usergrid.java.client.UsergridAuth;
 
 public class UsergridUserAuth extends UsergridAuth {
 
-    public final static String ENTITY_TYPE = "user";
-    public static String username = null;
-    public static String password = null;
+    public String username = null;
+    public String password = null;
 
     public UsergridUserAuth(String username, String password) {
         super();

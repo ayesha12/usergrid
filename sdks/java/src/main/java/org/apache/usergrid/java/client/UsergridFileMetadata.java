@@ -17,11 +17,29 @@
 package org.apache.usergrid.java.client;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import edu.umd.cs.findbugs.annotations.NonNull;
+import org.apache.usergrid.java.client.filter.ErrorResponseFilter;
+import org.apache.usergrid.java.client.model.*;
+import org.apache.usergrid.java.client.query.EntityQueryResult;
+import org.apache.usergrid.java.client.query.LegacyQueryResult;
+import org.apache.usergrid.java.client.query.QueryResult;
+import org.apache.usergrid.java.client.query.UsergridQuery;
+import org.apache.usergrid.java.client.response.UsergridResponse;
+import org.glassfish.jersey.jackson.JacksonFeature;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Form;
+import javax.ws.rs.core.MediaType;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
+
+import static org.apache.usergrid.java.client.utils.ObjectUtils.isEmpty;
 
 
 /**
@@ -44,7 +62,7 @@ public class UsergridFileMetadata {
     public static String checksum = "";
     public static SimpleDateFormat last_Modified_Date;
 
-    public void init(Map<String, JsonNode> metadataInfo) {
+    public UsergridFileMetadata(Map<String,JsonNode> metadataInfo) {
         eTag = metadataInfo.get(eTag_STRING).toString();
         content_Type = metadataInfo.get(CONTENT_TYPE_STRING).toString();
         content_Length = metadataInfo.get(CONTENT_LENGTH_STRING).asInt();

@@ -373,8 +373,7 @@ public class UsergridResponse {
 
             UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
                     client.config.baseUrl, paramsMap, null, segments);
-            UsergridRequestmanager reqManager = new UsergridRequestmanager(client);
-            UsergridResponse resp = reqManager.performRequest(request); //client.apiRequest("GET",paramsMap,null,client.getOrgId(),client.getAppId(),this.first().getType());
+            UsergridResponse resp = client.requestManager.performRequest(request); //client.apiRequest("GET",paramsMap,null,client.getOrgId(),client.getAppId(),this.first().getType());
             return resp.entities;
         }
         log.info("there are no more enetities to load. Cursor is empty.");

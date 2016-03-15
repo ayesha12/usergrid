@@ -1,8 +1,10 @@
 package org.apache.usergrid.client;
 
 import org.apache.usergrid.java.client.Usergrid;
+import org.apache.usergrid.java.client.UsergridEnums;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.response.UsergridResponse;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -13,8 +15,13 @@ public class ConnectionTestSuite {
 
   @Before
   public void before() {
-    Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME);
+    Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.authFallBack);
     Usergrid.authorizeAppClient(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
+  }
+
+  @After
+  public void after() {
+    Usergrid.reset();
   }
 
 

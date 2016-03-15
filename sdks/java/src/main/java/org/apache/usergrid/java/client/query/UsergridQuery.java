@@ -77,8 +77,7 @@ public class UsergridQuery {
         UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
                 ug.config.baseUrl, params, null, segments);
 
-        UsergridRequestmanager reqManager = new UsergridRequestmanager(ug);
-        return reqManager.performRequest(request);
+        return ug.requestManager.performRequest(request);
     }
 
 

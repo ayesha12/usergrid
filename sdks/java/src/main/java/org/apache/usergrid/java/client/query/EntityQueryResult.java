@@ -3,7 +3,6 @@ package org.apache.usergrid.java.client.query;
 import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.UsergridEnums;
 import org.apache.usergrid.java.client.UsergridRequest;
-import org.apache.usergrid.java.client.UsergridRequestmanager;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 
@@ -95,8 +94,7 @@ public class EntityQueryResult implements LegacyQueryResult {
                     this.usergrid.config.baseUrl, nextParams, data, segments);
 
 
-            UsergridRequestmanager reqManager = new UsergridRequestmanager(this.usergrid);
-            UsergridResponse nextResponse = reqManager.performRequest(request); //this.usergrid.apiRequest(method, nextParams, data, segments);
+            UsergridResponse nextResponse = this.usergrid.requestManager.performRequest(request); //this.usergrid.apiRequest(method, nextParams, data, segments);
 
             return new EntityQueryResult(this.usergrid, nextResponse, this);
         }

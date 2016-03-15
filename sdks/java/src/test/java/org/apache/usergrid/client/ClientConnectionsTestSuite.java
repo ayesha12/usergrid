@@ -7,10 +7,12 @@ import org.apache.commons.collections.functors.OnePredicate;
 import org.apache.usergrid.java.client.Direction;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
+import org.apache.usergrid.java.client.UsergridEnums;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.codehaus.jettison.json.JSONException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -27,8 +29,13 @@ public class ClientConnectionsTestSuite {
 
     @Before
     public void before() {
-        Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME);
+        Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.authFallBack);
         Usergrid.authorizeAppClient(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
+    }
+
+    @After
+    public void after() {
+        Usergrid.reset();
     }
 
     @Test
