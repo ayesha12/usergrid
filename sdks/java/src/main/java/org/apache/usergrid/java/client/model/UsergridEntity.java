@@ -44,8 +44,8 @@ public class UsergridEntity {
     private static final Logger log = LoggerFactory.getLogger(UsergridEntity.class);
 
     public static final String STR_UUID = "uuid";
-    public final static String PROPERTY_UUID = STR_UUID;
-    public final static String PROPERTY_TYPE = "type";
+    public static final String PROPERTY_UUID = STR_UUID;
+    public static final String PROPERTY_TYPE = "type";
     public static final String STR_NAME = "name";
     public static final String CREATED_TIMESTAMP = "created";
     private static final String METADATA = "metadata";
@@ -61,7 +61,6 @@ public class UsergridEntity {
     }
 
     protected Map<String, JsonNode> properties = new HashMap<>();
-    private static String entityName;
 
     public UsergridEntity() {
     }

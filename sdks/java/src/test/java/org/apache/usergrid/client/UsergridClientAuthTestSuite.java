@@ -16,7 +16,7 @@ public class UsergridClientAuthTestSuite {
 
     @Test
     public void clientAppInit() {
-        Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME);
+        Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.authFallBack);
         Usergrid.authorizeAppClient(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
 
         //should fall back to using no authentication when currentUser is not authenticated and authFallback is set to NONE
@@ -26,8 +26,7 @@ public class UsergridClientAuthTestSuite {
         String[] segments = {client.config.orgId,client.config.appId,"users"};
         UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
                 client.config.baseUrl,null,null,null,null,segments);
-        UsergridRequestmanager reqManager = new UsergridRequestmanager(client);
-        UsergridResponse response = reqManager.performRequest(request);
+        UsergridResponse response = client.requestManager.performRequest(request);
     }
 
     @Test

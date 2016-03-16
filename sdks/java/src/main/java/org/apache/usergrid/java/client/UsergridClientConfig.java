@@ -36,7 +36,7 @@ public class UsergridClientConfig {
     public String baseUrl = null;
 
     // The `UsergridAuthFallback` value used to determine what type of token will be sent, if any.
-    public UsergridAuthMode authMode = UsergridAuthMode.NONE;
+    public UsergridAuthMode authMode = UsergridAuthMode.USER;
 
     public UsergridAppAuth appAuth;
 

@@ -24,7 +24,7 @@ package org.apache.usergrid.java.client;
 public class UsergridEnums {
     public enum UsergridAuthMode {
         NONE,
-        User,
+        USER,
         APP
     }
 

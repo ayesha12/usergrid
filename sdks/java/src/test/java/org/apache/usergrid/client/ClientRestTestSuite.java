@@ -3,9 +3,11 @@ package org.apache.usergrid.client;
 import org.apache.usergrid.java.client.Direction;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
+import org.apache.usergrid.java.client.UsergridEnums;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.codehaus.jettison.json.JSONException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -23,9 +25,14 @@ public class ClientRestTestSuite {
     String collectionName;
     @Before
     public void before() throws JSONException {
-        Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME);
+        Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.authFallBack);
         Usergrid.authorizeAppClient(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
         CreateCollectionAndEntity();
+    }
+
+    @After
+    public void after() {
+        Usergrid.reset();
     }
 
     public void CreateCollectionAndEntity() throws JSONException {

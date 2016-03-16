@@ -5,18 +5,17 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.TextNode;
 import org.apache.usergrid.java.client.Direction;
 import org.apache.usergrid.java.client.Usergrid;
-import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.model.UsergridAppAuth;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.codehaus.jettison.json.JSONException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertTrue;
@@ -28,13 +27,14 @@ public class EntityTestSuite {
 
   @Before
   public void before() {
+    Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.authFallBack);
     UsergridAppAuth appAuth = new UsergridAppAuth(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
+    Usergrid.authenticateApp(appAuth);
+  }
 
-    Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME,
-            SDKTestConfiguration.APP_NAME,SDKTestConfiguration.authFallBack);
-
-
-    Usergrid.authorizeAppClient(Usergrid.getInstance().config.appAuth.clientId,Usergrid.getInstance().config.appAuth.clientSecret);
+  @After
+  public void after() {
+    Usergrid.reset();
   }
 
   @Test

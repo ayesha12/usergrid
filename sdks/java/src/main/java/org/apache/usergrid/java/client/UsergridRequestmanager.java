@@ -1,8 +1,9 @@
 package org.apache.usergrid.java.client;
 
-import org.apache.usergrid.java.client.UsergridEnums.UsergridHttpMethod;
+import org.apache.usergrid.java.client.filter.ErrorResponseFilter;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 
+import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
@@ -10,65 +11,50 @@ import javax.ws.rs.core.MediaType;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import org.apache.usergrid.java.client.UsergridEnums.UsergridHttpMethod;
+import org.glassfish.jersey.jackson.JacksonFeature;
 
 import static org.apache.usergrid.java.client.utils.ObjectUtils.isEmpty;
 
 /**
  * Created by ApigeeCorporation on 9/2/15.
  */
-public class UsergridRequestmanager {
-    UsergridClient client;
-    public static final String STR_BLANK = "";
-    private javax.ws.rs.client.Client restClient;
+public class UsergridRequestManager {
 
+    public UsergridClient client;
+    public javax.ws.rs.client.Client restClient;
+
+    public static final String STR_BLANK = "";
     public static final String HEADER_AUTHORIZATION = "Authorization";
     public static final String BEARER = "Bearer ";
-    public static final String HTTP_POST = "POST";
-    public static final String HTTP_PUT = "PUT";
-    public static final String HTTP_GET = "GET";
-    public static final String HTTP_DELETE = "DELETE";
     private static final String STRING_EXPIRES_IN = "expires_in";
 
-    public UsergridRequestmanager(UsergridClient client) {
+    public UsergridRequestManager(UsergridClient client){
         this.client = client;
+        this.restClient = ClientBuilder.newBuilder()
+                .register(JacksonFeature.class)
+                .register(new ErrorResponseFilter())
+                .build();
     }
-
-
-    public void ValidAppArguments() {
-        if (isEmpty(client)) {
-            throw new IllegalArgumentException("No client specified");
-        }
-        if (isEmpty(client.config.appId)) {
-            throw new IllegalArgumentException("No application id specified");
-        }
-        if (isEmpty(client.config.orgId)) {
-            throw new IllegalArgumentException("No organization id specified");
-        }
-    }
-
 
     /**
      * High-level Usergrid API request.
-     *
      * @param request : UsergridRequest object.
      * @return a UsergridResponse object
      */
 
-    public UsergridResponse performRequest(UsergridRequest request) {
-        ValidAppArguments();
-
+    public UsergridResponse performRequest(UsergridRequest request){
         UsergridHttpMethod method = request.method;
         MediaType contentType = request.contentType;
         Entity entity = Entity.entity(request.data == null ? STR_BLANK : request.data, contentType);
 
         // create the target from the base API URL
-        WebTarget webTarget = client.restClient.target(request.baseUrl);
+        WebTarget webTarget = this.restClient.target(request.baseUrl);
         for (String segment : request.segments)
             if (segment != null)
                 webTarget = webTarget.path(segment);
 
-        if ((method.toString().equals(HTTP_GET) || method.toString().equals(HTTP_PUT)
-                || method.toString().equals(HTTP_POST) || method.toString().equals(HTTP_DELETE)) && !isEmpty(request.parameters)) {
+        if ( !isEmpty(request.parameters) ) {
             for (Map.Entry<String, Object> param : request.parameters.entrySet()) {
                 webTarget = webTarget.queryParam(param.getKey(), param.getValue());
             }
@@ -84,7 +70,7 @@ public class UsergridRequestmanager {
         }
 
         try {
-            if (Objects.equals(method.toString(), HTTP_POST) || Objects.equals(method.toString(), HTTP_PUT)) {
+            if ( method == UsergridHttpMethod.POST ||  method == UsergridHttpMethod.PUT ) {
                 UsergridResponse response = invocationBuilder.method(method.toString(), entity, UsergridResponse.class);
                 return response;
             } else {
@@ -103,6 +89,7 @@ public class UsergridRequestmanager {
     }
 
 
+
     public UsergridResponse AuthenticateApp() {
 
         validateNonEmptyParam(client.config.appAuth.clientId, "client identifier");
@@ -113,8 +100,8 @@ public class UsergridRequestmanager {
         data.put("client_id", client.config.appAuth.clientId);
         data.put("client_secret", client.config.appAuth.clientSecret);
         String[] segments = {client.config.orgId, client.config.appId, "token"};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
-                client.config.baseUrl, null, data, segments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST,MediaType.APPLICATION_JSON_TYPE,
+                client.config.baseUrl,null,data,segments);
         UsergridResponse response = performRequest(request);
         if (response == null) {
             return null;
@@ -140,8 +127,8 @@ public class UsergridRequestmanager {
 
         String[] segments = {client.config.orgId, client.config.appId, "token"};
 
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
-                client.config.baseUrl, null, formData, segments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST,MediaType.APPLICATION_JSON_TYPE,
+                client.config.baseUrl,null,formData,segments);
         UsergridResponse response = performRequest(request);
         if (response == null) {
             return null;
