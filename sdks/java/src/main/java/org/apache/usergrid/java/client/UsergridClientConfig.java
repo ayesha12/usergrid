@@ -47,7 +47,7 @@ public class UsergridClientConfig {
         this.appId = appId;
     }
 
-    public UsergridClientConfig(String appId, String orgId, String baseUrl) {
+    public UsergridClientConfig(String orgId, String appId, String baseUrl) {
         this.orgId = orgId;
         this.appId = appId;
         this.baseUrl = baseUrl;
