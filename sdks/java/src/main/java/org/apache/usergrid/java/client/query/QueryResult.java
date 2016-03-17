@@ -87,8 +87,8 @@ public class QueryResult
         // if not cleared then return entities
         // otherwise make an API call
         if (cleared == false) {
-            q.getBuilder().cursor(cursor);
-            QueryResult next = q.GET();
+            q.cursor(cursor);
+            QueryResult next = usergridClient.GET(q);
 
             this.r = next.r;
         }
@@ -104,25 +104,25 @@ public class QueryResult
 
         if (this.hasMorePages()) {
             String cursor = this.cursor;
-            q.getBuilder().cursor(cursor);
+            q.cursor(cursor);
             QueryResult next = null;
 
             switch (this.verb) {
                 case "GET":
-                    next = q.GET();
+                    next = usergridClient.GET(q);
                     next.setPreviousQueryResult(this);
                     this.setNextQueryResult(next);
                     return next;
 
                 case "PUT":
                     //todo PUT?
-                    next = q.PUT(fields);
+                    next = usergridClient.PUT(q,fields);
                     next.setPreviousQueryResult(this);
                     this.setNextQueryResult(next);
                     return next;
 
                 case "DELETE":
-                    next = q.DELETE();
+                    next = usergridClient.DELETE(q);
                     next.setPreviousQueryResult(this);
                     this.setNextQueryResult(next);
                     return next;

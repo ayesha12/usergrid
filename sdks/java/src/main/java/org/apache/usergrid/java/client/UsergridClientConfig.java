@@ -47,17 +47,17 @@ public class UsergridClientConfig {
         this.appId = appId;
     }
 
-    public UsergridClientConfig(String appId, String orgId, String baseUrl) {
+    public UsergridClientConfig(String orgId, String appId, String baseUrl) {
         this.orgId = orgId;
         this.appId = appId;
         this.baseUrl = baseUrl;
     }
 
-    public UsergridClientConfig(String orgId, String appId, String baseUrl, UsergridAuthMode authFallback) {
+    public UsergridClientConfig(String orgId, String appId, String baseUrl, UsergridAuthMode authMode) {
         this.orgId = orgId;
         this.appId = appId;
         this.baseUrl = baseUrl;
-        this.authMode = authFallback;
+        this.authMode = authMode;
     }
 
 }

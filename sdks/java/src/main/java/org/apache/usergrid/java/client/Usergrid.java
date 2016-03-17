@@ -18,10 +18,14 @@ import static org.apache.usergrid.java.client.utils.ObjectUtils.isEmpty;
 /**
  * Created by Jeff West on 9/2/15.
  */
-public class Usergrid {
+public final class Usergrid {
 
     private static UsergridClient sharedClient;
+
     public static boolean isInitialized() { return (sharedClient != null); }
+    public static void reset() {
+        sharedClient = null;
+    }
 
     public static UsergridClient getInstance() {
         if( !Usergrid.isInitialized() ) {
@@ -30,8 +34,8 @@ public class Usergrid {
         return Usergrid.sharedClient;
     }
 
-    public static void reset() {
-        sharedClient = null;
+    private Usergrid() {
+        // Private constructor because we only have static methods.
     }
 
     /**
@@ -41,16 +45,16 @@ public class Usergrid {
      * @param orgName
      * @param appName
      */
-    public static void initSharedInstance(final String apiUrl, final String orgName, final String appName) {
-        Usergrid.initSharedInstance(new UsergridClientConfig(orgName, appName, apiUrl));
+    public static UsergridClient initSharedInstance(final String apiUrl, final String orgName, final String appName) {
+        return Usergrid.initSharedInstance(new UsergridClientConfig(orgName, appName, apiUrl));
     }
 
-    public static void initSharedInstance(final String apiUrl, final String orgName, final String appName, final UsergridAuthMode authMode ) {
-        Usergrid.initSharedInstance(new UsergridClientConfig(orgName, appName, apiUrl, authMode));
+    public static UsergridClient initSharedInstance(final String apiUrl, final String orgName, final String appName, final UsergridAuthMode authMode ) {
+        return Usergrid.initSharedInstance(new UsergridClientConfig(orgName, appName, apiUrl, authMode));
     }
 
-    public static void init(final String apiUrl, final String orgName, final String appName) {
-        Usergrid.initSharedInstance(new UsergridClientConfig(orgName, appName, apiUrl));
+    public static UsergridClient init(final String apiUrl, final String orgName, final String appName) {
+        return Usergrid.initSharedInstance(new UsergridClientConfig(orgName, appName, apiUrl));
     }
 
     /**
@@ -58,7 +62,7 @@ public class Usergrid {
      *
      * @param ugConfig
      */
-    public static void initSharedInstance(final UsergridClientConfig ugConfig) {
+    public static UsergridClient initSharedInstance(final UsergridClientConfig ugConfig) {
         if (isEmpty(ugConfig) || isEmpty(ugConfig.appId) || isEmpty(ugConfig.orgId) || isEmpty(ugConfig.baseUrl)) {
             throw new IllegalArgumentException("One of the input arguments is empty.");
         } else if( isInitialized() ){
@@ -66,6 +70,7 @@ public class Usergrid {
         } else {
             sharedClient = new UsergridClient(ugConfig);
         }
+        return sharedClient;
     }
 
     public static RequestBuilder collection(final String collection) {

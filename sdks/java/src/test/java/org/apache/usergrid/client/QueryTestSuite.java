@@ -41,11 +41,9 @@ public class QueryTestSuite {
   @Test
   public void testBasicQuery() {
 
-    UsergridQuery qDelete = new UsergridQuery.Builder()
-        .collection(COLLECTION)
-        .build();
+    UsergridQuery qDelete = new UsergridQuery(COLLECTION);
 
-    QueryResult r = qDelete.DELETE();
+    QueryResult r = Usergrid.DELETE(qDelete);
 
 
     Map<String, UsergridEntity> entityMapByUUID = SDKTestUtils.createColorShapes(COLLECTION);
@@ -68,19 +66,17 @@ public class QueryTestSuite {
     for (Map.Entry<String, String> entry : fields.entrySet()) {
       UsergridEntity targetEntity = entityMapByName.get(entry.getKey() + entry.getValue());
 
-      UsergridQuery q = new UsergridQuery.Builder()
-          .collection(COLLECTION)
-          .eq("color", entry.getKey())
-          .build();
+      UsergridQuery q = new UsergridQuery(COLLECTION)
+          .eq("color", entry.getKey());
 
 
-      r = q.GET();
+      r = Usergrid.GET(q);
 
       assertTrue("query for " + entry.getKey() + " shape should return 1, not: " + r.getEntities().size(), r.getEntities().size() == 1);
       assertTrue("query for " + entry.getKey() + " shape should the right UUID", r.first().getUuid().equals(targetEntity.getUuid()));
     }
 
-    r = qDelete.DELETE();
+    r = Usergrid.DELETE(qDelete);
 
   }
 
@@ -129,10 +125,9 @@ public class QueryTestSuite {
 
     String collectionName = "sdktestlocation";
 
-    UsergridQuery deleteQuery = new UsergridQuery.Builder()
-        .collection(collectionName).build();
+    UsergridQuery deleteQuery = new UsergridQuery(collectionName);
 
-    deleteQuery.DELETE();
+    Usergrid.DELETE(deleteQuery);
 
 
     UsergridEntity e = new UsergridEntity(collectionName);
@@ -170,11 +165,11 @@ public class QueryTestSuite {
     float centerLat = 37.334110f;
     float centerLon = -121.894340f;
 
-    UsergridQuery q1 = new UsergridQuery.Builder()
-        .collection(collectionName)
-        .locationWithin(611.00000, centerLat, centerLon).build();
+    UsergridQuery q1 = new UsergridQuery()
+        .collectionName(collectionName)
+        .locationWithin(611.00000, centerLat, centerLon);
 
-    QueryResult qr = q1.GET();
+    QueryResult qr = Usergrid.GET(q1);
     System.out.println(qr.getEntities().size());
     UsergridEntity lastEntity = null;
 
@@ -201,11 +196,11 @@ public class QueryTestSuite {
 
       lastEntity = entity;
     }
-    UsergridQuery q2 = new UsergridQuery.Builder()
-        .collection(collectionName)
-        .locationWithin(150, centerLat, centerLon).build();
+    UsergridQuery q2 = new UsergridQuery()
+        .collectionName(collectionName)
+        .locationWithin(150, centerLat, centerLon);
 
-    QueryResult qr2 = q2.GET();
+    QueryResult qr2 = Usergrid.GET(q2);
     System.out.println(qr.getEntities().size());
 
     for (UsergridEntity entity : qr2.getEntities()) {
