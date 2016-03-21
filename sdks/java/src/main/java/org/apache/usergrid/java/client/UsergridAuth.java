@@ -23,25 +23,17 @@ public class UsergridAuth {
     }
 
     public boolean hasToken() {
-        if (accessToken != null) // TODO: Why not just return the result instead of the if statement. e.g. return (accessToken != null);
-            return true;
-        return false;
+        return accessToken != null;
     }
 
-    public boolean isexprired() { // TODO: Methods need to be camel cased.
+    public boolean isExprired() {
         boolean isExpired = false;
         Long currTime = System.currentTimeMillis() / 1000;
-        if(token_expiry / 1000 < currTime)  // TODO: Why not just return the result instead of the if statement. e.g. return !(token_expiry / 1000 < currTime);
-            isExpired = false;
-        else
-            isExpired = true; //  todo : why !this.usingToken in swift ?
-        return isExpired;
+        return (token_expiry / 1000 < currTime);
     }
 
     public boolean isValidToken() {
-        if (hasToken() && !isexprired()) // TODO: Why not just return the result instead of the if statement. e.g. return (hasToken() && !isexprired());
-            return true;
-        return false;
+        return (hasToken() && !isExprired());
     }
 
     public void setAccessToken(String acToken) {
