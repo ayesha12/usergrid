@@ -507,10 +507,7 @@ public class UsergridClient {
      * @return
      */
     public LegacyQueryResult queryUsers() {
-        UsergridQuery q = new UsergridQuery.Builder()
-                .collection("users")
-                .desc("created")
-                .build();
+        UsergridQuery q = new UsergridQuery("users").desc("created");
 
         return queryEntities(UsergridHttpMethod.GET.toString(), null, null, config.orgId, config.appId, STR_USERS);
     }
@@ -1112,6 +1109,7 @@ public class UsergridClient {
         String[] segments = {config.orgId, config.appId,q.getCollectionName()};
         UsergridRequest request = new UsergridRequest(UsergridHttpMethod.PUT,MediaType.APPLICATION_JSON_TYPE,
                 config.baseUrl,null,null,segments);
+        request.query = q;
 
         return new QueryResult(this,
                 UsergridHttpMethod.PUT.toString(),
@@ -1130,8 +1128,13 @@ public class UsergridClient {
 
 
         String[] segments = {config.orgId, config.appId,q.getCollectionName()};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,q.params(),null,segments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET,
+                MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl,
+                null,
+                null,
+                segments);
+        request.query = q;
 
         return new QueryResult(this,
                 UsergridHttpMethod.GET.toString(),
@@ -1143,8 +1146,8 @@ public class UsergridClient {
 
         String[] segments = {config.orgId, config.appId,q.getCollectionName()};
         UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,q.params(),null,segments);
-
+                config.baseUrl,null,null,segments);
+        request.query = q;
 
         return new QueryResult(this,
                 UsergridHttpMethod.GET.toString(),
@@ -1164,7 +1167,8 @@ public class UsergridClient {
 
         String[] segments = {config.orgId, config.appId,q.getCollectionName()};
         UsergridRequest request = new UsergridRequest(UsergridHttpMethod.DELETE,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,q.params(),null,segments);
+                config.baseUrl,null,null,segments);
+        request.query = q;
 
 
         return new QueryResult(this,

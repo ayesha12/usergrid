@@ -158,37 +158,35 @@ public class EntityTestSuite {
 
     SDKTestUtils.indexSleep();
 
-    q = new UsergridQuery.Builder()
-        .collection(collectionName)
-        .eq("color", "red").build();
+    q = new UsergridQuery()
+        .collectionName(collectionName)
+        .eq("color", "red");
 
-    eLookup = q.GET().first();
+    eLookup = Usergrid.GET(q).first();
     assertTrue("The entity was not returned on lookup", eLookup != null);
     assertTrue("The returned entity does not have the same UUID", e.getUuidString().equals(eLookup.getUuidString()));
 
-    q = new UsergridQuery.Builder()
-        .collection(collectionName)
-        .eq("name", entityName).build();
+    q = new UsergridQuery(collectionName)
+        .eq("name", entityName);
 
-    eLookup = q.GET().first();
-
-    assertTrue("The entity was not returned on lookup", eLookup != null);
-    assertTrue("The returned entity does not have the same UUID", e.getUuidString().equals(eLookup.getUuidString()));
-
-    q = new UsergridQuery.Builder()
-        .collection(collectionName)
-        .eq("shape", "square").build();
-
-    eLookup = q.GET().first();
+    eLookup = Usergrid.GET(q).first();
 
     assertTrue("The entity was not returned on lookup", eLookup != null);
     assertTrue("The returned entity does not have the same UUID", e.getUuidString().equals(eLookup.getUuidString()));
 
-    q = new UsergridQuery.Builder()
-        .collection(collectionName)
-        .eq("shape", "circle").build();
+    q = new UsergridQuery()
+        .collectionName(collectionName)
+        .eq("shape", "square");
 
-    eLookup = q.GET().first();
+    eLookup = Usergrid.GET(q).first();
+
+    assertTrue("The entity was not returned on lookup", eLookup != null);
+    assertTrue("The returned entity does not have the same UUID", e.getUuidString().equals(eLookup.getUuidString()));
+
+    q = new UsergridQuery(collectionName)
+        .eq("shape", "circle");
+
+    eLookup = Usergrid.GET(q).first();
 
     assertTrue("The entity was not expected to be returned on lookup", eLookup == null);
   }
@@ -209,13 +207,13 @@ public class EntityTestSuite {
     SDKTestUtils.sleep(1000);
 
     UsergridQuery q;
-    q = new UsergridQuery.Builder()
-        .collection(collectionName)
-        .eq("orientation", "up").build();
+    q = new UsergridQuery()
+        .collectionName(collectionName)
+        .eq("orientation", "up");
 
     UsergridEntity eLookup;
 
-    eLookup = q.GET().first();
+    eLookup = Usergrid.GET(q).first();
 
     assertTrue("The returned entity does not have the same UUID when querying by field", e.getUuidString().equals(eLookup.getUuidString()));
 
@@ -231,11 +229,11 @@ public class EntityTestSuite {
 
     SDKTestUtils.sleep(1000);
 
-    q = new UsergridQuery.Builder()
-        .collection(collectionName)
-        .eq("orientation", "up").build();
+    q = new UsergridQuery()
+        .collectionName(collectionName)
+        .eq("orientation", "up");
 
-    eLookup = q.GET().first();
+    eLookup = Usergrid.GET(q).first();
 
     assertTrue("The entity was returned for old value!", eLookup == null);
   }
@@ -256,12 +254,12 @@ public class EntityTestSuite {
     SDKTestUtils.indexSleep();
 
     UsergridQuery q;
-    q = new UsergridQuery.Builder()
-        .collection(collectionName)
-        .eq("orientation", "up").build();
+    q = new UsergridQuery()
+        .collectionName(collectionName)
+        .eq("orientation", "up");
 
     UsergridEntity eLookup;
-    eLookup = q.GET().first();
+    eLookup = Usergrid.GET(q).first();
 
     assertTrue("The returned entity was null!", eLookup != null);
     assertTrue("The returned entity does not have the same UUID when querying by field", e.getUuidString().equals(eLookup.getUuidString()));
@@ -276,30 +274,27 @@ public class EntityTestSuite {
 
     assertTrue("The entity was not expected to be returned by getName", eLookup == null);
 
-    q = new UsergridQuery.Builder()
-        .collection(collectionName)
-        .eq("color", "red")
-        .build();
+    q = new UsergridQuery()
+        .collectionName(collectionName)
+        .eq("color", "red");
 
-    eLookup = q.GET().first();
-
-    assertTrue("The entity was not expected to be returned", eLookup == null);
-
-    q = new UsergridQuery.Builder()
-        .collection(collectionName)
-        .eq("shape", "square")
-        .build();
-
-    eLookup = q.GET().first();
+    eLookup = Usergrid.GET(q).first();
 
     assertTrue("The entity was not expected to be returned", eLookup == null);
 
-    q = new UsergridQuery.Builder()
-        .collection(collectionName)
-        .eq("orientation", "up")
-        .build();
+    q = new UsergridQuery()
+        .collectionName(collectionName)
+        .eq("shape", "square");
 
-    eLookup = q.GET().first();
+    eLookup = Usergrid.GET(q).first();
+
+    assertTrue("The entity was not expected to be returned", eLookup == null);
+
+    q = new UsergridQuery()
+        .collectionName(collectionName)
+        .eq("orientation", "up");
+
+    eLookup = Usergrid.GET(q).first();
 
     assertTrue("The entity was not expected to be returned", eLookup == null);
   }

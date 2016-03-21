@@ -165,11 +165,11 @@ public class UsergridUser extends UsergridEntity {
         if (email == null && username == null)
             new IllegalArgumentException("email and username both are null ");
         else if (username == null)
-            qry = new UsergridQuery.Builder().collection(ENTITY_TYPE).eq("email", email).build();
+            qry = new UsergridQuery(ENTITY_TYPE).eq("email", email);
         else if (email == null)
-            qry = new UsergridQuery.Builder().collection(ENTITY_TYPE).eq("username", username).build();
+            qry = new UsergridQuery(ENTITY_TYPE).eq("username", username);
         else
-            qry = new UsergridQuery.Builder().collection(ENTITY_TYPE).eq("email", email).or().eq("username", username).build();
+            qry = new UsergridQuery(ENTITY_TYPE).eq("email", email).or().eq("username", username);
 
         if (client.GET(qry).first() != null)
             return true;

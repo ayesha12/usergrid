@@ -17,6 +17,9 @@
 package org.apache.usergrid.java.client;
 
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 /**
  * The Client class for accessing the Usergrid API. Start by instantiating this
  * class though the appropriate constructor.
@@ -55,6 +58,43 @@ public class UsergridEnums {
             public String toString() {
                 return "DELETE";
             }
+        }
+    }
+    public enum UsergridQueryOperator {
+        EQUAL("="),
+        GREATER_THAN(">"),
+        GREATER_THAN_EQUAL_TO(">="),
+        LESS_THAN("<"),
+        LESS_THAN_EQUAL_TO("<=");
+
+        @Nonnull private final String operatorValue;
+
+        private UsergridQueryOperator(@Nonnull final String operatorValue) {
+            this.operatorValue = operatorValue;
+        }
+
+        @Nonnull
+        public String operatorValue() {
+            return this.operatorValue;
+        }
+    }
+
+    public enum UsergridQuerySortOrder {
+        ASC,
+        DESC;
+
+        @Nullable
+        public static UsergridQuerySortOrder fromString(@Nonnull final String stringValue) {
+            try {
+                return UsergridQuerySortOrder.valueOf(stringValue.toUpperCase());
+            } catch(Exception e) {
+                return null;
+            }
+        }
+
+        @Override @Nonnull
+        public String toString() {
+            return super.toString().toLowerCase();
         }
     }
 

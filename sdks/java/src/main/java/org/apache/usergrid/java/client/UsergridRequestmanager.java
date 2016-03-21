@@ -1,5 +1,7 @@
 package org.apache.usergrid.java.client;
 
+import com.fasterxml.jackson.databind.deser.std.JacksonDeserializers;
+import okhttp3.Request;
 import org.apache.usergrid.java.client.filter.ErrorResponseFilter;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 
@@ -49,7 +51,12 @@ public class UsergridRequestManager {
         Entity entity = Entity.entity(request.data == null ? STR_BLANK : request.data, contentType);
 
         // create the target from the base API URL
-        WebTarget webTarget = this.restClient.target(request.baseUrl);
+        String url = request.baseUrl;
+        if( request.query != null ) {
+            url += request.query.build();
+        }
+
+        WebTarget webTarget = this.restClient.target(url);
         for (String segment : request.segments)
             if (segment != null)
                 webTarget = webTarget.path(segment);
@@ -68,7 +75,6 @@ public class UsergridRequestManager {
             String auth = BEARER + authForRequest.accessToken;
             invocationBuilder.header(HEADER_AUTHORIZATION, auth);
         }
-
         try {
             if ( method == UsergridHttpMethod.POST ||  method == UsergridHttpMethod.PUT ) {
                 UsergridResponse response = invocationBuilder.method(method.toString(), entity, UsergridResponse.class);

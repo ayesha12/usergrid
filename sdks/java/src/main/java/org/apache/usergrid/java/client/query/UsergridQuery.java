@@ -1,110 +1,270 @@
 package org.apache.usergrid.java.client.query;
 
-import org.apache.usergrid.java.client.*;
-import org.apache.usergrid.java.client.response.UsergridResponse;
+import org.apache.usergrid.java.client.UsergridEnums.UsergridQueryOperator;
+import org.apache.usergrid.java.client.UsergridEnums.UsergridQuerySortOrder;
 
-import javax.ws.rs.core.MediaType;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.net.URLEncoder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
- * Created by ApigeeCorporation on 7/1/15.
+ * Created by Robert Walsh on 2/9/16.
  */
+@SuppressWarnings("unused")
+public final class UsergridQuery {
+    private Integer limit = UsergridQuery.LIMIT_DEFAULT;
+    private String cursor = null;
+    private String fromStringValue = null;
+    private String collectionName = null;
 
-public class UsergridQuery {
+    private final ArrayList<String> requirementStrings = new ArrayList<>();
+    private final ArrayList<String> urlTerms = new ArrayList<>();
+    private final HashMap<String,UsergridQuerySortOrder> orderClauses = new HashMap<>();
 
-    public static final String ORDER_BY = " ORDER BY ";
-    public static final String LIMIT = " LIMIT ";
-    public static final String AND = " AND ";
-    public static final String OR = " or ";
-    public static final String EQUALS = "=";
-    public static final String AMPERSAND = "&";
-    public static final String SPACE = " ";
-    public static final String ASTERISK = "*";
-    private static final String APOSTROPHE = "'";
-    private static final String COMMA = ",";
-    private static final String CONTAINS = " contains ";
-    private static final String IN = " in ";
-    private static final String NOT = " not ";
-    private static final String OF = " of ";
-    private static final String QL = "ql";
-    private static final String UTF8 = "UTF-8";
-    private static final String WITHIN = " within ";
-    private static final String ASC = "ASC";
-    private static final String DESC = "DESC";
-    private String qCollection = "";
-
-    private static enum order {
-        USERGRID_SORT_ASCENDING,
-        USERGRID_SORT_DESCENDING
+    public UsergridQuery() {
+        this(null);
     }
 
-
-    private Builder builder;
-
-    public static void main(String[] args) {
-        UsergridQuery q = new Builder()
-                .collection("pets")
-                .limit(100)
-                .gt("age", 100)
-                .gte("age", 100)
-                .or()
-                .contains("field", "value")
-                .desc("cats")
-                .asc("dogs")
-                .build();
-
-//    UsergridResponse q1 = new UsergridQuery("restaurants").qfromString("select * distance = 500");
-
+    public UsergridQuery(@Nullable final String collectionName) {
+        this.collectionName = collectionName;
+        this.requirementStrings.add(UsergridQuery.EMPTY_STRING);
     }
 
-    public UsergridQuery(Builder builder) {
-        this.builder = builder;
+    @Nonnull
+    public UsergridQuery fromString(@Nonnull final String stringValue) {
+        this.fromStringValue = stringValue;
+        return this;
     }
 
-    public UsergridQuery(String collection) {
-        this.qCollection = collection;
+    @Nullable
+    public String getType() {
+        return this.collectionName;
     }
 
-
-    public UsergridResponse qfromString(String query) {
-        Map<String, Object> params = new HashMap<>();
-        params.put("ql", query);
-        UsergridClient ug = Usergrid.getInstance();
-
-        String[] segments = {ug.getOrgId(), ug.getAppId(), this.qCollection};
-
-        UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
-                ug.config.baseUrl, params, null, segments);
-
-        return ug.requestManager.performRequest(request);
+    @Nullable
+    public String getCollectionName() {
+        return this.collectionName;
     }
 
-
-    public Builder getBuilder() {
-        return builder;
+    @Nullable
+    public String getCollection() {
+        return this.collectionName;
     }
 
-    public String build() {
-
-        String selectString = this.builder.getSelectString();
-
-        String predicateString = this.builder.getPredicateString();
-
-        String urlAppend = "?" + QL + "=" + selectString + " " + predicateString;
-
-        urlAppend += AMPERSAND + this.builder.getQueryParameterString();
-
-        return this.builder.collectionName + urlAppend;
+    @Nonnull
+    public UsergridQuery type(@Nullable final String type) {
+        this.collectionName = type;
+        return this;
     }
 
-    public String build(String queryString) {
-        String urlAppend = "?" + QL + "=" + queryString;
-        urlAppend += AMPERSAND + this.builder.getQueryParameterString();
-        return this.builder.collectionName + urlAppend;
+    @Nonnull
+    public UsergridQuery collection(@Nullable final String collectionName) {
+        return this.type(collectionName);
     }
 
-    private static String encode(final String stringValue) {
+    @Nonnull
+    public UsergridQuery collectionName(@Nullable final String collectionName) {
+        return this.type(collectionName);
+    }
+
+    @Nonnull
+    public UsergridQuery cursor(@Nullable final String value) {
+        this.cursor = value;
+        return this;
+    }
+
+    @Nonnull
+    public UsergridQuery limit(@Nonnull final Integer limit) {
+        this.limit = limit;
+        return this;
+    }
+
+    @Nonnull
+    private UsergridQuery addConditionalSeparator(@Nonnull final String separator) {
+        if( !this.requirementStrings.get(0).isEmpty() ) {
+            this.requirementStrings.add(0, separator);
+            this.requirementStrings.add(0, UsergridQuery.EMPTY_STRING);
+        }
+        return this;
+    }
+
+    @Nonnull
+    public UsergridQuery and() {
+        return this.addConditionalSeparator(UsergridQuery.AND);
+    }
+
+    @Nonnull
+    public UsergridQuery or() {
+        return this.addConditionalSeparator(UsergridQuery.OR);
+    }
+
+    @Nonnull
+    public UsergridQuery not() {
+        return this.addConditionalSeparator(UsergridQuery.NOT);
+    }
+
+    @Nonnull
+    public UsergridQuery sort(@Nonnull final String term, @Nonnull final UsergridQuerySortOrder sortOrder) {
+        this.orderClauses.put(term,sortOrder);
+        return this;
+    }
+
+    @Nonnull
+    public UsergridQuery ascending(@Nonnull final String term) {
+        return this.asc(term);
+    }
+
+    @Nonnull
+    public UsergridQuery asc(@Nonnull final String term) {
+        return this.sort(term,UsergridQuerySortOrder.ASC);
+    }
+
+    @Nonnull
+    public UsergridQuery descending(@Nonnull final String term) {
+        return this.desc(term);
+    }
+
+    @Nonnull
+    public UsergridQuery desc(@Nonnull final String term) {
+        return this.sort(term,UsergridQuerySortOrder.DESC);
+    }
+
+    @Nonnull
+    public UsergridQuery contains(@Nonnull final String term, @Nonnull final String value) {
+        return this.containsWord(term,value);
+    }
+
+    @Nonnull
+    public UsergridQuery containsString(@Nonnull final String term, @Nonnull final String value) {
+        return this.containsWord(term,value);
+    }
+
+    @Nonnull
+    public UsergridQuery containsWord(@Nonnull final String term, @Nonnull final String value) {
+        return this.addRequirement(term + SPACE + CONTAINS + SPACE + ((UsergridQuery.isUUID(value)) ? EMPTY_STRING : APOSTROPHE) + value + ((UsergridQuery.isUUID(value)) ? EMPTY_STRING : APOSTROPHE));
+    }
+
+    @Nonnull
+    public UsergridQuery filter(@Nonnull final String term, @Nonnull final Object value) {
+        return this.eq(term,value);
+    }
+
+    @Nonnull
+    public UsergridQuery equals(@Nonnull final String term, @Nonnull final Object value) {
+        return this.eq(term,value);
+    }
+
+    @Nonnull
+    public UsergridQuery eq(@Nonnull final String term, @Nonnull final Object value) {
+        return this.addOperationRequirement(term,UsergridQueryOperator.EQUAL,value);
+    }
+
+    @Nonnull
+    public UsergridQuery greaterThan(@Nonnull final String term, @Nonnull final Object value) {
+        return this.gt(term,value);
+    }
+
+    @Nonnull
+    public UsergridQuery gt(@Nonnull final String term, @Nonnull final Object value) {
+        return this.addOperationRequirement(term,UsergridQueryOperator.GREATER_THAN,value);
+    }
+
+    @Nonnull
+    public UsergridQuery greaterThanOrEqual(@Nonnull final String term, @Nonnull final Object value) {
+        return this.gte(term,value);
+    }
+
+    @Nonnull
+    public UsergridQuery gte(@Nonnull final String term, @Nonnull final Object value) {
+        return this.addOperationRequirement(term,UsergridQueryOperator.GREATER_THAN_EQUAL_TO,value);
+    }
+
+    @Nonnull
+    public UsergridQuery lessThan(@Nonnull final String term, @Nonnull final Object value) {
+        return this.lt(term,value);
+    }
+
+    @Nonnull
+    public UsergridQuery lt(@Nonnull final String term, @Nonnull final Object value) {
+        return this.addOperationRequirement(term,UsergridQueryOperator.LESS_THAN,value);
+    }
+
+    @Nonnull
+    public UsergridQuery lessThanOrEqual(@Nonnull final String term, @Nonnull final Object value) {
+        return this.lte(term,value);
+    }
+
+    @Nonnull
+    public UsergridQuery lte(@Nonnull final String term, @Nonnull final Object value) {
+        return this.addOperationRequirement(term,UsergridQueryOperator.LESS_THAN_EQUAL_TO,value);
+    }
+
+    @Nonnull
+    public UsergridQuery locationWithin(final double distance, final double latitude, final double longitude) {
+        return this.addRequirement(LOCATION + SPACE + WITHIN + SPACE + distance + SPACE + OF + SPACE + latitude + SPACE + COMMA + longitude);
+    }
+
+    @Nonnull
+    public UsergridQuery urlTerm(@Nonnull final String term, @Nonnull final String equalsValue) {
+        if( term.equalsIgnoreCase(QL) ) {
+            this.ql(equalsValue);
+        } else {
+            this.urlTerms.add(UsergridQuery.encode(term) + EQUALS + UsergridQuery.encode(equalsValue));
+        }
+        return this;
+    }
+
+    @Nonnull
+    public UsergridQuery ql(@Nonnull final String value) {
+        return this.addRequirement(value);
+    }
+
+    @Nonnull
+    public UsergridQuery addRequirement(@Nonnull final String requirement) {
+        String requirementString = this.requirementStrings.remove(0);
+        if( !requirement.isEmpty() && !requirementString.isEmpty() ) {
+            requirementString += SPACE + AND + SPACE;
+        }
+        requirementString += requirement;
+        this.requirementStrings.add(0,requirementString);
+        return this;
+    }
+
+    @Nonnull
+    public UsergridQuery addOperationRequirement(@Nonnull final String term, @Nonnull final UsergridQueryOperator operation, final int intValue) {
+        return this.addOperationRequirement(term,operation,Integer.valueOf(intValue));
+    }
+
+    @Nonnull
+    public UsergridQuery addOperationRequirement(@Nonnull final String term, @Nonnull final UsergridQueryOperator operation, @Nonnull final Object value) {
+        if( value instanceof String ) {
+            String valueString = value.toString();
+            if( !UsergridQuery.isUUID(valueString) ) {
+                valueString = APOSTROPHE + value + APOSTROPHE;
+            }
+            return addRequirement(term + SPACE + operation.operatorValue() + SPACE + valueString);
+        } else {
+            return addRequirement(term + SPACE + operation.operatorValue() + SPACE + value.toString());
+        }
+    }
+
+    private static boolean isUUID(@Nonnull final String string) {
+        try {
+            UUID uuid = UUID.fromString(string);
+            return true;
+        } catch (Exception ex) {
+            return false;
+        }
+    }
+
+    @Nonnull
+    private static String encode(@Nonnull final String stringValue) {
         String escapedString;
         try {
             escapedString = URLEncoder.encode(stringValue, UTF8);
@@ -114,418 +274,153 @@ public class UsergridQuery {
         return escapedString;
     }
 
-    public QueryResult GET() {
-        return Usergrid.getInstance().GET(this);
-    }
-
-    public QueryResult DELETE() {
-        return Usergrid.getInstance().DELETE(this);
-    }
-
-    public QueryResult PUT(final Map<String, Object> stringObjectHashMap) {
-        return Usergrid.getInstance().PUT(this, stringObjectHashMap);
-    }
-
-
-    public HashMap<String, Object> params() {
-        HashMap<String, Object> items = new HashMap<>();
-
-        items.putAll(builder.urlTerms);
-        items.put("ql", builder.getSelectString() + builder.getPredicateString());
-
-        return items;
-    }
-
-
-    public String getCollectionName() {
-        return builder.collectionName;
-    }
-
-
-    public static class Builder {
-
-        public final ArrayList<String> requirements = new ArrayList<>();
-        public final Map<String, String> urlTerms = new HashMap<>(11);
-        public String collectionName;
-        public List<SortTerm> orderClauses;
-        public Set<String> selectFields;
-
-        public Builder() {
-        }
-
-
-        private void addRequirement(final String requirement) {
-            if (requirement != null) {
-                this.requirements.add(requirement);
-            }
-        }
-
-        private Builder addOperationRequirement(final String term, final QUERY_OPERATION operation, final String value) {
-
-            if (term != null && operation != null && value != null) {
-                this.addRequirement(term + operation.toString() + APOSTROPHE + value + APOSTROPHE);
-            }
-
-            return this;
-        }
-
-        private Builder addOperationRequirement(final String term, final QUERY_OPERATION operation, final int value) {
-            if (term != null && operation != null) {
-                addRequirement(term + operation.toString() + value);
-            }
-            return this;
-        }
-
-        public Builder startsWith(final String term, final String value) {
-            if (term != null && value != null) {
-                addRequirement(term + EQUALS + APOSTROPHE + value + ASTERISK + APOSTROPHE);
-            }
-            return this;
-        }
-
-        public Builder endsWith(final String term, final String value) {
-            if (term != null && value != null) {
-                addRequirement(term + EQUALS + APOSTROPHE + ASTERISK + value + APOSTROPHE);
-            }
-            return this;
-        }
-
-        public Builder containsString(final String term, final String value) {
-            if (term != null && value != null) {
-                addRequirement(term + CONTAINS + APOSTROPHE + value + APOSTROPHE);
-            }
-            return this;
-        }
-
-        public Builder contains(final String term, final String value) {
-            if (term != null && value != null) {
-                addRequirement(term + CONTAINS + APOSTROPHE + value + APOSTROPHE);
-            }
-            return this;
-        }
-
-        public Builder not() {
-//      if(term != null && value != null){
-//        addRequirement(NOT + term + EQUALS + value);
-//      }
-//
-            addRequirement(NOT);
-            return this;
-        }
-
-        public Builder or() {
-//      System.out.println(this.requirements);
-            addRequirement(OR);
-            return this;
-        }
-
-
-        public Builder in(final String term, final int low, final int high) {
-            if (term != null) {
-                addRequirement(term + IN + low + COMMA + high);
-            }
-            return this;
-        }
-
-
-        public Builder locationWithin(final float distance, final float latitude, final float longitude) {
-
-            addRequirement("location " + WITHIN + distance + OF + latitude + COMMA + longitude);
-
-            return this;
-        }
-
-        public Builder locationWithin(final double distance, final double latitude, final double longitude) {
-
-            addRequirement("location " + WITHIN + distance + OF + latitude + COMMA + longitude);
-
-            return this;
-        }
-
-        public Builder collection(final String collectionName) {
-            if (collectionName != null) {
-                this.collectionName = collectionName;
-            }
-
-            return this;
-        }
-
-
-        public Builder urlTerm(final String urlTerm, final String equalsValue) {
-            if (urlTerm != null && equalsValue != null) {
-
-                if (urlTerm.equalsIgnoreCase(QL)) {
-                    ql(equalsValue);
-                } else {
-                    urlTerms.put(UsergridQuery.encode(urlTerm), UsergridQuery.encode(equalsValue));
+    @Nonnull
+    private String constructOrderByString() {
+        String orderByString = EMPTY_STRING;
+        if( !this.orderClauses.isEmpty() ) {
+            for(Map.Entry<String,UsergridQuerySortOrder> orderClause : this.orderClauses.entrySet()) {
+                if( !orderByString.isEmpty() ) {
+                    orderByString += COMMA;
                 }
+                orderByString += orderClause.getKey() + SPACE + orderClause.getValue().toString();
             }
-
-            return this;
-        }
-
-        public Builder ql(final String value) {
-            if (value != null) {
-                addRequirement(value);
+            if( !orderByString.isEmpty() ) {
+                orderByString = SPACE + ORDER_BY + SPACE + orderByString;
             }
-
-            return this;
         }
-
-        public Builder equals(final String term, final String stringValue) {
-            return addOperationRequirement(term, QUERY_OPERATION.EQUAL, stringValue);
-        }
-
-
-        public Builder equals(final String term, final int intValue) {
-            return addOperationRequirement(term, QUERY_OPERATION.EQUAL, intValue);
-        }
-
-        public Builder greaterThan(final String term, final String stringValue) {
-            return addOperationRequirement(term, QUERY_OPERATION.GREATER_THAN, stringValue);
-        }
-
-        public Builder greaterThan(final String term, final int intValue) {
-            return addOperationRequirement(term, QUERY_OPERATION.GREATER_THAN, intValue);
-        }
-
-
-        public Builder greaterThanOrEqual(final String term, final String stringValue) {
-            return addOperationRequirement(term, QUERY_OPERATION.GREATER_THAN_EQUAL_TO, stringValue);
-        }
-
-        public Builder greaterThanOrEqual(final String term, final int intValue) {
-            return addOperationRequirement(term, QUERY_OPERATION.GREATER_THAN_EQUAL_TO, intValue);
-        }
-
-        public Builder lessThan(final String term, final String stringValue) {
-            return addOperationRequirement(term, QUERY_OPERATION.LESS_THAN, stringValue);
-        }
-
-        public Builder lessThan(final String term, final int intValue) {
-            return addOperationRequirement(term, QUERY_OPERATION.LESS_THAN, intValue);
-        }
-
-        public Builder lessThanOrEqual(final String term, final String stringValue) {
-            return addOperationRequirement(term, QUERY_OPERATION.LESS_THAN_EQUAL_TO, stringValue);
-        }
-
-        public Builder lessThanOrEqual(final String term, final int intValue) {
-            return addOperationRequirement(term, QUERY_OPERATION.LESS_THAN_EQUAL_TO, intValue);
-        }
-
-        public Builder filter(final String term, final String stringValue) {
-            return this.equals(term, stringValue);
-        }
-
-        public Builder filter(final String term, final int intValue) {
-            return this.equals(term, intValue);
-        }
-
-        public Builder eq(final String term, final String stringValue) {
-            return this.equals(term, stringValue);
-        }
-
-        public Builder eq(final String term, final int intValue) {
-            return this.equals(term, intValue);
-        }
-
-        public Builder gt(final String term, final String stringValue) {
-            return this.greaterThan(term, stringValue);
-        }
-
-        public Builder gt(final String term, final int intValue) {
-            return this.greaterThan(term, intValue);
-        }
-
-        public Builder gte(final String term, final String stringValue) {
-            return this.greaterThanOrEqual(term, stringValue);
-        }
-
-        public Builder gte(final String term, final int intValue) {
-            return this.greaterThanOrEqual(term, intValue);
-        }
-
-        public Builder lt(final String term, final String stringValue) {
-            return this.lessThan(term, stringValue);
-        }
-
-        public Builder lt(final String term, final int intValue) {
-            return this.lessThan(term, intValue);
-        }
-
-        public Builder lte(final String term, final String stringValue) {
-            return this.lessThanOrEqual(term, stringValue);
-        }
-
-        public Builder lte(final String term, final int intValue) {
-            return this.lessThanOrEqual(term, intValue);
-        }
-
-        public Builder asc(String term) {
-            return this.descending(term);
-        }
-
-        public Builder ascending(String term) {
-            return addSortTerm(new SortTerm(term, ASC));
-        }
-
-        public Builder desc(String term) {
-            return this.descending(term);
-        }
-
-        public Builder descending(String term) {
-            return addSortTerm(new SortTerm(term, DESC));
-        }
-
-        private Builder addSortTerm(SortTerm term) {
-
-            if (orderClauses == null) {
-                orderClauses = new ArrayList<SortTerm>(3);
-            }
-
-            orderClauses.add(term);
-
-            return this;
-        }
-
-        public Builder sort(String term, Enum sortOrder) {
-            if (sortOrder == order.USERGRID_SORT_ASCENDING)
-                return asc(term);
-            else
-                return desc(term);
-        }
-
-        public UsergridQuery build() {
-            return new UsergridQuery(this);
-        }
-
-
-        public Builder fromString(String q1) {
-//      Builder ugquery = new Builder();
-//      return new UsergridQuery(ugquery);
-            urlTerms.put(UsergridQuery.encode("ql"), UsergridQuery.encode(q1));
-            return this;
-        }
-
-        public Builder limit(int limit) {
-
-            this.urlTerm("limit", String.valueOf(limit));
-            return this;
-        }
-
-        public Builder cursor(String cursor) {
-            this.urlTerm("cursor", cursor);
-            return this;
-        }
-
-        public Builder field(String field) {
-            if (selectFields == null) {
-                selectFields = new HashSet<>(3);
-            }
-
-            selectFields.add(field);
-
-            return this;
-        }
-
-        public String getSelectString() {
-            if (this.selectFields == null || this.selectFields.size() == 0)
-                return "select * ";
-
-            String selectString = "select ";
-            String appendString = ", ";
-
-            for (String field : this.selectFields)
-                selectString += field + appendString;
-
-            return selectString.substring(0, selectString.length() - appendString.length());
-        }
-
-        public String getQueryParameterString() {
-            String qparamString = "";
-
-            if (this.urlTerms.size() > 0) {
-
-                for (Map.Entry<String, String> urlTermPair : this.urlTerms.entrySet()) {
-
-                    String urlTerm = urlTermPair.getKey();
-                    String equalsValue = urlTermPair.getValue();
-                    if (qparamString.length() > 0)
-                        qparamString += AMPERSAND;
-                    qparamString += UsergridQuery.encode(urlTerm) + "=" + UsergridQuery.encode(equalsValue);
-                }
-
-            }
-            return qparamString;
-        }
-
-        public String getPredicateString() {
-
-            String predicatesString = "";
-
-            for (int i = 0; i < this.requirements.size(); i++) {
-
-                if (i > 0) {
-
-                    if (this.requirements.get(i) == OR || this.requirements.get(i) == NOT) {
-                        predicatesString += this.requirements.get(i);
-                        i++;
-                    } else if (this.requirements.get(i - 1) != NOT)
-                        predicatesString += AND;
-                }
-                predicatesString += this.requirements.get(i);
-            }
-
-            String qlString = "";
-
-            if (this.requirements.size() > 0)
-                qlString = " WHERE " + predicatesString;
-
-            if (this.orderClauses != null && this.orderClauses.size() > 0) {
-                for (int i = 0; i < this.orderClauses.size(); i++) {
-
-                    if (i == 0) {
-                        qlString += ORDER_BY;
-                    }
-                    SortTerm term = this.orderClauses.get(i);
-
-                    qlString += term.term + SPACE + term.order;
-
-                    if (i < this.orderClauses.size() - 1) {
-                        qlString += COMMA;
-                    }
-                }
-            }
-
-            return qlString;
-        }
+        return orderByString;
     }
 
-    private enum QUERY_OPERATION {
-        EQUAL(" = "),
-        GREATER_THAN(" > "),
-        GREATER_THAN_EQUAL_TO(" >= "),
-        LESS_THAN(" < "),
-        LESS_THAN_EQUAL_TO(" <= ");
-
-        private final String stringValue;
-
-        QUERY_OPERATION(final String s) {
-            this.stringValue = s;
+    @Nonnull
+    private String constructURLTermsString() {
+        String urlTermsString = EMPTY_STRING;
+        if( !this.urlTerms.isEmpty() ) {
+            urlTermsString = UsergridQuery.strJoin(this.urlTerms,AMPERSAND);
         }
-
-        public String toString() {
-            return this.stringValue;
-        }
+        return urlTermsString;
     }
 
-  /*
-  //TODO : UsergridQuery.or() -> first param - key:value1 , second param - key:value2 ?
-      new UsergridQuery("pets") --> without builder
-      UsergridQuery.fromString()
-    */
+    @Nonnull
+    public static String strJoin(@Nonnull final List<String> array, @Nonnull final String separator) {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i = 0, il = array.size(); i < il; i++) {
+            if (i > 0) {
+                stringBuilder.append(separator);
+            }
+            stringBuilder.append(array.get(i));
+        }
+        return stringBuilder.toString();
+    }
 
+    @Nonnull
+    private String constructRequirementString() {
+        ArrayList<String> requirementStrings = new ArrayList<>(this.requirementStrings);
+        String firstString = requirementStrings.get(0);
+        if( firstString.isEmpty() ) {
+            requirementStrings.remove(0);
+        }
+        String requirementsString = EMPTY_STRING;
+        if( !requirementStrings.isEmpty() ) {
+            firstString = requirementStrings.get(0);
+            if( firstString.equalsIgnoreCase(OR) || firstString.equalsIgnoreCase(AND) || firstString.equalsIgnoreCase(NOT) ) {
+                requirementStrings.remove(0);
+            }
+            if( !requirementStrings.isEmpty() ) {
+                Collections.reverse(requirementStrings);
+                requirementsString = UsergridQuery.strJoin(requirementStrings,SPACE);
+            }
+        }
+        return requirementsString;
+    }
+
+    @Nonnull
+    private String constructURLAppend() {
+        return this.constructURLAppend(true);
+    }
+
+    @Nonnull
+    private String constructURLAppend(final boolean autoURLEncode) {
+        if( this.fromStringValue != null ) {
+            String requirementsString = this.fromStringValue;
+            if( autoURLEncode ) {
+                requirementsString = UsergridQuery.encode(requirementsString);
+            }
+            return QUESTION_MARK + QL + EQUALS + requirementsString;
+        }
+        String urlAppend = EMPTY_STRING;
+        if( this.limit != LIMIT_DEFAULT ) {
+            urlAppend += LIMIT + EQUALS + this.limit.toString();
+        }
+        String urlTermsString = this.constructURLTermsString();
+        if( !urlTermsString.isEmpty() ) {
+            if( !urlAppend.isEmpty() ) {
+                urlAppend += AMPERSAND;
+            }
+            urlAppend += urlTermsString;
+        }
+        if( this.cursor != null && !this.cursor.isEmpty() ) {
+            if( !urlAppend.isEmpty() ) {
+                urlAppend += AMPERSAND;
+            }
+            urlAppend += CURSOR + EQUALS + this.cursor;
+        }
+
+        String requirementsString = this.constructRequirementString();
+        if( !requirementsString.isEmpty() ) {
+            requirementsString = SELECT_ALL + SPACE + WHERE + SPACE + requirementsString;
+        } else {
+            requirementsString = SELECT_ALL + SPACE;
+        }
+
+        String orderByString = this.constructOrderByString();
+        if( !orderByString.isEmpty() ) {
+            requirementsString += orderByString;
+        }
+        if( !requirementsString.isEmpty() ) {
+            if( autoURLEncode ) {
+                requirementsString = UsergridQuery.encode(requirementsString);
+            }
+            if( !urlAppend.isEmpty() ) {
+                urlAppend += AMPERSAND;
+            }
+            urlAppend += QL + EQUALS + requirementsString;
+        }
+        if( !urlAppend.isEmpty() ) {
+            urlAppend = QUESTION_MARK + urlAppend;
+        }
+        return urlAppend;
+    }
+
+    @Nonnull
+    public String build() {
+        return this.build(true);
+    }
+
+    @Nonnull
+    public String build(final boolean autoURLEncode) {
+        return this.constructURLAppend(autoURLEncode);
+    }
+
+    private static final int LIMIT_DEFAULT = 10;
+    private static final String AMPERSAND = "&";
+    private static final String AND = "and";
+    private static final String APOSTROPHE = "'";
+    private static final String COMMA = ",";
+    private static final String CONTAINS = "contains";
+    private static final String CURSOR = "cursor";
+    private static final String EMPTY_STRING = "";
+    private static final String EQUALS = "=";
+    private static final String LIMIT = "limit";
+    private static final String LOCATION = "location";
+    private static final String NOT = "not";
+    private static final String OF = "of";
+    private static final String OR = "or";
+    private static final String ORDER_BY = "order by";
+    private static final String QL = "ql";
+    private static final String QUESTION_MARK = "?";
+    private static final String SELECT_ALL = "select *";
+    private static final String SPACE = " ";
+    private static final String UTF8 = "UTF-8";
+    private static final String WHERE = "where";
+    private static final String WITHIN = "within";
 }
-
-

@@ -53,11 +53,11 @@ public class UsergridClientConfig {
         this.baseUrl = baseUrl;
     }
 
-    public UsergridClientConfig(String orgId, String appId, String baseUrl, UsergridAuthMode authFallback) {
+    public UsergridClientConfig(String orgId, String appId, String baseUrl, UsergridAuthMode authMode) {
         this.orgId = orgId;
         this.appId = appId;
         this.baseUrl = baseUrl;
-        this.authMode = authFallback;
+        this.authMode = authMode;
     }
 
 }
