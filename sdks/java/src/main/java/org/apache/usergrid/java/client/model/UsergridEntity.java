@@ -194,17 +194,6 @@ public class UsergridEntity {
      * @param name
      * @param value
      */
-    public UsergridEntity putproperty(String name, Long value) {
-        putproperty(name, value);
-        return this;
-    }
-
-    /**
-     * Set the property
-     *
-     * @param name
-     * @param value
-     */
     public void putproperty(String name, float value) {
         setFloatProperty(properties, name, value);
     }

@@ -1,9 +1,10 @@
 package org.apache.usergrid.client;
 
-import com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.BIConversion;
-import org.apache.usergrid.java.client.*;
+import org.apache.usergrid.java.client.Usergrid;
+import org.apache.usergrid.java.client.UsergridClient;
+import org.apache.usergrid.java.client.UsergridEnums;
+import org.apache.usergrid.java.client.UsergridRequest;
 import org.apache.usergrid.java.client.response.UsergridResponse;
-import org.junit.Before;
 import org.junit.Test;
 
 import javax.ws.rs.core.MediaType;

@@ -212,7 +212,7 @@ public class JsonUtils {
         JsonNode value = properties.get(name);
 
         if (value instanceof TextNode) {
-            return (T) value.asText();
+            return (T) value.toString();
         } else if (value instanceof LongNode) {
             Long valueLong = value.asLong();
             return (T) valueLong;

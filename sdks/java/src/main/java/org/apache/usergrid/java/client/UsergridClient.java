@@ -16,22 +16,26 @@
  */
 package org.apache.usergrid.java.client;
 
-import javax.annotation.Nullable;
-
 import edu.umd.cs.findbugs.annotations.NonNull;
-import org.apache.usergrid.java.client.model.*;
+import org.apache.usergrid.java.client.UsergridEnums.UsergridAuthMode;
+import org.apache.usergrid.java.client.UsergridEnums.UsergridHttpMethod;
+import org.apache.usergrid.java.client.model.UsergridAppAuth;
+import org.apache.usergrid.java.client.model.UsergridEntity;
+import org.apache.usergrid.java.client.model.UsergridUser;
+import org.apache.usergrid.java.client.model.UsergridUserAuth;
 import org.apache.usergrid.java.client.query.EntityQueryResult;
 import org.apache.usergrid.java.client.query.LegacyQueryResult;
 import org.apache.usergrid.java.client.query.QueryResult;
 import org.apache.usergrid.java.client.query.UsergridQuery;
-import org.apache.usergrid.java.client.UsergridEnums.UsergridAuthMode;
 import org.apache.usergrid.java.client.response.UsergridResponse;
-import org.apache.usergrid.java.client.UsergridEnums.UsergridHttpMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import javax.ws.rs.core.MediaType;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 import static org.apache.usergrid.java.client.utils.ObjectUtils.isEmpty;
 
@@ -544,6 +548,12 @@ public class UsergridClient {
         return queryEntities(UsergridHttpMethod.GET.toString(), params, null, config.orgId, config.appId, STR_USERS);
     }
 
+    public UsergridResponse getEntitiesInCollection(String collectionName,Map<String, Object> paramsMap){
+        String[] segments = {config.orgId, config.appId, collectionName};
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET,MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl,paramsMap,null,segments);
+        return requestManager.performRequest(request);
+    }
     public UsergridResponse getEntity(final String type, final String id) {
 
         String[] segments = {config.orgId, config.appId,  type, id};
@@ -883,18 +893,6 @@ public class UsergridClient {
 
         return queryEntities(UsergridHttpMethod.GET.toString(), params, null, config.orgId, config.appId, connectingEntityType, connectingEntityId, connectionType);
     }
-
-
-    public UsergridResponse queryEdgesForVertex(final String srcType,
-                                                final String srcID) {
-
-
-        String[] segments = {config.orgId, config.appId, srcType, srcID};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,null,segments);
-        return requestManager.performRequest(request);
-    }
-
 
     public UsergridResponse queryCollections() {
 
