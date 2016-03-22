@@ -23,13 +23,17 @@ public class UsergridAuth {
     }
 
     public boolean hasToken() {
-        return (accessToken != null);
+        return (accessToken != null); // TODO: Why not just return the result instead of the if statement. e.g. return (accessToken != null);
     }
 
-    public boolean isExprired() {
+    public boolean isExprired() { // TODO: Methods need to be camel cased.
         boolean isExpired = false;
         Long currTime = System.currentTimeMillis() / 1000;
-        return (!(token_expiry / 1000 < currTime));
+        if(token_expiry / 1000 < currTime)  // TODO: Why not just return the result instead of the if statement. e.g. return !(token_expiry / 1000 < currTime);
+            isExpired = false;
+        else
+            isExpired = true; //  todo : why !this.usingToken in swift ?
+        return isExpired;
     }
 
     public boolean isValidToken() {

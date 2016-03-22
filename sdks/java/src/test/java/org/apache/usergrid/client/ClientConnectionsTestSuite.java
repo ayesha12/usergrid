@@ -1,22 +1,14 @@
 package org.apache.usergrid.client;
 
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.TextNode;
-import org.apache.commons.collections.functors.OnePredicate;
 import org.apache.usergrid.java.client.Direction;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
-import org.apache.usergrid.java.client.UsergridEnums;
 import org.apache.usergrid.java.client.model.UsergridEntity;
-import org.apache.usergrid.java.client.query.UsergridQuery;
-import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.codehaus.jettison.json.JSONException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -51,7 +43,7 @@ public class ClientConnectionsTestSuite {
         //should set properties for a given object, overwriting properties that exist and creating those that don\'t
         UsergridEntity entityone = new UsergridEntity(collectionName);
         entityone.putProperties(fields);
-        entityone.POST();
+        client.POST(entityone);
 
         fields = new HashMap<>(3);
         fields.put("name", "amici");
@@ -60,7 +52,7 @@ public class ClientConnectionsTestSuite {
         //should set properties for a given object, overwriting properties that exist and creating those that don\'t
         UsergridEntity entitytwo = new UsergridEntity(collectionName);
         entitytwo.putProperties(fields);
-        entitytwo.POST();
+        client.POST(entitytwo);
 
         //should connect entities by passing UsergridEntity objects as parameters
         client.connect(entityone, "likes", entitytwo);
@@ -116,7 +108,7 @@ public class ClientConnectionsTestSuite {
         //should set properties for a given object, overwriting properties that exist and creating those that don\'t
         UsergridEntity entityone = new UsergridEntity(collectionName);
         entityone.putProperties(fields);
-        entityone.POST();
+        client.POST(entityone);
 
         fields = new HashMap<>(3);
         fields.put("name", "amici");
@@ -125,7 +117,7 @@ public class ClientConnectionsTestSuite {
         //should set properties for a given object, overwriting properties that exist and creating those that don\'t
         UsergridEntity entitytwo = new UsergridEntity(collectionName);
         entitytwo.putProperties(fields);
-        entitytwo.POST();
+        client.POST(entitytwo);
 
         //should connect entities by passing UsergridEntity objects as parameters
         client.connect(entityone, "likes", entitytwo);
@@ -157,7 +149,7 @@ public class ClientConnectionsTestSuite {
         //should set properties for a given object, overwriting properties that exist and creating those that don\'t
         UsergridEntity entityone = new UsergridEntity(collectionName);
         entityone.putProperties(fields);
-        entityone.POST();
+        client.POST(entityone);
 
         fields = new HashMap<>(3);
         fields.put("name", "amici");
@@ -166,7 +158,7 @@ public class ClientConnectionsTestSuite {
         //should set properties for a given object, overwriting properties that exist and creating those that don\'t
         UsergridEntity entitytwo = new UsergridEntity(collectionName);
         entitytwo.putProperties(fields);
-        entitytwo.POST();
+        client.POST(entitytwo);
 
         //should connect entities by passing UsergridEntity objects as parameters
         client.connect(entityone, "likes", entitytwo);
@@ -174,6 +166,7 @@ public class ClientConnectionsTestSuite {
         client.connect(entityone,"twice",entitytwo);
         client.connect(entityone,"thrice",entitytwo);
 
+        //should disconnect entities by passing UsergridEntity objects as parameters
         client.disconnect(entityone, "likes" , entitytwo);
         UsergridEntity response = client.getConnections(Direction.IN, entitytwo, "likes").first();
         assertTrue("response should be null", response == null);

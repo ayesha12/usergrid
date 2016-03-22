@@ -1,7 +1,6 @@
 package org.apache.usergrid.client;
 
 import org.apache.usergrid.java.client.Usergrid;
-import org.apache.usergrid.java.client.UsergridEnums;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.junit.After;
@@ -34,7 +33,7 @@ public class ConnectionTestSuite {
     owner.putproperty("getName", "jeff");
     owner.putproperty("wife", "julie");
 
-    UsergridResponse r = owner.POST();
+    UsergridResponse r = Usergrid.getInstance().POST(owner);
 
     // assert created
 
@@ -42,7 +41,7 @@ public class ConnectionTestSuite {
     pet.putproperty("getName", "max");
     pet.putproperty("color", "tabby");
 
-    r = pet.POST();
+    r = Usergrid.getInstance().POST(pet);
 
     // assert created
 

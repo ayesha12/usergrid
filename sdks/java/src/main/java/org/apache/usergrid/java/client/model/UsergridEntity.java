@@ -307,79 +307,6 @@ public class UsergridEntity {
     }
 
     /**
-     * Retrieves an Entity by type and getName
-     *
-     * @param collectionName the getName of the collection
-     * @param name           the getName or UUID of the object
-     * @return
-     */
-    public static UsergridEntity GET(@Nonnull final String collectionName, @Nonnull final String name) {
-        return GET(Usergrid.getInstance(), collectionName, name);
-    }
-
-    public static UsergridEntity GET(@Nonnull final UsergridClient client, @Nonnull final String collectionName, @Nonnull final String name) {
-        return client.getEntity(collectionName, name).first();
-    }
-
-    /**
-     * Performs a PUT of this entity using the Singleton client
-     *
-     * @throws ClientException
-     */
-    public UsergridResponse PUT() throws ClientException {
-
-        return PUT(Usergrid.getInstance());
-    }
-
-    public UsergridResponse PUT(@Nonnull final UsergridClient client) throws ClientException {
-
-        // check for one of: getName, uuid, error if not found
-        if (this.getUuid() == null && this.getStringProperty("getName") == null)
-            throw new IllegalArgumentException("No getName or uuid is present for the entity. Invalid argument");
-
-        UsergridResponse response = client.PUT(this);
-
-        this.refresh(response.first());
-
-        return response;
-    }
-
-    /**
-     * Performs a POST of the entity using the Singleton client
-     *
-     * @throws ClientException
-     */
-    public UsergridResponse POST() throws ClientException {
-        return POST(Usergrid.getInstance());
-    }
-
-    public UsergridResponse POST(@Nonnull final UsergridClient client) throws ClientException {
-        UsergridResponse response = client.POST(this);
-        if (response != null) {
-            if (response.responseError == null) {
-                UsergridEntity first = response.first();
-                if (first != null)
-                    this.refresh(first);
-            }
-            return response;
-        }
-        throw new ClientException("Response was null on POST!");
-    }
-
-    /**
-     * Performs a DELETE of this entity using the Singleton client
-     *
-     * @throws ClientException
-     */
-    public UsergridResponse DELETE() throws ClientException {
-        return DELETE(Usergrid.getInstance());
-    }
-
-    public UsergridResponse DELETE(@Nonnull final UsergridClient client) throws ClientException {
-        return client.DELETE(this);
-    }
-
-    /**
      * Will refresh this object with a response from the server.  For example, when you do a POST and get back the
      * entity after a POST and setting the UUID
      *
@@ -403,9 +330,10 @@ public class UsergridEntity {
 
     public void save(@Nonnull final UsergridClient client) {
         if (this.getUuidString() != null || this.getUuidString() != "")
-            PUT(client);
+            client.PUT(this);
         else
-            POST(client);
+            client.POST(this);
+
     }
 
     public void remove() {
@@ -413,7 +341,7 @@ public class UsergridEntity {
     }
 
     public void remove(@Nonnull final UsergridClient client) {
-        DELETE(client);
+        client.DELETE(this);
     }
 
     public UsergridResponse connect(@Nonnull final String relation, @Nonnull final String type, @Nonnull final String name) {
@@ -428,8 +356,8 @@ public class UsergridEntity {
         return connect(Usergrid.getInstance(), connectionType, targetUUId);
     }
 
-    public UsergridResponse connect(@Nonnull final UsergridClient client, @Nonnull final String connectionType, @Nonnull final String targetUUId) throws ClientException {
-        return client.connect(this.getType(), this.getName(), connectionType, targetUUId.toString());
+    public UsergridResponse connect(@Nonnull final UsergridClient client, @Nonnull final String relationship, @Nonnull final String targetUuid) throws ClientException {
+        return client.connect(this.getType(), this.getName(), relationship, targetUuid);
     }
 
     public UsergridResponse connect(@Nonnull final String connectionType, @Nonnull final UsergridEntity target) throws ClientException {
@@ -514,8 +442,13 @@ public class UsergridEntity {
 
 
     public UsergridEntity reload() {
-        return GET(this.getType(), this.getName());
+        return reload(Usergrid.getInstance());
     }
+
+    public UsergridEntity reload(@Nonnull UsergridClient client) {
+        return client.GET(this.getType(),this.getName()).first();
+    }
+
 
     /**
      * Will effectively delete a property when it is set to null.  The property will not be

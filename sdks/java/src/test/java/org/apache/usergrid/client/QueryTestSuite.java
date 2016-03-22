@@ -2,7 +2,7 @@ package org.apache.usergrid.client;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.DoubleNode;
 import org.apache.usergrid.java.client.Usergrid;
-import org.apache.usergrid.java.client.model.UsergridAppAuth;
+import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.query.QueryResult;
 import org.apache.usergrid.java.client.query.UsergridQuery;
@@ -23,10 +23,13 @@ public class QueryTestSuite {
 
   public static final String COLLECTION = "shapes";
 
+  public static UsergridClient client = null;
   @Before
   public void before() {
     Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME,SDKTestConfiguration.authFallBack);
     Usergrid.authorizeAppClient(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
+    client = Usergrid.getInstance();
+
   }
 
   @After
@@ -133,32 +136,32 @@ public class QueryTestSuite {
     UsergridEntity e = new UsergridEntity(collectionName);
     e.setLocation(37.334115, -121.894340);
     e.putproperty("name", "Apigee Office");
-    e.POST();
+    client.POST(e);
 
     UsergridEntity amicis = new UsergridEntity(collectionName);
     amicis.setLocation(37.335616, -121.894168);
     amicis.putproperty("name", "Amicis");
-    amicis.POST();
+    client.POST(amicis);
 
     UsergridEntity sanPedroMarket = new UsergridEntity(collectionName);
     sanPedroMarket.setLocation(37.336499, -121.894356);
     sanPedroMarket.putproperty("name", "SanPedroMarket");
-    sanPedroMarket.POST();
+    client.POST(sanPedroMarket);
 
     UsergridEntity saintJamesPark = new UsergridEntity(collectionName);
     saintJamesPark.setLocation(37.339079, -121.891422);
     saintJamesPark.putproperty("name", "saintJamesPark");
-    saintJamesPark.POST();
+    client.POST(saintJamesPark);
 
     UsergridEntity sanJoseNews = new UsergridEntity(collectionName);
     sanJoseNews.setLocation(37.337812, -121.890784);
     sanJoseNews.putproperty("name", "sanJoseNews");
-    sanJoseNews.POST();
+    client.POST(sanJoseNews);
 
     UsergridEntity deAnza = new UsergridEntity(collectionName);
     deAnza.setLocation(37.334370, -121.895081);
     deAnza.putproperty("name", "deAnza");
-    deAnza.POST();
+    client.POST(deAnza);
 
     SDKTestUtils.indexSleep();
 

@@ -1,5 +1,6 @@
 package org.apache.usergrid.client;
 
+import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 
@@ -64,7 +65,7 @@ public class    SDKTestUtils {
       e.putproperty(field.getKey(), field.getValue());
     }
 
-    UsergridResponse r = e.POST();
+    UsergridResponse r = Usergrid.getInstance().POST(e);
 
     if (r.responseError != null) {
       assertTrue("UUID should not be null", e.getUuidString() != null);
@@ -74,7 +75,7 @@ public class    SDKTestUtils {
       }
     }
 
-    return e;
+    return r.first();
   }
 
   public static void sleep(long millis) {

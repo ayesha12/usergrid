@@ -1,10 +1,9 @@
 package org.apache.usergrid.client;
 
-import org.apache.usergrid.java.client.Direction;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
-import org.apache.usergrid.java.client.UsergridEnums;
 import org.apache.usergrid.java.client.model.UsergridEntity;
+import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.codehaus.jettison.json.JSONException;
 import org.junit.After;
@@ -43,13 +42,13 @@ public class ClientRestTestSuite {
         fields.put("place", "San Jose");
         UsergridEntity entityone = new UsergridEntity(collectionName);
         entityone.putProperties(fields);
-        entityone.POST();
+        client.POST(entityone);
         fields = new HashMap<>(3);
         fields.put("name", "amici");
         fields.put("place", "San Jose");
         UsergridEntity entitytwo = new UsergridEntity(collectionName);
         entitytwo.putProperties(fields);
-        entitytwo.POST();
+        client.POST(entitytwo);
         client.connect(entityone, "likes", entitytwo);
         client.connect(entityone, "visited", entitytwo.getUuid().toString());
 
@@ -80,6 +79,11 @@ public class ClientRestTestSuite {
         //response.last should exist and have a valid uuid
         assertTrue("last entity is not null", response.last() != null);
         assertTrue("last entity is not null and has uuid", response.last().getUuidString() != null);
+
+
+        UsergridQuery query = new UsergridQuery(collectionName)
+                .eq("place", "San Jose");
+
 
     }
 
