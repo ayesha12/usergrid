@@ -11,7 +11,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class UsergridInitTest {
 
-  
+
   @Test
   public void testInitAppUsergrid() {
 

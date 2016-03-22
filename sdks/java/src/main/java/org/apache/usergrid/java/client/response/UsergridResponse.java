@@ -388,7 +388,7 @@ public class UsergridResponse {
             response.responseError = new UsergridResponseError(clientError.getResponse().getStatusInfo().toString(), clientError.getResponse().getStatus(),
                     clientError.getResponse().toString(), clientError.getClass().toString());
         } else
-            response.responseError = new UsergridResponseError(ex.getClass().toString(), 0, ex.getMessage(), ex.getClass().toString());
+            response.responseError = new UsergridResponseError(ex.getClass().toString(), 0, ex.getMessage(), ex.getCause().toString());
         return response;
     }
 

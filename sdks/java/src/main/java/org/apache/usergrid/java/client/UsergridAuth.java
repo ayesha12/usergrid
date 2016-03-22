@@ -4,12 +4,11 @@ package org.apache.usergrid.java.client;
  * Created by Jeff West on 9/2/15.
  */
 public class UsergridAuth {
-
     /**
      * TODO: These should be private with getters/setters.
      * In java start with private and add getters and setters and proceed from there.  Only use public if you absolutely need to.
      */
-    public String accessToken = null;
+    public static String accessToken = null;
     public boolean usingToken = false;
     public Long token_expiry;
 
@@ -23,7 +22,7 @@ public class UsergridAuth {
     }
 
     public boolean hasToken() {
-        return accessToken != null;
+        return (accessToken != null);
     }
 
     public boolean isExprired() {
@@ -36,8 +35,8 @@ public class UsergridAuth {
         return (hasToken() && !isExprired());
     }
 
-    public void setAccessToken(String acToken) {
-        this.accessToken = acToken;
+    public static void setAccessToken(String acToken) {
+        accessToken = acToken;
     }
 
     public void setTokenExpiry(Long tokenExpriy) {
@@ -48,8 +47,7 @@ public class UsergridAuth {
      * Destroys/removes the access token and expiry.
      */
     public void destroy() {
-        this.accessToken = null;
-        this.token_expiry = null;
+        accessToken = null;
+        token_expiry = null;
     }
-
 }

@@ -1,9 +1,9 @@
 package org.apache.usergrid.java.client;
 
-import com.fasterxml.jackson.databind.deser.std.JacksonDeserializers;
-import okhttp3.Request;
+import org.apache.usergrid.java.client.UsergridEnums.UsergridHttpMethod;
 import org.apache.usergrid.java.client.filter.ErrorResponseFilter;
 import org.apache.usergrid.java.client.response.UsergridResponse;
+import org.glassfish.jersey.jackson.JacksonFeature;
 
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
@@ -12,9 +12,6 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
-import org.apache.usergrid.java.client.UsergridEnums.UsergridHttpMethod;
-import org.glassfish.jersey.jackson.JacksonFeature;
 
 import static org.apache.usergrid.java.client.utils.ObjectUtils.isEmpty;
 
