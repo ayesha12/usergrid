@@ -25,6 +25,7 @@ import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.apache.usergrid.java.client.utils.JsonUtils;
 import org.codehaus.jettison.json.JSONException;
 
+import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.List;
 
@@ -53,26 +54,26 @@ public class UsergridUser extends UsergridEntity {
         changeType(ENTITY_TYPE);
     }
 
-    public UsergridUser(UsergridEntity usergridEntity) {
+    public UsergridUser(@Nonnull final UsergridEntity usergridEntity) {
         super();
         properties = usergridEntity.properties;
         changeType(ENTITY_TYPE);
     }
 
-    public UsergridUser(String name, HashMap<String, Object> propertyMap) throws JSONException {
+    public UsergridUser(@Nonnull final String name, HashMap<String, Object> propertyMap) throws JSONException {
         super();
         changeType(ENTITY_TYPE);
         setName(name);
         putProperties(propertyMap);
     }
 
-    public UsergridUser(String username, String userPassword) {
+    public UsergridUser(@Nonnull final String username, @Nonnull final String userPassword) {
         super();
         setUsername(username);
         setPassword(userPassword);
     }
 
-    public UsergridUser(String name, String username, String emailid, String password) {
+    public UsergridUser(@Nonnull final String name, @Nonnull final String username, @Nonnull final String emailid, @Nonnull final String password) {
         super();
         setName(name);
         setUsername(username);
@@ -104,14 +105,16 @@ public class UsergridUser extends UsergridEntity {
     }
 
     public void create() throws JSONException {
+        create(Usergrid.getInstance());
+    }
 
+    public void create(@Nonnull final UsergridClient client) throws JSONException {
         UsergridEntity entity = null;
         UsergridResponse entityResponse = null;
         try {
-            entityResponse = Usergrid.getInstance().GET(ENTITY_TYPE, this.getUsername());
+            entityResponse = client.GET(ENTITY_TYPE, this.getUsername());
             entity = entityResponse.entity();
         } catch (Exception e) {
-//			e.printStackTrace();
         }
         if (entity != null) {
             this.properties = entity.properties;
@@ -119,13 +122,17 @@ public class UsergridUser extends UsergridEntity {
             if (getName() == null)
                 this.setName(getUsername());
             this.setType(ENTITY_TYPE);
-            entityResponse = Usergrid.getInstance().createEntity(this);
+            entityResponse = client.createEntity(this);
             this.properties = entityResponse.entity().properties;
         }
     }
 
     public void remove() {
-        Usergrid.getInstance().DELETE(this);
+        remove(Usergrid.getInstance());
+    }
+
+    public void remove(@Nonnull final UsergridClient client) {
+        client.DELETE(this);
     }
 
     @JsonSerialize(include = NON_NULL)
@@ -133,7 +140,7 @@ public class UsergridUser extends UsergridEntity {
         return JsonUtils.getStringProperty(properties, PROPERTY_USERNAME);
     }
 
-    public void setUsername(String username) {
+    public void setUsername(@Nonnull final String username) {
         setStringProperty(properties, PROPERTY_USERNAME, username);
     }
 
@@ -142,7 +149,7 @@ public class UsergridUser extends UsergridEntity {
         return JsonUtils.getStringProperty(properties, PROPERTY_NAME);
     }
 
-    public void setName(String name) {
+    public void setName(@Nonnull final String name) {
         setStringProperty(properties, PROPERTY_NAME, name);
     }
 
@@ -151,16 +158,19 @@ public class UsergridUser extends UsergridEntity {
         return JsonUtils.getStringProperty(properties, PROPERTY_EMAIL);
     }
 
-    public void setEmail(String email) {
+    public void setEmail(@Nonnull final String email) {
         setStringProperty(properties, PROPERTY_EMAIL, email);
     }
 
-    public void setPassword(String password) {
+    public void setPassword(@Nonnull final String password) {
         setStringProperty(properties, PROPERTY_PASSWORD, password);
     }
 
-    public boolean checkAvailable(String email, String username) {
-        UsergridClient client = Usergrid.getInstance();
+    public boolean checkAvailable(@Nonnull final String email, @Nonnull final String username) {
+        return checkAvailable(Usergrid.getInstance(), email, username);
+    }
+
+    public boolean checkAvailable(@Nonnull final UsergridClient client, @Nonnull final String email, @Nonnull final String username) {
         UsergridQuery qry = null;
         if (email == null && username == null)
             new IllegalArgumentException("email and username both are null ");
@@ -182,7 +192,7 @@ public class UsergridUser extends UsergridEntity {
         return getBooleanProperty(properties, PROPERTY_ACTIVATED);
     }
 
-    public void setActivated(Boolean activated) {
+    public void setActivated(@Nonnull final Boolean activated) {
         setBooleanProperty(properties, PROPERTY_ACTIVATED, activated);
     }
 
@@ -191,7 +201,7 @@ public class UsergridUser extends UsergridEntity {
         return getBooleanProperty(properties, PROPERTY_DISABLED);
     }
 
-    public void setDisabled(Boolean disabled) {
+    public void setDisabled(@Nonnull final Boolean disabled) {
         setBooleanProperty(properties, PROPERTY_DISABLED, disabled);
     }
 
@@ -200,7 +210,7 @@ public class UsergridUser extends UsergridEntity {
         return JsonUtils.getStringProperty(properties, PROPERTY_FIRSTNAME);
     }
 
-    public void setFirstname(String firstname) {
+    public void setFirstname(@Nonnull final String firstname) {
         setStringProperty(properties, PROPERTY_FIRSTNAME, firstname);
     }
 
@@ -209,7 +219,7 @@ public class UsergridUser extends UsergridEntity {
         return JsonUtils.getStringProperty(properties, PROPERTY_MIDDLENAME);
     }
 
-    public void setMiddlename(String middlename) {
+    public void setMiddlename(@Nonnull final String middlename) {
         setStringProperty(properties, PROPERTY_MIDDLENAME, middlename);
     }
 
@@ -218,7 +228,7 @@ public class UsergridUser extends UsergridEntity {
         return JsonUtils.getStringProperty(properties, PROPERTY_LASTNAME);
     }
 
-    public void setLastname(String lastname) {
+    public void setLastname(@Nonnull final String lastname) {
         setStringProperty(properties, PROPERTY_LASTNAME, lastname);
     }
 
@@ -227,7 +237,7 @@ public class UsergridUser extends UsergridEntity {
         return JsonUtils.getStringProperty(properties, PROPERTY_PICTURE);
     }
 
-    public void setPicture(String picture) {
+    public void setPicture(@Nonnull final String picture) {
         setStringProperty(properties, PROPERTY_PICTURE, picture);
     }
 
