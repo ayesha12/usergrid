@@ -221,7 +221,7 @@ public class EntityTestSuite {
 
         assertTrue("The returned entity does not have the same UUID when querying by field", e.getUuidString().equals(eLookup.getUuidString()));
 
-        e.putproperty("orientation", "down");
+        e.putProperty("orientation", "down");
 
         client.PUT(e);
 
@@ -314,31 +314,31 @@ public class EntityTestSuite {
         String entityName = "testEntity9";
 
         UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
-        e.putproperty("orientation", "up");
-        e.putproperty("sides", Integer.valueOf(4));
+        e.putProperty("orientation", "up");
+        e.putProperty("sides", Integer.valueOf(4));
         e.save();
 
         UsergridEntity eLookUp = client.GET(collectionName, "testEntity9").first();
 
         //Check if the property was added correctly
         assertTrue("The entity returned is not null.", eLookUp != null);
-        assertTrue("The entity putproperty() was successfull ", eLookUp.getStringProperty("orientation").equals("up"));
-        assertTrue("The entity putproperty() was successfull ", eLookUp.getProperties().get("sides").asInt() == 4);
+        assertTrue("The entity putProperty() was successfull ", eLookUp.getStringProperty("orientation").equals("up"));
+        assertTrue("The entity putProperty() was successfull ", eLookUp.getProperties().get("sides").asInt() == 4);
 
         //Overwrite the property if it exists.
-        e.putproperty("orientation", "horizontal");
+        e.putProperty("orientation", "horizontal");
         e.save();
         eLookUp = client.GET(collectionName, "testEntity9").first();
-        assertTrue("The entity putproperty() was successfull ", eLookUp.getStringProperty("orientation").equals("horizontal"));
+        assertTrue("The entity putProperty() was successfull ", eLookUp.getStringProperty("orientation").equals("horizontal"));
         eLookUp = client.GET(collectionName, "entityNew").first();
 
         //should not be able to set the name key (name is immutable)
         e.setName("entityNew");
         e.save();
         eLookUp = client.GET(collectionName, "testEntity9").first();
-        assertTrue("The entity putproperty() was successfull ", eLookUp.getName().equals("testEntity9"));
+        assertTrue("The entity putProperty() was successfull ", eLookUp.getName().equals("testEntity9"));
         eLookUp = client.GET(collectionName, "entityNew").first();
-        assertTrue("The entity putproperty() was successfull ", eLookUp == null);
+        assertTrue("The entity putProperty() was successfull ", eLookUp == null);
 
     }
 
@@ -362,7 +362,7 @@ public class EntityTestSuite {
 
         UsergridEntity eLookUp = client.GET(collectionName, "testEntity9").first();
         assertTrue("The entity returned is not null.", eLookUp != null);
-        assertTrue("The entity putproperty() was successfull ", eLookUp.getStringProperty("orientation").equals("up"));
+        assertTrue("The entity putProperty() was successfull ", eLookUp.getStringProperty("orientation").equals("up"));
         assertTrue("overwrite existing property", eLookUp.getStringProperty("color").equals("black"));
 
     }
@@ -449,7 +449,7 @@ public class EntityTestSuite {
         lenArr.add(2);
         lenArr.add(3);
         lenArr.add(4);
-        e.putproperty("lenArray", lenArr);
+        e.putProperty("lenArray", lenArr);
         e.save();
 
         ArrayList<Object> lenArr2 = new ArrayList<>();
@@ -487,7 +487,7 @@ public class EntityTestSuite {
         lenArr.add(2);
         lenArr.add(3);
         lenArr.add(4);
-        e.putproperty("lenArray", lenArr);
+        e.putProperty("lenArray", lenArr);
         e.save();
 
         ArrayList<Object> lenArr2 = new ArrayList<>();
@@ -521,7 +521,7 @@ public class EntityTestSuite {
         lenArr.add(1);
         lenArr.add(2);
         lenArr.add(3);
-        e.putproperty("lenArray", lenArr);
+        e.putProperty("lenArray", lenArr);
         e.save();
         e.pop("lenArray");
         e.save();
@@ -536,7 +536,7 @@ public class EntityTestSuite {
 
 
         //value should remain unchanged if it is not an array
-        e.putproperty("foo", "test1");
+        e.putProperty("foo", "test1");
         e.save();
         e.pop("foo");
         eLookUp = client.GET(collectionName, "testEntity1").first();
@@ -547,7 +547,7 @@ public class EntityTestSuite {
 
         //should gracefully handle empty arrays
         ArrayList<Object> lenArr2 = new ArrayList<>();
-        e.putproperty("foo", lenArr2);
+        e.putProperty("foo", lenArr2);
         e.save();
         e.pop("foo");
         eLookUp = client.GET(collectionName, "testEntity1").first();
@@ -571,7 +571,7 @@ public class EntityTestSuite {
         lenArr.add(1);
         lenArr.add(2);
         lenArr.add(3);
-        e.putproperty("lenArray", lenArr);
+        e.putProperty("lenArray", lenArr);
         e.save();
         e.shift("lenArray");
         e.save();
@@ -586,7 +586,7 @@ public class EntityTestSuite {
 
 
         //value should remain unchanged if it is not an array
-        e.putproperty("foo", "test1");
+        e.putProperty("foo", "test1");
         e.save();
         e.shift("foo");
         eLookUp = client.GET(collectionName, "testEntity1").first();
@@ -597,7 +597,7 @@ public class EntityTestSuite {
 
         //should gracefully handle empty arrays
         ArrayList<Object> lenArr2 = new ArrayList<>();
-        e.putproperty("foo", lenArr2);
+        e.putProperty("foo", lenArr2);
         e.save();
         e.shift("foo");
         eLookUp = client.GET(collectionName, "testEntity1").first();
@@ -625,7 +625,7 @@ public class EntityTestSuite {
         lenArr.add(2);
         lenArr.add(3);
         lenArr.add(4);
-        e.putproperty("lenArray", lenArr);
+        e.putProperty("lenArray", lenArr);
         e.save();
 
         ArrayList<Object> lenArr2 = new ArrayList<>();
@@ -653,7 +653,7 @@ public class EntityTestSuite {
         lenArr.add(3);
         lenArr.add(4);
 
-        e.putproperty("lenArray", lenArr);
+        e.putProperty("lenArray", lenArr);
         e.save();
         lenArr2 = new ArrayList<>();
 
@@ -672,7 +672,7 @@ public class EntityTestSuite {
         assertTrue("The entity returned is not null.", eLookUp.getProperties().get("lenArray").equals(toCompare));
 
         //should convert an existing value into an array when inserting a second value
-        e.putproperty("foo", "test");
+        e.putProperty("foo", "test");
         e.save();
         e.insert("foo", "test1", 1);
         e.save();
@@ -695,7 +695,7 @@ public class EntityTestSuite {
 
         //should gracefully handle indexes out of range
 
-        e.putproperty("Arrindex", "test1");
+        e.putProperty("Arrindex", "test1");
         e.save();
         e.insert("Arrindex", "test2", 1000);
         e.save();
@@ -750,7 +750,7 @@ public class EntityTestSuite {
         assertTrue("The entity returned is not null.", eLookUp2.getConnections(Direction.IN, "likes").get(0).getName().equals("testEntity1"));
 
 
-        e1.disconnect("likes", e2);
+        e1.disConnect("likes", e2);
         e1.save();
         eLookUp = client.GET(collectionName, "testEntity1").first();
         assertTrue("The entity returned is not null.", eLookUp != null);
@@ -763,7 +763,7 @@ public class EntityTestSuite {
         assertTrue("The entity returned is not null.", eLookUp != null);
         assertTrue("The entity returned is not null.", eLookUp.getConnections(Direction.OUT, "visited").get(0).getName().equals("testEntity2"));
 
-        e1.disconnect("visited", e2.getUuid().toString());
+        e1.disConnect("visited", e2.getUuid().toString());
         e1.save();
         eLookUp = client.GET(collectionName, "testEntity1").first();
         assertTrue("The entity returned is not null.", eLookUp != null);
@@ -776,7 +776,7 @@ public class EntityTestSuite {
         assertTrue("The entity returned is not null.", eLookUp != null);
         assertTrue("The entity returned is not null.", eLookUp.getConnections(Direction.OUT, "revisit").get(0).getName().equals("testEntity2"));
 
-        e1.disconnect("revisit", e2.getType(), e2.getName());
+        e1.disConnect("revisit", e2.getType(), e2.getName());
         e1.save();
         eLookUp = client.GET(collectionName, "testEntity1").first();
         assertTrue("The entity returned is not null.", eLookUp != null);

@@ -30,16 +30,16 @@ public class ConnectionTestSuite {
         String petCollection = "pet" + System.currentTimeMillis();
 
         UsergridEntity owner = new UsergridEntity(ownerCollection);
-        owner.putproperty("getName", "jeff");
-        owner.putproperty("wife", "julie");
+        owner.putProperty("getName", "jeff");
+        owner.putProperty("wife", "julie");
 
         UsergridResponse r = Usergrid.getInstance().POST(owner);
 
         // assert created
 
         UsergridEntity pet = new UsergridEntity(petCollection);
-        pet.putproperty("getName", "max");
-        pet.putproperty("color", "tabby");
+        pet.putProperty("getName", "max");
+        pet.putProperty("color", "tabby");
 
         r = Usergrid.getInstance().POST(pet);
 

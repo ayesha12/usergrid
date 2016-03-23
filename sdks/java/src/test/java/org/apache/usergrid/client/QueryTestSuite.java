@@ -143,32 +143,32 @@ public class QueryTestSuite {
 
         UsergridEntity e = new UsergridEntity(collectionName);
         e.setLocation(37.334115, -121.894340);
-        e.putproperty("name", "Apigee Office");
+        e.putProperty("name", "Apigee Office");
         client.POST(e);
 
         UsergridEntity amicis = new UsergridEntity(collectionName);
         amicis.setLocation(37.335616, -121.894168);
-        amicis.putproperty("name", "Amicis");
+        amicis.putProperty("name", "Amicis");
         client.POST(amicis);
 
         UsergridEntity sanPedroMarket = new UsergridEntity(collectionName);
         sanPedroMarket.setLocation(37.336499, -121.894356);
-        sanPedroMarket.putproperty("name", "SanPedroMarket");
+        sanPedroMarket.putProperty("name", "SanPedroMarket");
         client.POST(sanPedroMarket);
 
         UsergridEntity saintJamesPark = new UsergridEntity(collectionName);
         saintJamesPark.setLocation(37.339079, -121.891422);
-        saintJamesPark.putproperty("name", "saintJamesPark");
+        saintJamesPark.putProperty("name", "saintJamesPark");
         client.POST(saintJamesPark);
 
         UsergridEntity sanJoseNews = new UsergridEntity(collectionName);
         sanJoseNews.setLocation(37.337812, -121.890784);
-        sanJoseNews.putproperty("name", "sanJoseNews");
+        sanJoseNews.putProperty("name", "sanJoseNews");
         client.POST(sanJoseNews);
 
         UsergridEntity deAnza = new UsergridEntity(collectionName);
         deAnza.setLocation(37.334370, -121.895081);
-        deAnza.putproperty("name", "deAnza");
+        deAnza.putProperty("name", "deAnza");
         client.POST(deAnza);
 
         SDKTestUtils.indexSleep();
