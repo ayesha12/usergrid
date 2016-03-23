@@ -51,7 +51,8 @@ public class UsergridClient {
     private static final Logger log = LoggerFactory.getLogger(UsergridClient.class);
     private static final String CONNECTIONS = "connections";
     private static final String CONNECTING = "connecting";
-    public static String DEFAULT_BASE_URL = "http://localhost:8080";
+    public static String DEFAULT_BASE_URL = "https://api.usergrid.com";
+
     public UsergridClientConfig config;
     public UsergridRequestManager requestManager;
     private UsergridUser currentUser = null;

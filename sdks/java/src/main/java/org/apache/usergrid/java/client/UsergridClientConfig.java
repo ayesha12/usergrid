@@ -33,9 +33,9 @@ public class UsergridClientConfig {
     public String appId = null;
 
     // The base URL that all calls will be made with.
-    public String baseUrl = null;
+    public String baseUrl = UsergridClient.DEFAULT_BASE_URL;
 
-    // The `UsergridAuthFallback` value used to determine what type of token will be sent, if any.
+    // The `UsergridAuthMode` value used to determine what type of token will be sent, if any.
     public UsergridAuthMode authMode = UsergridAuthMode.USER;
 
     public UsergridAppAuth appAuth;
