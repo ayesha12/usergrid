@@ -22,11 +22,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize.Inclusion;
-import com.sun.istack.internal.NotNull;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
@@ -61,7 +61,7 @@ public class UsergridResponseError {
     }
 
     @JsonAnySetter
-    public void setProperty(@NotNull final String key, @NotNull final JsonNode value) {
+    public void setProperty(@Nonnull final String key, @Nonnull final JsonNode value) {
         properties.put(key, value);
     }
 
@@ -70,7 +70,7 @@ public class UsergridResponseError {
         return errorException;
     }
 
-    public void setError(@NotNull final String error) {
+    public void setError(@Nonnull final String error) {
         this.errorException = error;
     }
 
@@ -82,7 +82,7 @@ public class UsergridResponseError {
 
     @JsonSerialize(include = Inclusion.NON_NULL)
     @JsonProperty("error_description")
-    public void setErrorDescription(@NotNull final String errorDescription) {
+    public void setErrorDescription(@Nonnull final String errorDescription) {
         this.errorDescription = errorDescription;
     }
 
@@ -91,7 +91,7 @@ public class UsergridResponseError {
         return this.statuscode;
     }
 
-    public void setStatusCode(@NotNull final int status) {
+    public void setStatusCode(@Nonnull final int status) {
         this.statuscode = status;
     }
 

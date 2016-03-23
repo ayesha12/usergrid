@@ -61,7 +61,6 @@ public class UsergridResponse {
     private Map<String, UUID> applications;
     private Map<String, JsonNode> metadata;
     private Map<String, List<String>> params;
-    private List<AggregateCounterSet> counters;
     private UUID last;
     private UsergridUser user;
     private int statuscode;
@@ -102,15 +101,6 @@ public class UsergridResponse {
     }
 
     @JsonSerialize(include = Inclusion.NON_NULL)
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(@Nonnull final String path) {
-        this.path = path;
-    }
-
-    @JsonSerialize(include = Inclusion.NON_NULL)
     public String getUri() {
         return uri;
     }
@@ -126,15 +116,6 @@ public class UsergridResponse {
 
     public void setStatus(@Nonnull final String status) {
         this.status = status;
-    }
-
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    public long getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(@Nonnull final long timestamp) {
-        this.timestamp = timestamp;
     }
 
     // TODO : this can be null. @Nullable
@@ -153,11 +134,6 @@ public class UsergridResponse {
             return 0;
         }
         return entities.size();
-    }
-
-    @Nullable
-    public UsergridEntity getFirstEntity() {
-        return first();
     }
 
     public <T extends UsergridEntity> List<T> getEntities(Class<T> t) {
@@ -183,15 +159,6 @@ public class UsergridResponse {
         this.cursor = cursor;
     }
 
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    public String getAction() {
-        return action;
-    }
-
-    public void setAction(@Nonnull final String action) {
-        this.action = action;
-    }
-
     //TODO : can be null
     @JsonSerialize(include = Inclusion.NON_NULL)
     public List<Object> getList() {
@@ -210,16 +177,6 @@ public class UsergridResponse {
 
     public void setData(@Nonnull final Object data) {
         this.data = data;
-    }
-
-    //TODO : required ?
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    public Map<String, UUID> getApplications() {
-        return applications;
-    }
-
-    public void setApplications(@Nonnull final Map<String, UUID> applications) {
-        this.applications = applications;
     }
 
     @JsonSerialize(include = Inclusion.NON_NULL)
@@ -247,15 +204,6 @@ public class UsergridResponse {
 
     public void setParams(@Nonnull final Map<String, List<String>> params) {
         this.params = params;
-    }
-
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    public List<AggregateCounterSet> getCounters() {
-        return counters;
-    }
-
-    public void setCounters(@Nonnull final List<AggregateCounterSet> counters) {
-        this.counters = counters;
     }
 
     //TODO: @Nullable ?

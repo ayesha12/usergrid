@@ -1,6 +1,6 @@
 package org.apache.usergrid.client;
 
-import org.apache.usergrid.java.client.Direction;
+import org.apache.usergrid.java.client.UsergridEnums.Direction;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.model.UsergridEntity;

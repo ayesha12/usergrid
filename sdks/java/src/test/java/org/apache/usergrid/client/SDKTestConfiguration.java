@@ -6,15 +6,15 @@ import org.apache.usergrid.java.client.UsergridEnums.UsergridAuthMode;
  * Created by ApigeeCorporation on 9/9/15.
  */
 public class SDKTestConfiguration {
-    public static final String APP_CLIENT_ID = "b3U66ne33W4OEeWXmAIj6QFb-Q";
-    public static final String APP_CLIENT_SECRET = "b3U6PxbpQiTrXKCWu0n1CjK1uTZXuG4";
+    public static final String APP_CLIENT_ID = "YXA6_j0WsfFCEeWKoy6txsCOfA" ; // "b3U66ne33W4OEeWXmAIj6QFb-Q";
+    public static final String APP_CLIENT_SECRET = "YXA6jg8x4wjq1AAyQBKtn4bRd1l0gJ8"; //"b3U6PxbpQiTrXKCWu0n1CjK1uTZXuG4";
 
 
     public static final String APP_UserName = "Blueprints_usergrid_0302";//"b3U66ne33W4OEeWXmAIj6QFb-Q";
     public static final String APP_Password = "Blueprints_usergrid_0302";//"b3U6PxbpQiTrXKCWu0n1CjK1uTZXuG4";
-    public static final String USERGRID_URL = "https://ug21.e2e.apigee.net";
-    public static final String ORG_NAME = "usergrid";
-    public static final String APP_NAME = "ayesha";
+    public static final String USERGRID_URL = "http://localhost:8080/";
+    public static final String ORG_NAME = "test-organization";
+    public static final String APP_NAME = "test-app";
 
     public static UsergridAuthMode authFallBack = UsergridAuthMode.APP;
 

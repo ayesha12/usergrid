@@ -3,7 +3,7 @@ package org.apache.usergrid.client;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.TextNode;
-import org.apache.usergrid.java.client.Direction;
+import org.apache.usergrid.java.client.UsergridEnums.Direction;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.model.UsergridAppAuth;

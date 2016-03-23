@@ -28,6 +28,7 @@ import org.apache.usergrid.java.client.query.LegacyQueryResult;
 import org.apache.usergrid.java.client.query.QueryResult;
 import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;
+import org.apache.usergrid.java.client.UsergridEnums.Direction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -856,7 +857,6 @@ public class UsergridClient {
      */
     public QueryResult GET(final UsergridQuery q) {
 
-
         String[] segments = {config.orgId, config.appId, q.getCollectionName()};
         UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET,
                 MediaType.APPLICATION_JSON_TYPE,
@@ -871,21 +871,6 @@ public class UsergridClient {
                 requestManager.performRequest(request),
                 q);
     }
-
-    public QueryResult GETFromQuery(final UsergridQuery q) {
-
-        String[] segments = {config.orgId, config.appId, q.getCollectionName()};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl, null, null, segments);
-        request.query = q;
-
-        return new QueryResult(this,
-                UsergridHttpMethod.GET.toString(),
-                requestManager.performRequest(request),
-                q);
-    }
-
-
 
     /**
      * PUT (update) an entity, requires the type and one of (getName | uuid) to be set on the entity

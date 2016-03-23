@@ -51,18 +51,18 @@ public class UsergridUser extends UsergridEntity {
 
     public UsergridUser() {
         super();
-        changeType(ENTITY_TYPE);
+        setType(ENTITY_TYPE);
     }
 
     public UsergridUser(@Nonnull final UsergridEntity usergridEntity) {
         super();
         properties = usergridEntity.properties;
-        changeType(ENTITY_TYPE);
+        setType(ENTITY_TYPE);
     }
 
     public UsergridUser(@Nonnull final String name, HashMap<String, Object> propertyMap) throws JSONException {
         super();
-        changeType(ENTITY_TYPE);
+        setType(ENTITY_TYPE);
         setName(name);
         putProperties(propertyMap);
     }
@@ -79,13 +79,6 @@ public class UsergridUser extends UsergridEntity {
         setUsername(username);
         setEmail(emailid);
         setPassword(password);
-    }
-
-
-    @Override
-    @JsonIgnore
-    public String getNativeType() {
-        return ENTITY_TYPE;
     }
 
     @Override

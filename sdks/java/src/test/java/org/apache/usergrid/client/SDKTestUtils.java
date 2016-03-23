@@ -87,6 +87,6 @@ public class SDKTestUtils {
     }
 
     public static void indexSleep() {
-        sleep(25);
+        sleep(1000);
     }
 }

@@ -37,12 +37,12 @@ public class UsergridFileMetadata {
     public static final Long LAST_MODIFIED_STRING = null;
     public static final String CHECKSUM_STRING = "checksum";
 
-    public static String eTag = "";
-    public static String content_Type = "";
-    public static int content_Length = 0;
-    public static Long last_Modified_Timestamp = null;
-    public static String checksum = "";
-    public static SimpleDateFormat last_Modified_Date;
+    public String eTag = "";
+    public String content_Type = "";
+    public int content_Length = 0;
+    public Long last_Modified_Timestamp = null;
+    public String checksum = "";
+    public SimpleDateFormat last_Modified_Date;
 
     public UsergridFileMetadata(Map<String, JsonNode> metadataInfo) {
         eTag = metadataInfo.get(eTag_STRING).toString();

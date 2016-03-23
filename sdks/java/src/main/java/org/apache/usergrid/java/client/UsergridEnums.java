@@ -31,6 +31,12 @@ public class UsergridEnums {
         APP
     }
 
+    public enum Direction {
+        OUT,
+        IN,
+        BOTH
+    }
+
     /**
      * An enumeration for defining the HTTP methods used by Usergrid.
      */
