@@ -46,19 +46,16 @@ import static org.apache.usergrid.java.client.utils.ObjectUtils.isEmpty;
  */
 public class UsergridClient {
 
-    public  static String DEFAULT_BASE_URL = "http://localhost:8080";
-
-    public UsergridClientConfig config;
-    private UsergridUser currentUser = null;
-    private UsergridAuth tempAuth = null;
-    public UsergridRequestManager requestManager;
-
     public static final String STR_GROUPS = "groups";
     public static final String STR_USERS = "users";
-
     private static final Logger log = LoggerFactory.getLogger(UsergridClient.class);
     private static final String CONNECTIONS = "connections";
     private static final String CONNECTING = "connecting";
+    public static String DEFAULT_BASE_URL = "http://localhost:8080";
+    public UsergridClientConfig config;
+    public UsergridRequestManager requestManager;
+    private UsergridUser currentUser = null;
+    private UsergridAuth tempAuth = null;
 
     public UsergridClient(UsergridClientConfig usergridClientConfig) {
         config = usergridClientConfig;
@@ -72,7 +69,7 @@ public class UsergridClient {
      * @param applicationId  the application id or getName
      */
     public UsergridClient(final String organizationId, final String applicationId) {
-        this(new UsergridClientConfig(organizationId,applicationId));
+        this(new UsergridClientConfig(organizationId, applicationId));
     }
 
     /**
@@ -82,24 +79,36 @@ public class UsergridClient {
      * @param applicationId  the application id or getName
      */
     public UsergridClient(final String organizationId, final String applicationId, final String baseurl) {
-        this(new UsergridClientConfig(organizationId,applicationId,baseurl));
+        this(new UsergridClientConfig(organizationId, applicationId, baseurl));
     }
 
-    public UsergridClient(final String orgId, String appId, String baseurl, UsergridAuthMode authfallBack){
-        this(new UsergridClientConfig(orgId,appId,baseurl,authfallBack));
+    public UsergridClient(final String orgId, String appId, String baseurl, UsergridAuthMode authfallBack) {
+        this(new UsergridClientConfig(orgId, appId, baseurl, authfallBack));
+    }
+
+    /**
+     * Validate if the usergrid entity is valid.
+     *
+     * @param e
+     */
+    public static void ValidateEntity(UsergridEntity e) {
+        if (isEmpty(e.getType())) {
+            throw new IllegalArgumentException("UsergridEntity is required to have a 'type' property in order to to a PUT");
+        }
+
+        if (isEmpty(e.getName()) && isEmpty(e.getUuid())) {
+            throw new IllegalArgumentException("UsergridEntity is required to have a 'getName' or 'uuid' property in order to to a PUT");
+        }
     }
 
     public UsergridAuth authForRequests() {
         UsergridAuth authForRequests = null;
-        if( tempAuth != null )
-        {
-            if( tempAuth.isValidToken() ) {
+        if (tempAuth != null) {
+            if (tempAuth.isValidToken()) {
                 authForRequests = tempAuth;
             }
             tempAuth = null;
-        }
-        else
-        {
+        } else {
             switch (config.authMode) {
                 case USER: {
                     if (this.currentUser != null && this.currentUser.userAuth != null && this.currentUser.userAuth.isValidToken()) {
@@ -167,6 +176,8 @@ public class UsergridClient {
     }
 
 
+    //TODO:     /// The currently logged in `UsergridUser`.
+
     /**
      * @param applicationId the application id or getName
      * @return Client object for method call chaining
@@ -176,8 +187,6 @@ public class UsergridClient {
         return this;
     }
 
-
-    //TODO:     /// The currently logged in `UsergridUser`.
     /**
      * getCurrentUser -- curretnuser?
      *
@@ -185,14 +194,6 @@ public class UsergridClient {
      */
     public UsergridUser getCurrentUser() {
         return currentUser;
-    }
-
-    /**
-     * @param loggedInUser the logged-in user, usually not set by host application
-     *                     //TODO: called by UsergridClient?
-     */
-    public void setCurrentUser(final UsergridUser loggedInUser) {
-        this.currentUser = loggedInUser;
     }
 //
 //    /**
@@ -254,6 +255,14 @@ public class UsergridClient {
 //
 //    }
 
+    /**
+     * @param loggedInUser the logged-in user, usually not set by host application
+     *                     //TODO: called by UsergridClient?
+     */
+    public void setCurrentUser(final UsergridUser loggedInUser) {
+        this.currentUser = loggedInUser;
+    }
+
     public void ValidAppArguments() {
         //TODO: need to add any other checks? Return void ?
         if (isEmpty(config.appId)) {
@@ -264,8 +273,8 @@ public class UsergridClient {
         }
     }
 
-    public UsergridResponse authenticateUser(String username,String password) {
-        UsergridUserAuth auth = new UsergridUserAuth(username,password);
+    public UsergridResponse authenticateUser(String username, String password) {
+        UsergridUserAuth auth = new UsergridUserAuth(username, password);
         return authenticateUser(auth);
     }
 
@@ -283,11 +292,6 @@ public class UsergridClient {
         return response;
     }
 
-    public UsergridClient usingAuth(UsergridAuth ugAuth){
-        this.tempAuth = ugAuth;
-        return this;
-    }
-
 
     /**
      *
@@ -296,6 +300,11 @@ public class UsergridClient {
      });
 
      */
+
+    public UsergridClient usingAuth(UsergridAuth ugAuth) {
+        this.tempAuth = ugAuth;
+        return this;
+    }
 
     /**
      * Change the password for the currently logged in user. You must supply the
@@ -316,8 +325,8 @@ public class UsergridClient {
 
         String[] segments = {config.orgId, config.appId, STR_USERS, username, "password"};
 
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,data,segments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, data, segments);
         return requestManager.performRequest(request);
     }
 
@@ -346,9 +355,9 @@ public class UsergridClient {
 
         String[] segments = {config.orgId, config.appId, "token"};
 
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,formData,segments);
-        UsergridResponse response =  requestManager.performRequest(request);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, formData, segments);
+        UsergridResponse response = requestManager.performRequest(request);
 
         if (response == null) {
             return null;
@@ -382,11 +391,11 @@ public class UsergridClient {
         Map<String, Object> formData = new HashMap<>();
         formData.put("fb_access_token", fb_access_token);
 
-        String[] segments = {config.orgId, config.appId,"auth", "facebook"};
+        String[] segments = {config.orgId, config.appId, "auth", "facebook"};
 
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,formData,segments);
-        UsergridResponse response =  requestManager.performRequest(request);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, formData, segments);
+        UsergridResponse response = requestManager.performRequest(request);
 
         if (response == null) {
             return null;
@@ -406,10 +415,9 @@ public class UsergridClient {
         return response;
     }
 
-
     @Nullable
-    public UsergridResponse authenticateApp(final String clientId, final String clientSecret){
-        UsergridAppAuth ugAppAuth = new UsergridAppAuth(clientId,clientSecret);
+    public UsergridResponse authenticateApp(final String clientId, final String clientSecret) {
+        UsergridAppAuth ugAppAuth = new UsergridAppAuth(clientId, clientSecret);
         return authenticateApp(ugAppAuth);
     }
 
@@ -422,12 +430,11 @@ public class UsergridClient {
      * "invalid_grant" to see if access is denied.
      */
     @Nullable
-    public UsergridResponse authenticateApp(UsergridAppAuth auth){
+    public UsergridResponse authenticateApp(UsergridAppAuth auth) {
         this.config.appAuth = auth;
         UsergridResponse response = requestManager.AuthenticateApp();
         return response;
     }
-
 
     private void validateNonEmptyParam(final Object param,
                                        final String paramName) {
@@ -435,7 +442,6 @@ public class UsergridClient {
             throw new IllegalArgumentException(paramName + " cannot be null or empty");
         }
     }
-
 
     /**
      * Create a new usergridEntity on the server.
@@ -450,10 +456,10 @@ public class UsergridClient {
         }
 
 
-        String[] segments = {config.orgId, config.appId,  usergridEntity.getType()};
+        String[] segments = {config.orgId, config.appId, usergridEntity.getType()};
 
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,usergridEntity,segments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, usergridEntity, segments);
         return requestManager.performRequest(request);
     }
 
@@ -473,13 +479,11 @@ public class UsergridClient {
 
         String[] segments = {config.orgId, config.appId, properties.get("type").toString()};
 
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,properties,segments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, properties, segments);
 
         return requestManager.performRequest(request);
     }
-
-
 
     /**
      * Perform a query request and return a query object. The QueryResult object
@@ -496,8 +500,8 @@ public class UsergridClient {
                                            final Map<String, Object> params,
                                            final Object data,
                                            final String... segments) {
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,params,data,segments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, params, data, segments);
         return new EntityQueryResult(this, requestManager.performRequest(request), method, params, data, segments);
     }
 
@@ -545,42 +549,43 @@ public class UsergridClient {
         return queryEntities(UsergridHttpMethod.GET.toString(), params, null, config.orgId, config.appId, STR_USERS);
     }
 
-    public UsergridResponse getEntitiesInCollection(String collectionName,Map<String, Object> paramsMap){
+    public UsergridResponse getEntitiesInCollection(String collectionName, Map<String, Object> paramsMap) {
         String[] segments = {config.orgId, config.appId, collectionName};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,paramsMap,null,segments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, paramsMap, null, segments);
         return requestManager.performRequest(request);
     }
+
     public UsergridResponse getEntity(final String type, final String id) {
 
-        String[] segments = {config.orgId, config.appId,  type, id};
+        String[] segments = {config.orgId, config.appId, type, id};
 
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,null,segments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, null, segments);
         return requestManager.performRequest(request);
     }
 
-    public UsergridResponse getConnections(Direction direction, UsergridEntity sourceVertex, String relationship){
+    public UsergridResponse getConnections(Direction direction, UsergridEntity sourceVertex, String relationship) {
 
         ValidateEntity(sourceVertex);
         String[] segments1 = {config.orgId, config.appId,
-                sourceVertex.getType(),sourceVertex.getUuidString(),CONNECTIONS,relationship};
+                sourceVertex.getType(), sourceVertex.getUuidString(), CONNECTIONS, relationship};
 
-        UsergridRequest request1 = new UsergridRequest(UsergridHttpMethod.GET,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,null,segments1);
+        UsergridRequest request1 = new UsergridRequest(UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, null, segments1);
 
         String[] segments2 = {config.orgId, config.appId,
-                sourceVertex.getType(),sourceVertex.getUuidString(),CONNECTING,relationship};
+                sourceVertex.getType(), sourceVertex.getUuidString(), CONNECTING, relationship};
 
-        UsergridRequest request2 = new UsergridRequest(UsergridHttpMethod.GET,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,null,segments2);
+        UsergridRequest request2 = new UsergridRequest(UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, null, segments2);
 
 
         switch (direction) {
             case OUT:
                 return requestManager.performRequest(request1);
             case IN:
-               return requestManager.performRequest(request2);
+                return requestManager.performRequest(request2);
 
         }
 
@@ -593,8 +598,8 @@ public class UsergridClient {
 
         String[] segments = {config.orgId, config.appId, type, id};
 
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.DELETE,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,null,segments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.DELETE, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, null, segments);
         return requestManager.performRequest(request);
     }
 
@@ -620,10 +625,10 @@ public class UsergridClient {
                                            final String groupId) {
 
 
-        String[] segments = {config.orgId, config.appId,STR_GROUPS, groupId, STR_USERS, userId};
+        String[] segments = {config.orgId, config.appId, STR_GROUPS, groupId, STR_USERS, userId};
 
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,null,segments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, null, segments);
         return requestManager.performRequest(request);
     }
 
@@ -695,7 +700,6 @@ public class UsergridClient {
         return queryEntities(UsergridHttpMethod.GET.toString(), params, null, config.orgId, config.appId, STR_GROUPS);
     }
 
-
     /**
      * Create a connection between two entities
      *
@@ -713,13 +717,12 @@ public class UsergridClient {
         return this.connect(sourceVertex.getType(), sourceVertex.getUuid().toString(), connetionName, targetVertex.getUuid().toString());
     }
 
-
     /**
      * Create a connection between two entities
      *
-     * @param sourceVertex  The source entity/vertex of the connection
-     * @param targetVertexUUid  The target entity/vertex UUID.
-     * @param connetionName The getName of the connection/edge
+     * @param sourceVertex     The source entity/vertex of the connection
+     * @param targetVertexUUid The target entity/vertex UUID.
+     * @param connetionName    The getName of the connection/edge
      * @return
      */
     public UsergridResponse connect(final UsergridEntity sourceVertex,
@@ -729,7 +732,6 @@ public class UsergridClient {
         ValidateEntity(sourceVertex);
         return this.connect(sourceVertex.getType(), sourceVertex.getUuid().toString(), connetionName, targetVertexUUid);
     }
-
 
     /**
      * Connect two entities together.
@@ -749,13 +751,12 @@ public class UsergridClient {
         String[] segments = {config.orgId, config.appId, connectingEntityType,
                 connectingEntityId, connectionType, connectedEntityId};
 
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,null,segments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, null, segments);
 
         return requestManager.performRequest(request);
 
     }
-
 
     /**
      * Connect two entities together using type and getName
@@ -773,10 +774,10 @@ public class UsergridClient {
                                     final String connectedEntityType,
                                     final String connectedEntityName) {
 
-        String[] segments = {config.orgId, config.appId,connectingEntityType, connectingEntityId,
+        String[] segments = {config.orgId, config.appId, connectingEntityType, connectingEntityId,
                 connectionType, connectedEntityType, connectedEntityName};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,null,segments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, null, segments);
         return requestManager.performRequest(request);
     }
 
@@ -794,9 +795,9 @@ public class UsergridClient {
                                        final String connectionType,
                                        final String connectedEntityId) {
 
-        String[] segments = {config.orgId, config.appId,connectingEntityType, connectingEntityId, connectionType, connectedEntityId};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.DELETE,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,null,segments);
+        String[] segments = {config.orgId, config.appId, connectingEntityType, connectingEntityId, connectionType, connectedEntityId};
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.DELETE, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, null, segments);
         return requestManager.performRequest(request);
     }
 
@@ -816,13 +817,12 @@ public class UsergridClient {
                                        final String connectedEntitytype,
                                        final String connectedEntityName) {
 
-        String[] segments = {config.orgId, config.appId,connectingEntityType,
-                connectingEntityId, connectionType, connectedEntitytype,connectedEntityName};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.DELETE,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,null,segments);
+        String[] segments = {config.orgId, config.appId, connectingEntityType,
+                connectingEntityId, connectionType, connectedEntitytype, connectedEntityName};
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.DELETE, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, null, segments);
         return requestManager.performRequest(request);
     }
-
 
     /**
      * @param sourceVertex
@@ -837,7 +837,6 @@ public class UsergridClient {
         ValidateEntity(targetVertex);
         return this.disconnect(sourceVertex.getType(), sourceVertex.getUuid().toString(), connetionName, targetVertex.getUuid().toString());
     }
-
 
     /**
      * QueryResult the connected entities.
@@ -894,20 +893,8 @@ public class UsergridClient {
     public UsergridResponse queryCollections() {
 
         String[] segments = {config.orgId, config.appId};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,null,segments);
-        return requestManager.performRequest(request);
-    }
-
-    public UsergridResponse queryConnection(final String... segments) {
-
-        String[] paramPath = new String[10];
-        paramPath[0] = this.config.orgId;
-        paramPath[1] = this.config.appId;
-        System.arraycopy(segments, 0, paramPath, 2, segments.length);
-
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,null,paramPath);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, null, segments);
         return requestManager.performRequest(request);
     }
 
@@ -919,6 +906,18 @@ public class UsergridClient {
    -------------------------------------
    */
 
+    public UsergridResponse queryConnection(final String... segments) {
+
+        String[] paramPath = new String[10];
+        paramPath[0] = this.config.orgId;
+        paramPath[1] = this.config.appId;
+        System.arraycopy(segments, 0, paramPath, 2, segments.length);
+
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, null, paramPath);
+        return requestManager.performRequest(request);
+    }
+
     /**
      * PUT (update) an entity, requires the type and one of (getName | uuid) to be set on the entity
      *
@@ -929,12 +928,14 @@ public class UsergridClient {
 
         ValidateEntity(e);
 
-        String[] segments = {config.orgId, config.appId,e.getType(),
+        String[] segments = {config.orgId, config.appId, e.getType(),
                 e.getUuidString() != null ? e.getUuidString() : e.getName()};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.PUT,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,e.getProperties(),segments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.PUT, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, e.getProperties(), segments);
         return requestManager.performRequest(request);
     }
+
+    //TODO: UsergridClient.PUT("<type>", bodyObject); // excluding uuid or getName will result in a new record being created
 
     /**
      * is used to update entities in a Usergrid collection.
@@ -946,28 +947,10 @@ public class UsergridClient {
     public UsergridResponse PUT(final String type,
                                 final String entityId) {
 
-        String[] segments = {config.orgId, config.appId,type, entityId};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.PUT,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,null,segments);
+        String[] segments = {config.orgId, config.appId, type, entityId};
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.PUT, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, null, segments);
         return requestManager.performRequest(request);
-    }
-
-    //TODO: UsergridClient.PUT("<type>", bodyObject); // excluding uuid or getName will result in a new record being created
-
-
-    /**
-     * Validate if the usergrid entity is valid.
-     *
-     * @param e
-     */
-    public static void ValidateEntity(UsergridEntity e) {
-        if (isEmpty(e.getType())) {
-            throw new IllegalArgumentException("UsergridEntity is required to have a 'type' property in order to to a PUT");
-        }
-
-        if (isEmpty(e.getName()) && isEmpty(e.getUuid())) {
-            throw new IllegalArgumentException("UsergridEntity is required to have a 'getName' or 'uuid' property in order to to a PUT");
-        }
     }
 
     /**
@@ -980,9 +963,9 @@ public class UsergridClient {
 
         // ValidateEntity(e);
 
-        String[] segments = {config.orgId, config.appId,e.getType()};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,e,segments);
+        String[] segments = {config.orgId, config.appId, e.getType()};
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, e, segments);
         return requestManager.performRequest(request);
     }
 
@@ -997,9 +980,9 @@ public class UsergridClient {
     public UsergridResponse POST(final String type,
                                  final String entityId) {
 
-        String[] segments = {config.orgId, config.appId,type, entityId};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,null,segments);
+        String[] segments = {config.orgId, config.appId, type, entityId};
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, null, segments);
         return requestManager.performRequest(request);
     }
 
@@ -1014,10 +997,10 @@ public class UsergridClient {
     public UsergridResponse DELETE(final UsergridEntity e) {
         ValidateEntity(e);
 
-        String[] segments = {config.orgId, config.appId,e.getType(),
+        String[] segments = {config.orgId, config.appId, e.getType(),
                 e.getUuid() == null ? e.getName() : e.getUuidString()};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.DELETE,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,null,segments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.DELETE, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, null, segments);
         return requestManager.performRequest(request);
     }
 
@@ -1040,17 +1023,17 @@ public class UsergridClient {
                                    final String entityId) {
 
         String[] segments = {config.orgId, config.appId, collection, entityId};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.DELETE,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,null,segments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.DELETE, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, null, segments);
         return requestManager.performRequest(request);
 
     }
 
     public UsergridResponse DELETE(final UUID uuid) {
 
-        String[] segments = {config.orgId, config.appId,uuid.toString()};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.DELETE,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,null,segments);
+        String[] segments = {config.orgId, config.appId, uuid.toString()};
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.DELETE, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, null, segments);
         return requestManager.performRequest(request);
 
     }
@@ -1067,8 +1050,8 @@ public class UsergridClient {
                                 final String entityId) {
 
         String[] segments = {config.orgId, config.appId, collection, entityId};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,null,segments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, null, segments);
         return requestManager.performRequest(request);
     }
 
@@ -1082,8 +1065,8 @@ public class UsergridClient {
     public UsergridResponse GET(final UUID uuid) {
 
         String[] segments = {config.orgId, config.appId, uuid.toString()};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,null,segments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, null, segments);
         return requestManager.performRequest(request);
     }
 
@@ -1106,9 +1089,9 @@ public class UsergridClient {
     public QueryResult PUT(final UsergridQuery q, Map<String, Object> fields) {
 
 
-        String[] segments = {config.orgId, config.appId,q.getCollectionName()};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.PUT,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,null,segments);
+        String[] segments = {config.orgId, config.appId, q.getCollectionName()};
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.PUT, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, null, segments);
         request.query = q;
 
         return new QueryResult(this,
@@ -1127,7 +1110,7 @@ public class UsergridClient {
     public QueryResult GET(final UsergridQuery q) {
 
 
-        String[] segments = {config.orgId, config.appId,q.getCollectionName()};
+        String[] segments = {config.orgId, config.appId, q.getCollectionName()};
         UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET,
                 MediaType.APPLICATION_JSON_TYPE,
                 config.baseUrl,
@@ -1144,9 +1127,9 @@ public class UsergridClient {
 
     public QueryResult GETFromQuery(final UsergridQuery q) {
 
-        String[] segments = {config.orgId, config.appId,q.getCollectionName()};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,null,segments);
+        String[] segments = {config.orgId, config.appId, q.getCollectionName()};
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, null, segments);
         request.query = q;
 
         return new QueryResult(this,
@@ -1165,9 +1148,9 @@ public class UsergridClient {
     public QueryResult DELETE(final UsergridQuery q) {
 
 
-        String[] segments = {config.orgId, config.appId,q.getCollectionName()};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.DELETE,MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl,null,null,segments);
+        String[] segments = {config.orgId, config.appId, q.getCollectionName()};
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.DELETE, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, null, segments);
         request.query = q;
 
 

@@ -35,13 +35,12 @@ import static org.apache.usergrid.java.client.utils.JsonUtils.toJsonString;
 
 public class ApiResponse {
 
+    private final Map<String, JsonNode> properties = new HashMap<String, JsonNode>();
     private String accessToken;
-
     private String error;
     private String errorDescription;
     private String errorUri;
     private String exception;
-
     private String path;
     private String uri;
     private String status;
@@ -58,15 +57,11 @@ public class ApiResponse {
     private Map<String, List<String>> params;
     private List<AggregateCounterSet> counters;
     private ClientCredentialsInfo credentials;
-
     private List<QueueInfo> queues;
     private UUID last;
     private UUID queue;
     private UUID consumer;
-
     private UsergridUser user;
-
-    private final Map<String, JsonNode> properties = new HashMap<String, JsonNode>();
 
     public ApiResponse() {
     }

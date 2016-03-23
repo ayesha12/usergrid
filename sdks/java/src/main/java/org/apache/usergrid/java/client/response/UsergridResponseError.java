@@ -22,24 +22,25 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize.Inclusion;
+import com.sun.istack.internal.NotNull;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
 public class UsergridResponseError {
 
+    private static final Logger log = LoggerFactory.getLogger(UsergridEntity.class);
     public static String errorName;
     public static String errorDescription;
     public static String errorException;
     public static int code;
-
     private final Map<String, JsonNode> properties = new HashMap<String, JsonNode>();
     private int statuscode;
     private Map<String, JsonNode> header;
-    private static final Logger log = LoggerFactory.getLogger(UsergridEntity.class);
 
     public UsergridResponseError() {
     }
@@ -54,12 +55,13 @@ public class UsergridResponseError {
     }
 
     @JsonAnyGetter
+    @Nullable
     public Map<String, JsonNode> getProperties() {
         return properties;
     }
 
     @JsonAnySetter
-    public void setProperty(String key, JsonNode value) {
+    public void setProperty(@NotNull final String key, @NotNull final JsonNode value) {
         properties.put(key, value);
     }
 
@@ -68,7 +70,7 @@ public class UsergridResponseError {
         return errorException;
     }
 
-    public void setError(String error) {
+    public void setError(@NotNull final String error) {
         this.errorException = error;
     }
 
@@ -78,20 +80,22 @@ public class UsergridResponseError {
         return errorDescription;
     }
 
+    @JsonSerialize(include = Inclusion.NON_NULL)
     @JsonProperty("error_description")
-    public void setErrorDescription(String errorDescription) {
+    public void setErrorDescription(@NotNull final String errorDescription) {
         this.errorDescription = errorDescription;
     }
 
-
+    @JsonSerialize(include = Inclusion.NON_NULL)
     public int getStatusCode() {
         return this.statuscode;
     }
 
-    public void setStatusCode(int status) {
+    public void setStatusCode(@NotNull final int status) {
         this.statuscode = status;
     }
 
+    @JsonSerialize(include = Inclusion.NON_NULL)
     public boolean ok() {
         if (this.statuscode < 400)
             return true;

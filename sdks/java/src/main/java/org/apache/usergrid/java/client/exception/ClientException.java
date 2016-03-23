@@ -23,9 +23,8 @@ package org.apache.usergrid.java.client.exception;
  */
 public class ClientException extends RuntimeException {
 
-    private int responseCode;
-
     private static final long serialVersionUID = 1L;
+    private int responseCode;
 
     /**
      * @param message

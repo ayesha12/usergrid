@@ -23,20 +23,23 @@ public final class Usergrid {
 
     private static UsergridClient sharedClient;
 
-    public static boolean isInitialized() { return (sharedClient != null); }
+    private Usergrid() {
+        // Private constructor because we only have static methods.
+    }
+
+    public static boolean isInitialized() {
+        return (sharedClient != null);
+    }
+
     public static void reset() {
         sharedClient = null;
     }
 
     public static UsergridClient getInstance() {
-        if( !Usergrid.isInitialized() ) {
+        if (!Usergrid.isInitialized()) {
             throw new NullPointerException("Shared client has not been initialized!");
         }
         return Usergrid.sharedClient;
-    }
-
-    private Usergrid() {
-        // Private constructor because we only have static methods.
     }
 
     /**
@@ -50,7 +53,7 @@ public final class Usergrid {
         return Usergrid.initSharedInstance(new UsergridClientConfig(orgName, appName, apiUrl));
     }
 
-    public static UsergridClient initSharedInstance(final String apiUrl, final String orgName, final String appName, final UsergridAuthMode authMode ) {
+    public static UsergridClient initSharedInstance(final String apiUrl, final String orgName, final String appName, final UsergridAuthMode authMode) {
         return Usergrid.initSharedInstance(new UsergridClientConfig(orgName, appName, apiUrl, authMode));
     }
 
@@ -66,7 +69,7 @@ public final class Usergrid {
     public static UsergridClient initSharedInstance(final UsergridClientConfig ugConfig) {
         if (isEmpty(ugConfig) || isEmpty(ugConfig.appId) || isEmpty(ugConfig.orgId) || isEmpty(ugConfig.baseUrl)) {
             throw new IllegalArgumentException("One of the input arguments is empty.");
-        } else if( isInitialized() ){
+        } else if (isInitialized()) {
             System.out.print("The Usergrid shared instance was already initialized. All subsequent initialization attempts (including this) will be ignored.");
         } else {
             sharedClient = new UsergridClient(ugConfig);
@@ -215,7 +218,6 @@ public final class Usergrid {
     ) {
         return Usergrid.getInstance().connect(sourceVertex, connetionName, targetVertex);
     }
-
 
 
     public static UsergridResponse connect(final UsergridEntity sourceVertex,

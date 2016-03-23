@@ -18,7 +18,7 @@ public class ClientInItTestSuite {
 
     @Before
     public void before() {
-        Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL,SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.authFallBack);
+        Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.authFallBack);
     }
 
     @After
@@ -29,25 +29,23 @@ public class ClientInItTestSuite {
     @Test
     public void clientAppInit() throws JSONException {
         //should fail to initialize without an orgId and appId
-        UsergridClient client1 = new UsergridClient(null,null);
+        UsergridClient client1 = new UsergridClient(null, null);
 
-        try{
+        try {
             UsergridResponse response = client1.authenticateApp(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
             assertTrue("no error thrown", response.responseError.getError() == null);
 
-        }
-        catch (NullPointerException e){
+        } catch (NullPointerException e) {
         }
 
         //should initialize using properties defined in config.json
 
-        UsergridClient client2 =Usergrid.getInstance();
+        UsergridClient client2 = Usergrid.getInstance();
         client2.config.authMode = SDKTestConfiguration.authFallBack;
-        try{
+        try {
             UsergridResponse response = client2.authenticateApp(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
             assertTrue("no error thrown", response.responseError == null);
-        }
-        catch (IllegalArgumentException e){
+        } catch (IllegalArgumentException e) {
             assertTrue("no error thrown", e != null);
         }
 
@@ -56,27 +54,23 @@ public class ClientInItTestSuite {
 
     @Test
     public void clientUserInit() {
-        UsergridClient client1 = new UsergridClient(null,null);
+        UsergridClient client1 = new UsergridClient(null, null);
 
-        try{
-            UsergridResponse response = client1.authenticateUser(SDKTestConfiguration.APP_UserName,SDKTestConfiguration.APP_Password);
+        try {
+            UsergridResponse response = client1.authenticateUser(SDKTestConfiguration.APP_UserName, SDKTestConfiguration.APP_Password);
             assertTrue("no error thrown", response.responseError.getError() == null);
-        }
-        catch(NullPointerException e){
+        } catch (NullPointerException e) {
             assertTrue("no error thrown", e != null);
         }
 
         UsergridClient client2 = Usergrid.getInstance();
         client2.config.authMode = UsergridEnums.UsergridAuthMode.NONE;
-        try{
-            UsergridResponse response = client2.authenticateUser(SDKTestConfiguration.APP_UserName,SDKTestConfiguration.APP_Password);
+        try {
+            UsergridResponse response = client2.authenticateUser(SDKTestConfiguration.APP_UserName, SDKTestConfiguration.APP_Password);
             assertTrue("no error thrown", response.responseError == null);
-        }
-        catch (IllegalArgumentException e){
+        } catch (IllegalArgumentException e) {
             assertTrue("no error thrown", e == null);
         }
-
-
 
 
     }

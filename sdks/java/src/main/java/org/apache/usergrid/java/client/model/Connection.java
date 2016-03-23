@@ -51,10 +51,6 @@ public class Connection {
 
     }
 
-    public void setLabel(String label) {
-        setStringProperty(properties, LABEL, label);
-    }
-
     public void setConnectionID(String connID) {
         setStringProperty(properties, PROPERTY_ID, connID);
     }
@@ -63,13 +59,16 @@ public class Connection {
         return getStringProperty(properties, LABEL);
     }
 
-
-    public void setClientConnection(UsergridClient client) {
-        this.client = client;
+    public void setLabel(String label) {
+        setStringProperty(properties, LABEL, label);
     }
 
     public UsergridClient getClientConnection() {
         return this.client;
+    }
+
+    public void setClientConnection(UsergridClient client) {
+        this.client = client;
     }
 
     public String getPropertyId() {

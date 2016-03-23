@@ -135,27 +135,12 @@ public class UsergridUser extends UsergridEntity {
         client.DELETE(this);
     }
 
-    @JsonSerialize(include = NON_NULL)
-    public String getUsername() {
-        return JsonUtils.getStringProperty(properties, PROPERTY_USERNAME);
-    }
-
     public void setUsername(@Nonnull final String username) {
         setStringProperty(properties, PROPERTY_USERNAME, username);
     }
 
-    @JsonSerialize(include = NON_NULL)
-    public String getName() {
-        return JsonUtils.getStringProperty(properties, PROPERTY_NAME);
-    }
-
     public void setName(@Nonnull final String name) {
         setStringProperty(properties, PROPERTY_NAME, name);
-    }
-
-    @JsonSerialize(include = NON_NULL)
-    public String getEmail() {
-        return JsonUtils.getStringProperty(properties, PROPERTY_EMAIL);
     }
 
     public void setEmail(@Nonnull final String email) {
@@ -164,6 +149,21 @@ public class UsergridUser extends UsergridEntity {
 
     public void setPassword(@Nonnull final String password) {
         setStringProperty(properties, PROPERTY_PASSWORD, password);
+    }
+
+    @JsonSerialize(include = NON_NULL)
+    public String getUsername() {
+        return JsonUtils.getStringProperty(properties, PROPERTY_USERNAME);
+    }
+
+    @JsonSerialize(include = NON_NULL)
+    public String getName() {
+        return JsonUtils.getStringProperty(properties, PROPERTY_NAME);
+    }
+
+    @JsonSerialize(include = NON_NULL)
+    public String getEmail() {
+        return JsonUtils.getStringProperty(properties, PROPERTY_EMAIL);
     }
 
     public boolean checkAvailable(@Nonnull final String email, @Nonnull final String username) {
@@ -199,46 +199,6 @@ public class UsergridUser extends UsergridEntity {
     @JsonSerialize(include = NON_NULL)
     public Boolean isDisabled() {
         return getBooleanProperty(properties, PROPERTY_DISABLED);
-    }
-
-    public void setDisabled(@Nonnull final Boolean disabled) {
-        setBooleanProperty(properties, PROPERTY_DISABLED, disabled);
-    }
-
-    @JsonSerialize(include = NON_NULL)
-    public String getFirstname() {
-        return JsonUtils.getStringProperty(properties, PROPERTY_FIRSTNAME);
-    }
-
-    public void setFirstname(@Nonnull final String firstname) {
-        setStringProperty(properties, PROPERTY_FIRSTNAME, firstname);
-    }
-
-    @JsonSerialize(include = NON_NULL)
-    public String getMiddlename() {
-        return JsonUtils.getStringProperty(properties, PROPERTY_MIDDLENAME);
-    }
-
-    public void setMiddlename(@Nonnull final String middlename) {
-        setStringProperty(properties, PROPERTY_MIDDLENAME, middlename);
-    }
-
-    @JsonSerialize(include = NON_NULL)
-    public String getLastname() {
-        return JsonUtils.getStringProperty(properties, PROPERTY_LASTNAME);
-    }
-
-    public void setLastname(@Nonnull final String lastname) {
-        setStringProperty(properties, PROPERTY_LASTNAME, lastname);
-    }
-
-    @JsonSerialize(include = NON_NULL)
-    public String getPicture() {
-        return JsonUtils.getStringProperty(properties, PROPERTY_PICTURE);
-    }
-
-    public void setPicture(@Nonnull final String picture) {
-        setStringProperty(properties, PROPERTY_PICTURE, picture);
     }
 
 }

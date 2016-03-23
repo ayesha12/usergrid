@@ -60,6 +60,7 @@ public class UsergridEnums {
             }
         }
     }
+
     public enum UsergridQueryOperator {
         EQUAL("="),
         GREATER_THAN(">"),
@@ -67,7 +68,8 @@ public class UsergridEnums {
         LESS_THAN("<"),
         LESS_THAN_EQUAL_TO("<=");
 
-        @Nonnull private final String operatorValue;
+        @Nonnull
+        private final String operatorValue;
 
         private UsergridQueryOperator(@Nonnull final String operatorValue) {
             this.operatorValue = operatorValue;
@@ -87,12 +89,13 @@ public class UsergridEnums {
         public static UsergridQuerySortOrder fromString(@Nonnull final String stringValue) {
             try {
                 return UsergridQuerySortOrder.valueOf(stringValue.toUpperCase());
-            } catch(Exception e) {
+            } catch (Exception e) {
                 return null;
             }
         }
 
-        @Override @Nonnull
+        @Override
+        @Nonnull
         public String toString() {
             return super.toString().toLowerCase();
         }

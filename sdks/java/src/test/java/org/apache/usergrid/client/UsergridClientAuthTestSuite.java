@@ -24,9 +24,9 @@ public class UsergridClientAuthTestSuite {
         UsergridClient client = Usergrid.getInstance();
 //        client.config.authMode = UsergridEnums.UsergridAuthMode.NONE;
 
-        String[] segments = {client.config.orgId,client.config.appId,"users"};
+        String[] segments = {client.config.orgId, client.config.appId, "users"};
         UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
-                client.config.baseUrl,null,null,null,null,segments);
+                client.config.baseUrl, null, null, null, null, segments);
         UsergridResponse response = client.requestManager.performRequest(request);
     }
 

@@ -22,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 public class ClientRestTestSuite {
 
     String collectionName;
+
     @Before
     public void before() throws JSONException {
         Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.authFallBack);
@@ -36,7 +37,7 @@ public class ClientRestTestSuite {
 
     public void CreateCollectionAndEntity() throws JSONException {
         UsergridClient client = Usergrid.getInstance();
-        collectionName= "testClientConnection" + System.currentTimeMillis();
+        collectionName = "testClientConnection" + System.currentTimeMillis();
         Map<String, Object> fields = new HashMap<>(3);
         fields.put("name", "john");
         fields.put("place", "San Jose");
@@ -60,7 +61,7 @@ public class ClientRestTestSuite {
         UsergridClient client = Usergrid.getInstance();
 
         //Retrieve the entity.
-        UsergridResponse response = client.GET(collectionName,"john");
+        UsergridResponse response = client.GET(collectionName, "john");
 
         //response.ok should be true
         assertTrue("no error thrown", response.responseError == null);

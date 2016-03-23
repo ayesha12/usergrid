@@ -25,9 +25,8 @@ import java.io.IOException;
  */
 public class UsergridException extends IOException {
 
-    private int responseCode;
-
     private static final long serialVersionUID = 1L;
+    private int responseCode;
 
     /**
      * @param message

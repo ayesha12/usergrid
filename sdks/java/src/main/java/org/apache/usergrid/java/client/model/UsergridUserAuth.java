@@ -18,12 +18,14 @@ package org.apache.usergrid.java.client.model;
 
 import org.apache.usergrid.java.client.UsergridAuth;
 
+import javax.annotation.Nonnull;
+
 public class UsergridUserAuth extends UsergridAuth {
 
     public String username = null;
     public String password = null;
 
-    public UsergridUserAuth(String username, String password) {
+    public UsergridUserAuth(@Nonnull final String username, @Nonnull final String password) {
         super();
         this.username = username;
         this.password = password;

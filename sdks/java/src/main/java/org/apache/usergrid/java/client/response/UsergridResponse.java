@@ -22,12 +22,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize.Inclusion;
-import org.apache.usergrid.java.client.*;
+import org.apache.usergrid.java.client.Usergrid;
+import org.apache.usergrid.java.client.UsergridClient;
+import org.apache.usergrid.java.client.UsergridEnums;
+import org.apache.usergrid.java.client.UsergridRequest;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.model.UsergridUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.MediaType;
@@ -40,15 +44,14 @@ import static org.apache.usergrid.java.client.utils.JsonUtils.toJsonString;
 
 public class UsergridResponse {
 
-    private String accessToken;
-
+    private static final Logger log = LoggerFactory.getLogger(UsergridEntity.class);
+    private final Map<String, JsonNode> properties = new HashMap<String, JsonNode>();
     public UsergridResponseError responseError = null;
-
+    private String accessToken;
     private String path;
     private String uri;
     private String status;
     private long timestamp;
-    private UUID application;
     private List<UsergridEntity> entities;
     private UUID next;
     private String cursor;
@@ -59,27 +62,31 @@ public class UsergridResponse {
     private Map<String, JsonNode> metadata;
     private Map<String, List<String>> params;
     private List<AggregateCounterSet> counters;
-    private ClientCredentialsInfo credentials;
-
-    private List<QueueInfo> queues;
     private UUID last;
-    private UUID queue;
-    private UUID consumer;
-
     private UsergridUser user;
-
-    private final Map<String, JsonNode> properties = new HashMap<String, JsonNode>();
     private int statuscode;
     private Map<String, JsonNode> header;
-    private static final Logger log = LoggerFactory.getLogger(UsergridEntity.class);
+
+    public static UsergridResponse fromException(Exception ex) {
+        UsergridResponse response = new UsergridResponse();
+        if (ex instanceof ClientErrorException) {
+            ClientErrorException clientError = (ClientErrorException) ex;
+            response.responseError = new UsergridResponseError(clientError.getResponse().getStatusInfo().toString(), clientError.getResponse().getStatus(),
+                    clientError.getResponse().toString(), clientError.getClass().toString());
+        } else
+            response.responseError = new UsergridResponseError(ex.getClass().toString(), 0, ex.getMessage(), ex.getCause().toString());
+        return response;
+    }
 
     @JsonAnyGetter
+    @JsonSerialize(include = Inclusion.NON_NULL)
     public Map<String, JsonNode> getProperties() {
         return properties;
     }
 
+    @JsonSerialize(include = Inclusion.NON_NULL)
     @JsonAnySetter
-    public void setProperty(String key, JsonNode value) {
+    public void setProperty(@Nonnull final  String key, @Nonnull final JsonNode value) {
         properties.put(key, value);
     }
 
@@ -90,7 +97,7 @@ public class UsergridResponse {
     }
 
     @JsonProperty("access_token")
-    public void setAccessToken(String accessToken) {
+    public void setAccessToken(@Nonnull final String accessToken) {
         this.accessToken = accessToken;
     }
 
@@ -99,7 +106,7 @@ public class UsergridResponse {
         return path;
     }
 
-    public void setPath(String path) {
+    public void setPath(@Nonnull final String path) {
         this.path = path;
     }
 
@@ -108,7 +115,7 @@ public class UsergridResponse {
         return uri;
     }
 
-    public void setUri(String uri) {
+    public void setUri(@Nonnull final String uri) {
         this.uri = uri;
     }
 
@@ -117,36 +124,30 @@ public class UsergridResponse {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(@Nonnull final String status) {
         this.status = status;
     }
 
+    @JsonSerialize(include = Inclusion.NON_NULL)
     public long getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(long timestamp) {
+    public void setTimestamp(@Nonnull final long timestamp) {
         this.timestamp = timestamp;
     }
 
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    public UUID getApplication() {
-        return application;
-    }
-
-    public void setApplication(UUID application) {
-        this.application = application;
-    }
-
+    // TODO : this can be null. @Nullable
     @JsonSerialize(include = Inclusion.NON_NULL)
     public List<UsergridEntity> getEntities() {
         return entities;
     }
 
-    public void setEntities(List<UsergridEntity> entities) {
+    public void setEntities(@Nonnull final List<UsergridEntity> entities) {
         this.entities = entities;
     }
 
+    @JsonSerialize(include = Inclusion.NON_NULL)
     public int getEntityCount() {
         if (entities == null) {
             return 0;
@@ -159,19 +160,6 @@ public class UsergridResponse {
         return first();
     }
 
-    public <T extends UsergridEntity> T getFirstEntity(Class<T> t) {
-        return UsergridEntity.toType(getFirstEntity(), t);
-    }
-
-    @Nullable
-    public UsergridEntity getLastEntity() {
-        return last();
-    }
-
-    public <T extends UsergridEntity> T getLastEntity(Class<T> t) {
-        return UsergridEntity.toType(getLastEntity(), t);
-    }
-
     public <T extends UsergridEntity> List<T> getEntities(Class<T> t) {
         return UsergridEntity.toType(entities, t);
     }
@@ -181,16 +169,17 @@ public class UsergridResponse {
         return next;
     }
 
-    public void setNext(UUID next) {
+    public void setNext(@Nonnull final UUID next) {
         this.next = next;
     }
 
+    //TODO : can be null
     @JsonSerialize(include = Inclusion.NON_NULL)
     public String getCursor() {
         return cursor;
     }
 
-    public void setCursor(String cursor) {
+    public void setCursor(@Nonnull final String cursor) {
         this.cursor = cursor;
     }
 
@@ -199,34 +188,37 @@ public class UsergridResponse {
         return action;
     }
 
-    public void setAction(String action) {
+    public void setAction(@Nonnull final String action) {
         this.action = action;
     }
 
+    //TODO : can be null
     @JsonSerialize(include = Inclusion.NON_NULL)
     public List<Object> getList() {
         return list;
     }
 
-    public void setList(List<Object> list) {
+    public void setList(@Nonnull final List<Object> list) {
         this.list = list;
     }
 
+    //todo : can be null ?
     @JsonSerialize(include = Inclusion.NON_NULL)
     public Object getData() {
         return data;
     }
 
-    public void setData(Object data) {
+    public void setData(@Nonnull final Object data) {
         this.data = data;
     }
 
+    //TODO : required ?
     @JsonSerialize(include = Inclusion.NON_NULL)
     public Map<String, UUID> getApplications() {
         return applications;
     }
 
-    public void setApplications(Map<String, UUID> applications) {
+    public void setApplications(@Nonnull final Map<String, UUID> applications) {
         this.applications = applications;
     }
 
@@ -235,25 +227,25 @@ public class UsergridResponse {
         return metadata;
     }
 
-    public void setMetadata(Map<String, JsonNode> metadata) {
+    public void setMetadata(@Nonnull final Map<String, JsonNode> metadata) {
         this.metadata = metadata;
     }
 
-    public void setHeaders(Map<String, JsonNode> headers) {
-        this.header = headers;
-    }
-
+    @Nullable
     public Map<String, JsonNode> getHeaders() {
         return this.header;
     }
 
+    public void setHeaders(@Nonnull final Map<String, JsonNode> headers) {
+        this.header = headers;
+    }
 
     @JsonSerialize(include = Inclusion.NON_NULL)
     public Map<String, List<String>> getParams() {
         return params;
     }
 
-    public void setParams(Map<String, List<String>> params) {
+    public void setParams(@Nonnull final Map<String, List<String>> params) {
         this.params = params;
     }
 
@@ -262,42 +254,22 @@ public class UsergridResponse {
         return counters;
     }
 
-    public void setCounters(List<AggregateCounterSet> counters) {
+    public void setCounters(@Nonnull final List<AggregateCounterSet> counters) {
         this.counters = counters;
     }
 
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    public ClientCredentialsInfo getCredentials() {
-        return credentials;
-    }
-
-    public void setCredentials(ClientCredentialsInfo credentials) {
-        this.credentials = credentials;
-    }
-
-    @JsonSerialize(include = Inclusion.NON_NULL)
-
-
-    /**
-     * A UsergridUser instance that contains details about the last authenticated user.
-     */
-
+    //TODO: @Nullable ?
     public UsergridUser currentUser() {
         return user;
     }
 
-    public void setUser(UsergridUser user) {
+    public void setUser(@Nonnull final UsergridUser user) {
         this.user = user;
     }
 
     @Override
     public String toString() {
         return toJsonString(this);
-    }
-
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    public UUID getLast() {
-        return last;
     }
 
     /**
@@ -314,22 +286,6 @@ public class UsergridResponse {
         return null;
     }
 
-    public UsergridEntity user() {
-        if (first().getType() == "user")
-            return first();
-        else
-            new Exception("Entity not of the type user");
-        return null;
-    }
-
-    public List<UsergridEntity> users() {
-        if (first().getType() == "user")
-            return entities;
-        else
-            new Exception("Entity not of the type user");
-        return null;
-    }
-
 
     /**
      * .entity is an alias for .first
@@ -341,7 +297,6 @@ public class UsergridResponse {
     public UsergridEntity entity() {
         return first();
     }
-
 
     /**
      * get the last entity in the 'entities' array in the response
@@ -380,18 +335,7 @@ public class UsergridResponse {
         return null;
     }
 
-
-    public static UsergridResponse fromException(Exception ex) {
-        UsergridResponse response = new UsergridResponse();
-        if (ex instanceof ClientErrorException) {
-            ClientErrorException clientError = (ClientErrorException) ex;
-            response.responseError = new UsergridResponseError(clientError.getResponse().getStatusInfo().toString(), clientError.getResponse().getStatus(),
-                    clientError.getResponse().toString(), clientError.getClass().toString());
-        } else
-            response.responseError = new UsergridResponseError(ex.getClass().toString(), 0, ex.getMessage(), ex.getCause().toString());
-        return response;
-    }
-
+    @JsonSerialize(include = Inclusion.NON_NULL)
     public int getStatusIntCode() {
         return this.statuscode;
     }
@@ -400,6 +344,7 @@ public class UsergridResponse {
         this.statuscode = status;
     }
 
+    @JsonSerialize(include = Inclusion.NON_NULL)
     public boolean ok() {
         if (this.statuscode < 400)
             return true;

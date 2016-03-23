@@ -20,15 +20,14 @@ import static org.apache.usergrid.java.client.utils.ObjectUtils.isEmpty;
  */
 public class UsergridRequestManager {
 
-    public UsergridClient client;
-    public javax.ws.rs.client.Client restClient;
-
     public static final String STR_BLANK = "";
     public static final String HEADER_AUTHORIZATION = "Authorization";
     public static final String BEARER = "Bearer ";
     private static final String STRING_EXPIRES_IN = "expires_in";
+    public UsergridClient client;
+    public javax.ws.rs.client.Client restClient;
 
-    public UsergridRequestManager(UsergridClient client){
+    public UsergridRequestManager(UsergridClient client) {
         this.client = client;
         this.restClient = ClientBuilder.newBuilder()
                 .register(JacksonFeature.class)
@@ -38,18 +37,19 @@ public class UsergridRequestManager {
 
     /**
      * High-level Usergrid API request.
+     *
      * @param request : UsergridRequest object.
      * @return a UsergridResponse object
      */
 
-    public UsergridResponse performRequest(UsergridRequest request){
+    public UsergridResponse performRequest(UsergridRequest request) {
         UsergridHttpMethod method = request.method;
         MediaType contentType = request.contentType;
         Entity entity = Entity.entity(request.data == null ? STR_BLANK : request.data, contentType);
 
         // create the target from the base API URL
         String url = request.baseUrl;
-        if( request.query != null ) {
+        if (request.query != null) {
             url += request.query.build();
         }
 
@@ -58,7 +58,7 @@ public class UsergridRequestManager {
             if (segment != null)
                 webTarget = webTarget.path(segment);
 
-        if ( !isEmpty(request.parameters) ) {
+        if (!isEmpty(request.parameters)) {
             for (Map.Entry<String, Object> param : request.parameters.entrySet()) {
                 webTarget = webTarget.queryParam(param.getKey(), param.getValue());
             }
@@ -73,7 +73,7 @@ public class UsergridRequestManager {
             invocationBuilder.header(HEADER_AUTHORIZATION, auth);
         }
         try {
-            if ( method == UsergridHttpMethod.POST ||  method == UsergridHttpMethod.PUT ) {
+            if (method == UsergridHttpMethod.POST || method == UsergridHttpMethod.PUT) {
                 UsergridResponse response = invocationBuilder.method(method.toString(), entity, UsergridResponse.class);
                 return response;
             } else {
@@ -92,7 +92,6 @@ public class UsergridRequestManager {
     }
 
 
-
     public UsergridResponse AuthenticateApp() {
 
         validateNonEmptyParam(client.config.appAuth.clientId, "client identifier");
@@ -103,8 +102,8 @@ public class UsergridRequestManager {
         data.put("client_id", client.config.appAuth.clientId);
         data.put("client_secret", client.config.appAuth.clientSecret);
         String[] segments = {client.config.orgId, client.config.appId, "token"};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST,MediaType.APPLICATION_JSON_TYPE,
-                client.config.baseUrl,null,data,segments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
+                client.config.baseUrl, null, data, segments);
         UsergridResponse response = performRequest(request);
         if (response == null) {
             return null;
@@ -130,8 +129,8 @@ public class UsergridRequestManager {
 
         String[] segments = {client.config.orgId, client.config.appId, "token"};
 
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST,MediaType.APPLICATION_JSON_TYPE,
-                client.config.baseUrl,null,formData,segments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
+                client.config.baseUrl, null, formData, segments);
         UsergridResponse response = performRequest(request);
         if (response == null) {
             return null;

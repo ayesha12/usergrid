@@ -12,81 +12,81 @@ import static org.junit.Assert.assertTrue;
 /**
  * Created by ApigeeCorporation on 9/10/15.
  */
-public class    SDKTestUtils {
+public class SDKTestUtils {
 
 
-  public static Map<String, UsergridEntity> createColorShapes(String collection) {
+    public static Map<String, UsergridEntity> createColorShapes(String collection) {
 
-    Map<String, Map<String, String>> entityMap = new HashMap<>(7);
+        Map<String, Map<String, String>> entityMap = new HashMap<>(7);
 
-    Map<String, String> fields = new HashMap<>(3);
-    fields.put("color", "red");
-    fields.put("shape", "square");
+        Map<String, String> fields = new HashMap<>(3);
+        fields.put("color", "red");
+        fields.put("shape", "square");
 
-    entityMap.put("redsquare", fields);
+        entityMap.put("redsquare", fields);
 
-    fields = new HashMap<>(3);
-    fields.put("color", "blue");
-    fields.put("shape", "circle");
+        fields = new HashMap<>(3);
+        fields.put("color", "blue");
+        fields.put("shape", "circle");
 
-    entityMap.put("bluecircle", fields);
+        entityMap.put("bluecircle", fields);
 
-    fields = new HashMap<>(3);
-    fields.put("color", "yellow");
-    fields.put("shape", "triangle");
+        fields = new HashMap<>(3);
+        fields.put("color", "yellow");
+        fields.put("shape", "triangle");
 
-    entityMap.put("yellowtriangle", fields);
+        entityMap.put("yellowtriangle", fields);
 
-    return createEntities(collection, entityMap);
-  }
-
-  public static Map<String, UsergridEntity> createEntities(final String collection,
-                                                           final Map<String, Map<String, String>> entities) {
-
-    Map<String, UsergridEntity> entityMap = new HashMap<>();
-
-    for (Map.Entry<String, Map<String, String>> entity : entities.entrySet()) {
-
-      UsergridEntity e = createEntity(collection, entity.getKey(), entity.getValue());
-      entityMap.put(e.getUuidString(), e);
+        return createEntities(collection, entityMap);
     }
 
-    return entityMap;
-  }
+    public static Map<String, UsergridEntity> createEntities(final String collection,
+                                                             final Map<String, Map<String, String>> entities) {
 
-  public static UsergridEntity createEntity(final String collection,
-                                            final String name,
-                                            final Map<String, String> fields) {
+        Map<String, UsergridEntity> entityMap = new HashMap<>();
 
-    UsergridEntity e = new UsergridEntity(collection);
-    e.putproperty("name", name);
+        for (Map.Entry<String, Map<String, String>> entity : entities.entrySet()) {
 
-    for (Map.Entry<String, String> field : fields.entrySet()) {
-      e.putproperty(field.getKey(), field.getValue());
+            UsergridEntity e = createEntity(collection, entity.getKey(), entity.getValue());
+            entityMap.put(e.getUuidString(), e);
+        }
+
+        return entityMap;
     }
 
-    UsergridResponse r = Usergrid.getInstance().POST(e);
+    public static UsergridEntity createEntity(final String collection,
+                                              final String name,
+                                              final Map<String, String> fields) {
 
-    if (r.responseError != null) {
-      assertTrue("UUID should not be null", e.getUuidString() != null);
+        UsergridEntity e = new UsergridEntity(collection);
+        e.putproperty("name", name);
 
-      for (Map.Entry<String, String> field : fields.entrySet()) {
-        assertTrue("attempted to set a property which did not persist on the entity", e.getStringProperty(field.getKey()).equals(field.getValue()));
-      }
+        for (Map.Entry<String, String> field : fields.entrySet()) {
+            e.putproperty(field.getKey(), field.getValue());
+        }
+
+        UsergridResponse r = Usergrid.getInstance().POST(e);
+
+        if (r.responseError != null) {
+            assertTrue("UUID should not be null", e.getUuidString() != null);
+
+            for (Map.Entry<String, String> field : fields.entrySet()) {
+                assertTrue("attempted to set a property which did not persist on the entity", e.getStringProperty(field.getKey()).equals(field.getValue()));
+            }
+        }
+
+        return r.first();
     }
 
-    return r.first();
-  }
-
-  public static void sleep(long millis) {
-    try {
-      Thread.sleep(millis);
-    } catch (InterruptedException ignore) {
-      ignore.printStackTrace();
+    public static void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException ignore) {
+            ignore.printStackTrace();
+        }
     }
-  }
 
-  public static void indexSleep() {
-    sleep(25);
-  }
+    public static void indexSleep() {
+        sleep(25);
+    }
 }

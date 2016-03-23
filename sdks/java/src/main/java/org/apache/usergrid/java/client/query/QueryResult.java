@@ -116,7 +116,7 @@ public class QueryResult
 
                 case "PUT":
                     //todo PUT?
-                    next = usergridClient.PUT(q,fields);
+                    next = usergridClient.PUT(q, fields);
                     next.setPreviousQueryResult(this);
                     this.setNextQueryResult(next);
                     return next;
@@ -132,16 +132,12 @@ public class QueryResult
         return new QueryResult(this.usergridClient, this.verb, null, null);
     }
 
-    public void setPreviousQueryResult(QueryResult previousQueryResult) {
-        this.previousQueryResult = previousQueryResult;
-    }
-
     public QueryResult getPreviousQueryResult() {
         return previousQueryResult;
     }
 
-    public void setNextQueryResult(QueryResult nextQueryResult) {
-        this.nextQueryResult = nextQueryResult;
+    public void setPreviousQueryResult(QueryResult previousQueryResult) {
+        this.previousQueryResult = previousQueryResult;
     }
 
     public QueryResult getNextQueryResult() {
@@ -150,6 +146,10 @@ public class QueryResult
         }
 
         return nextQueryResult;
+    }
+
+    public void setNextQueryResult(QueryResult nextQueryResult) {
+        this.nextQueryResult = nextQueryResult;
     }
 
     @Override
