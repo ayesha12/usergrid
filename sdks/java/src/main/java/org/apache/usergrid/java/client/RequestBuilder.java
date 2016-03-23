@@ -2,6 +2,7 @@ package org.apache.usergrid.java.client;
 
 import org.apache.usergrid.java.client.response.UsergridResponse;
 
+import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,22 +21,22 @@ public class RequestBuilder {
         return "";
     }
 
-    public RequestBuilder collection(final String collection) {
+    public RequestBuilder collection(@Nonnull final String collection) {
         this.collection = collection;
         return this;
     }
 
-    public RequestBuilder entity(final String name_uuid) {
+    public RequestBuilder entity(@Nonnull final String name_uuid) {
         this.name = name_uuid;
         return this;
     }
 
-    public RequestBuilder parameter(final String name, final String value) {
+    public RequestBuilder parameter(@Nonnull final String name, @Nonnull final String value) {
 
         return this;
     }
 
-    public RequestBuilder header(final String name, final String value) {
+    public RequestBuilder header(@Nonnull final String name, @Nonnull final String value) {
 
         if (this.headers == null) {
             this.headers = new HashMap<>(13);
@@ -46,12 +47,12 @@ public class RequestBuilder {
         return this;
     }
 
-    public RequestBuilder headers(final Map<String, String> headers) {
+    public RequestBuilder headers(@Nonnull final Map<String, String> headers) {
         this.headers = headers;
         return this;
     }
 
-    public RequestBuilder parameters(final Map<String, String> parameters) {
+    public RequestBuilder parameters(@Nonnull final Map<String, String> parameters) {
         this.parameters = parameters;
         return this;
     }
@@ -63,6 +64,7 @@ public class RequestBuilder {
 
     }
 
+    //TODO: ?
     public UsergridResponse GET(String uri) {
         return null;
     }
