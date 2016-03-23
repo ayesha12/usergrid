@@ -387,7 +387,7 @@ public class UsergridEntity {
     @Nonnull
     public UsergridResponse disconnect(@Nonnull final UsergridClient client, @Nonnull final String connectionType,
                                        @Nonnull final String targetuuid) throws ClientException {
-        return client.disconnect(this.getType(), this.getName(), connectionType, targetuuid);
+        return client.disConnect(this.getType(), this.getName(), connectionType, targetuuid);
     }
 
     @Nonnull
@@ -399,7 +399,7 @@ public class UsergridEntity {
     @Nonnull
     public UsergridResponse disconnect(@Nonnull final UsergridClient client, @Nonnull final String connectionType,
                                        @Nonnull final String type, @Nonnull final String name) throws ClientException {
-        return client.disconnect(this.getType(), this.getName(), connectionType, type, name);
+        return client.disConnect(this.getType(), this.getName(), connectionType, type, name);
     }
 
     @Nonnull
@@ -413,13 +413,13 @@ public class UsergridEntity {
                                        @Nonnull final UsergridEntity target) throws ClientException {
 
         if (target.getUuid() != null) {
-            return client.disconnect(
+            return client.disConnect(
                     this,
                     connectionType,
                     target);
 
         } else if (target.getType() != null && target.getName() != null) {
-            return client.disconnect(
+            return client.disConnect(
                     this,
                     connectionType,
                     target);

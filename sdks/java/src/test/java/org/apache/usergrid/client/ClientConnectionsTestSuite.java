@@ -166,23 +166,23 @@ public class ClientConnectionsTestSuite {
         client.connect(entityone, "twice", entitytwo);
         client.connect(entityone, "thrice", entitytwo);
 
-        //should disconnect entities by passing UsergridEntity objects as parameters
-        client.disconnect(entityone, "likes", entitytwo);
+        //should disConnect entities by passing UsergridEntity objects as parameters
+        client.disConnect(entityone, "likes", entitytwo);
         UsergridEntity response = client.getConnections(Direction.IN, entitytwo, "likes").first();
         assertTrue("response should be null", response == null);
 
-        //should disconnect entities by passing source type, source uuid, and target uuid as parameters
-        client.disconnect(entityone.getType(), entityone.getUuidString(), "visited", entitytwo.getUuidString());
+        //should disConnect entities by passing source type, source uuid, and target uuid as parameters
+        client.disConnect(entityone.getType(), entityone.getUuidString(), "visited", entitytwo.getUuidString());
         response = client.getConnections(Direction.OUT, entityone, "visited").first();
         assertTrue("response should be null", response == null);
 
-        //should disconnect entities by passing source type, source name, target type, and target name as parameters
-        client.disconnect(entityone.getType(), entityone.getName(), "twice", entitytwo.getType(), entitytwo.getName());
+        //should disConnect entities by passing source type, source name, target type, and target name as parameters
+        client.disConnect(entityone.getType(), entityone.getName(), "twice", entitytwo.getType(), entitytwo.getName());
         response = client.getConnections(Direction.OUT, entityone, "twice").first();
         assertTrue("response should be null", response == null);
 
-        //should fail to disconnect entities when specifying target name without type
-        client.disconnect(entitytwo.getType(), entitytwo.getName(), "thrice", entityone.getName());
+        //should fail to disConnect entities when specifying target name without type
+        client.disConnect(entitytwo.getType(), entitytwo.getName(), "thrice", entityone.getName());
         response = client.getConnections(Direction.OUT, entitytwo, "thrice").first();
         assertTrue("both entities name should be same", response == null);
 
