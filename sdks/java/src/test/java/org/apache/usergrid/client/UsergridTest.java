@@ -18,8 +18,5 @@ public class UsergridTest {
     @Test
     public void initialize() {
         Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME);
-
-//    assertTrue();
-
     }
 }

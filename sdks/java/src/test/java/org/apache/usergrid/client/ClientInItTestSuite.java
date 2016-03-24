@@ -2,7 +2,6 @@ package org.apache.usergrid.client;
 
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
-import org.apache.usergrid.java.client.UsergridEnums;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.codehaus.jettison.json.JSONException;
 import org.junit.After;
@@ -34,7 +33,6 @@ public class ClientInItTestSuite {
         try {
             UsergridResponse response = client1.authenticateApp(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
             assertTrue("no error thrown", response.responseError.getError() == null);
-
         } catch (NullPointerException e) {
         }
 
@@ -48,8 +46,6 @@ public class ClientInItTestSuite {
         } catch (IllegalArgumentException e) {
             assertTrue("no error thrown", e != null);
         }
-
-
     }
 
     @Test
@@ -62,16 +58,7 @@ public class ClientInItTestSuite {
         } catch (NullPointerException e) {
             assertTrue("no error thrown", e != null);
         }
-
-        UsergridClient client2 = Usergrid.getInstance();
-        client2.config.authMode = UsergridEnums.UsergridAuthMode.NONE;
-        try {
-            UsergridResponse response = client2.authenticateUser(SDKTestConfiguration.APP_UserName, SDKTestConfiguration.APP_Password);
-            assertTrue("no error thrown", response.responseError == null);
-        } catch (IllegalArgumentException e) {
-            assertTrue("no error thrown", e == null);
-        }
-
+        //TODO : need to add tests
 
     }
 

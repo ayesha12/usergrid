@@ -10,8 +10,8 @@ public class SDKTestConfiguration {
     public static final String APP_CLIENT_SECRET = "YXA6jg8x4wjq1AAyQBKtn4bRd1l0gJ8"; //"b3U6PxbpQiTrXKCWu0n1CjK1uTZXuG4";
 
 
-    public static final String APP_UserName = "Blueprints_usergrid_0302";//"b3U66ne33W4OEeWXmAIj6QFb-Q";
-    public static final String APP_Password = "Blueprints_usergrid_0302";//"b3U6PxbpQiTrXKCWu0n1CjK1uTZXuG4";
+    public static final String APP_UserName = "test";//"Blueprints_usergrid_0302";//"b3U66ne33W4OEeWXmAIj6QFb-Q";
+    public static final String APP_Password = "test";//"Blueprints_usergrid_0302";//"b3U6PxbpQiTrXKCWu0n1CjK1uTZXuG4";
     public static final String USERGRID_URL = "http://localhost:8080/";
     public static final String ORG_NAME = "test-organization";
     public static final String APP_NAME = "test-app";

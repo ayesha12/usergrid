@@ -91,6 +91,13 @@ public class UsergridRequestManager {
         }
     }
 
+    private void validateNotNull(final Object param,
+                                       final String paramName) {
+        if (isEmpty(param)) {
+            throw new NullPointerException(paramName + " cannot be null or empty");
+        }
+    }
+
 
     public UsergridResponse AuthenticateApp() {
 
@@ -101,6 +108,8 @@ public class UsergridRequestManager {
         data.put("grant_type", "client_credentials");
         data.put("client_id", client.config.appAuth.clientId);
         data.put("client_secret", client.config.appAuth.clientSecret);
+        validateNotNull(client.config.orgId,"org id");
+        validateNotNull(client.config.appId,"app id");
         String[] segments = {client.config.orgId, client.config.appId, "token"};
         UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
                 client.config.baseUrl, null, data, segments);
@@ -126,6 +135,9 @@ public class UsergridRequestManager {
         formData.put("grant_type", "password");
         formData.put("username", client.config.userAuth.username);
         formData.put("password", client.config.userAuth.password);
+
+        validateNotNull(client.config.orgId,"org id");
+        validateNotNull(client.config.appId,"app id");
 
         String[] segments = {client.config.orgId, client.config.appId, "token"};
 

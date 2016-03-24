@@ -44,6 +44,7 @@ public class ClientConnectionsTestSuite {
         UsergridEntity entityone = new UsergridEntity(collectionName);
         entityone.putProperties(fields);
         client.POST(entityone);
+        entityone =  client.GET(collectionName, "john").first();
 
         fields = new HashMap<>(3);
         fields.put("name", "amici");
@@ -53,6 +54,7 @@ public class ClientConnectionsTestSuite {
         UsergridEntity entitytwo = new UsergridEntity(collectionName);
         entitytwo.putProperties(fields);
         client.POST(entitytwo);
+        entitytwo =  client.GET(collectionName, "amici").first();
 
         //should connect entities by passing UsergridEntity objects as parameters
         client.connect(entityone, "likes", entitytwo);
@@ -109,6 +111,7 @@ public class ClientConnectionsTestSuite {
         UsergridEntity entityone = new UsergridEntity(collectionName);
         entityone.putProperties(fields);
         client.POST(entityone);
+        entityone = client.GET(collectionName, "john").first();
 
         fields = new HashMap<>(3);
         fields.put("name", "amici");
@@ -119,6 +122,7 @@ public class ClientConnectionsTestSuite {
         entitytwo.putProperties(fields);
         client.POST(entitytwo);
 
+        entitytwo =  client.GET(collectionName, "amici").first();
         //should connect entities by passing UsergridEntity objects as parameters
         client.connect(entityone, "likes", entitytwo);
         client.connect(entityone, "visited", entitytwo.getUuid().toString());
@@ -150,6 +154,7 @@ public class ClientConnectionsTestSuite {
         UsergridEntity entityone = new UsergridEntity(collectionName);
         entityone.putProperties(fields);
         client.POST(entityone);
+        entityone = client.GET(collectionName, "john").first();
 
         fields = new HashMap<>(3);
         fields.put("name", "amici");
@@ -159,6 +164,7 @@ public class ClientConnectionsTestSuite {
         UsergridEntity entitytwo = new UsergridEntity(collectionName);
         entitytwo.putProperties(fields);
         client.POST(entitytwo);
+        entitytwo =  client.GET(collectionName, "amici").first();
 
         //should connect entities by passing UsergridEntity objects as parameters
         client.connect(entityone, "likes", entitytwo);
