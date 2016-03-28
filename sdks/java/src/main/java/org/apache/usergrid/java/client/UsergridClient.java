@@ -351,6 +351,26 @@ public class UsergridClient {
         return requestManager.performRequest(request);
     }
 
+    public void logoutCurrentUser() {
+        logoutUser(this.config.userAuth.username,this.config.userAuth.accessToken);
+    }
+
+
+    public UsergridResponse logoutUser(String userName,String token){
+        String[] segments = {config.orgId, config.appId, STR_USERS, userName, ""};
+        int len = segments.length;
+        Map<String, Object> param = new HashMap<>();
+        if(token != null){
+            segments[len-1] = "revoketoken";
+            param.put("token",token);
+        }
+        else{
+            segments[len-1] = "revoketokens";
+        }
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, param, null, segments);
+        return requestManager.performRequest(request);
+    }
 
     private void validateNonEmptyParam(final Object param,
                                        final String paramName) {
@@ -971,7 +991,6 @@ public class UsergridClient {
                 requestManager.performRequest(request),
                 q);
     }
-
 
 
     /*
