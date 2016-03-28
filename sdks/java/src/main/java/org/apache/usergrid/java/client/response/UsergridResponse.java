@@ -49,9 +49,9 @@ public class UsergridResponse {
     public UsergridResponseError responseError = null;
     private String accessToken;
     private String path;
-    private String uri;
-    private String status;
-    private long timestamp;
+    public String uri;
+    public String status;
+    public long timestamp;
     private List<UsergridEntity> entities;
     private UUID next;
     private String cursor;
@@ -61,10 +61,10 @@ public class UsergridResponse {
     private Map<String, UUID> applications;
     private Map<String, JsonNode> metadata;
     private Map<String, List<String>> params;
-    private UUID last;
-    private UsergridUser user;
-    private int statuscode;
-    private Map<String, JsonNode> header;
+    public UUID last;
+    public UsergridUser user;
+    public int statuscode;
+    public Map<String, JsonNode> header;
 
     public static UsergridResponse fromException(Exception ex) {
         UsergridResponse response = new UsergridResponse();

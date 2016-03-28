@@ -181,7 +181,7 @@ public class UsergridEntity {
      * @param value
      */
     @Nonnull
-    public UsergridEntity putProperty(@Nonnull String name, @Nonnull String value) {
+    public UsergridEntity   putProperty(@Nonnull String name, @Nonnull String value) {
         setStringProperty(properties, name, value);
         return this;
     }

@@ -29,10 +29,10 @@ public class UsergridAuth {
     public boolean isExprired() { // TODO: Methods need to be camel cased.
         boolean isExpired = false;
         Long currTime = System.currentTimeMillis() / 1000;
-        if (token_expiry / 1000 < currTime)  // TODO: Why not just return the result instead of the if statement. e.g. return !(token_expiry / 1000 < currTime);
-            isExpired = false;
+        if (token_expiry != null)  // TODO: Why not just return the result instead of the if statement. e.g. return !(token_expiry / 1000 < currTime);
+            isExpired = !(token_expiry / 1000 < currTime);
         else
-            isExpired = true; //  todo : why !this.usingToken in swift ?
+            isExpired = !this.usingToken; //  todo : why !this.usingToken in swift ?
         return isExpired;
     }
 

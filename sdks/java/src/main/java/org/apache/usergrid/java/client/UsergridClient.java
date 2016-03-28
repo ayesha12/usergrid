@@ -32,6 +32,7 @@ import org.apache.usergrid.java.client.UsergridEnums.Direction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.ws.rs.core.MediaType;
 import java.util.HashMap;
@@ -294,19 +295,37 @@ public class UsergridClient {
         return response;
     }
 
+    @Nullable
+    public UsergridResponse authenticateApp(final String clientId, final String clientSecret) {
+        UsergridAppAuth ugAppAuth = new UsergridAppAuth(clientId, clientSecret);
+        return authenticateApp(ugAppAuth);
+    }
 
     /**
+     * Log the app in with it's client id and client secret key. Not recommended
+     * for production apps.
      *
-     * // Or with a callback:
-     TODO: UsergridClient.authenticateUser(auth, function(callback) {
-     });
-
+     * @param auth :   UsergridAppAuth containing the client id and secret.
+     * @return non-null UsergridResponse if request succeeds, check getError() for
+     * "invalid_grant" to see if access is denied.
      */
+    @Nullable
+    public UsergridResponse authenticateApp(UsergridAppAuth auth) {
+        this.config.appAuth = auth;
+        UsergridResponse response = requestManager.AuthenticateApp();
+        return response;
+    }
 
     public UsergridClient usingAuth(UsergridAuth ugAuth) {
         this.tempAuth = ugAuth;
         return this;
     }
+
+    public UsergridClient usingToken(String ugToken) {
+        this.tempAuth = new UsergridAuth(ugToken,null);
+        return this;
+    }
+
 
     /**
      * Change the password for the currently logged in user. You must supply the
@@ -332,111 +351,6 @@ public class UsergridClient {
         return requestManager.performRequest(request);
     }
 
-    /**
-     * Log the user in with their numeric pin-code and get a valid access token.
-     *
-     * @param email
-     * @param pin
-     * @return non-null UsergridResponse if request succeeds, check getError() for
-     * "invalid_grant" to see if access is denied.
-     */
-    @Nullable
-    public UsergridResponse authorizeAppUserViaPin(final String email,
-                                                   final String pin) {
-
-
-        validateNonEmptyParam(email, "email");
-        validateNonEmptyParam(pin, "pin");
-
-        currentUser = null;
-
-        Map<String, Object> formData = new HashMap<>();
-        formData.put("grant_type", "pin");
-        formData.put("username", email);
-        formData.put("pin", pin);
-
-        String[] segments = {config.orgId, config.appId, "token"};
-
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl, null, formData, segments);
-        UsergridResponse response = requestManager.performRequest(request);
-
-        if (response == null) {
-            return null;
-        }
-
-        if (!isEmpty(response.getAccessToken()) && (response.currentUser() != null)) {
-            currentUser = response.currentUser();
-            this.config.appAuth.setAccessToken(response.getAccessToken());
-            log.info("Client.authenticateUser(): Access token: " + this.config.appAuth.accessToken);
-        } else {
-            log.info("Client.authenticateUser(): Response: " + response);
-        }
-
-        return response;
-    }
-
-    /**
-     * Log the user in with their Facebook access token retrived via Facebook
-     * OAuth.
-     *
-     * @param fb_access_token the access token from Facebook
-     * @return non-null UsergridResponse if request succeeds, check getError() for
-     * "invalid_grant" to see if access is denied.
-     */
-    @Nullable
-    public UsergridResponse authorizeAppUserViaFacebook(final String fb_access_token) {
-
-        validateNonEmptyParam(fb_access_token, "Facebook token");
-
-        currentUser = null;
-        Map<String, Object> formData = new HashMap<>();
-        formData.put("fb_access_token", fb_access_token);
-
-        String[] segments = {config.orgId, config.appId, "auth", "facebook"};
-
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl, null, formData, segments);
-        UsergridResponse response = requestManager.performRequest(request);
-
-        if (response == null) {
-            return null;
-        }
-
-        if (!isEmpty(response.getAccessToken()) && (response.currentUser() != null)) {
-
-            currentUser = response.currentUser();
-            this.config.appAuth.setAccessToken(response.getAccessToken());
-            log.info("Client.authorizeAppUserViaFacebook(): Access token: " + this.config.appAuth.accessToken);
-
-        } else {
-
-            log.info("Client.authorizeAppUserViaFacebook(): Response: " + response);
-        }
-
-        return response;
-    }
-
-    @Nullable
-    public UsergridResponse authenticateApp(final String clientId, final String clientSecret) {
-        UsergridAppAuth ugAppAuth = new UsergridAppAuth(clientId, clientSecret);
-        return authenticateApp(ugAppAuth);
-    }
-
-    /**
-     * Log the app in with it's client id and client secret key. Not recommended
-     * for production apps.
-     *
-     * @param auth :   UsergridAppAuth containing the client id and secret.
-     * @return non-null UsergridResponse if request succeeds, check getError() for
-     * "invalid_grant" to see if access is denied.
-     */
-    @Nullable
-    public UsergridResponse authenticateApp(UsergridAppAuth auth) {
-        this.config.appAuth = auth;
-        UsergridResponse response = requestManager.AuthenticateApp();
-        return response;
-    }
 
     private void validateNonEmptyParam(final Object param,
                                        final String paramName) {
@@ -570,18 +484,23 @@ public class UsergridClient {
     public UsergridResponse getConnections(Direction direction, UsergridEntity sourceVertex, String relationship) {
 
         ValidateEntity(sourceVertex);
+        return getConnections(direction,sourceVertex.getType(),sourceVertex.getName(),relationship,null);
+    }
+
+    public UsergridResponse getConnections(@Nonnull Direction direction, @Nonnull String sourceVertexType,
+                                           @Nonnull String sourceVertexName, @Nonnull String relationship,
+                                           @Nullable UsergridQuery query) {
         String[] segments1 = {config.orgId, config.appId,
-                sourceVertex.getType(), sourceVertex.getUuidString(), CONNECTIONS, relationship};
+                sourceVertexType, sourceVertexName, CONNECTIONS, relationship};
 
         UsergridRequest request1 = new UsergridRequest(UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl, null, null, segments1);
+                config.baseUrl, null, query, segments1);
 
         String[] segments2 = {config.orgId, config.appId,
-                sourceVertex.getType(), sourceVertex.getUuidString(), CONNECTING, relationship};
+                sourceVertexType, sourceVertexName, CONNECTING, relationship};
 
         UsergridRequest request2 = new UsergridRequest(UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl, null, null, segments2);
-
+                config.baseUrl, null, query, segments2);
 
         switch (direction) {
             case OUT:
@@ -590,7 +509,32 @@ public class UsergridClient {
                 return requestManager.performRequest(request2);
 
         }
+        return null; // invalid connection getName.
+    }
 
+    public UsergridResponse getConnections(@Nonnull Direction direction,
+                                           @Nonnull String sourceVertexuuid, @Nonnull String relationship,
+                                           @Nullable UsergridQuery query) {
+        //TODO : check valid uuid.
+
+        String[] segments1 = {config.orgId, config.appId,
+                sourceVertexuuid, CONNECTIONS, relationship};
+
+        UsergridRequest request1 = new UsergridRequest(UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, query, segments1);
+
+        String[] segments2 = {config.orgId, config.appId,
+                sourceVertexuuid, CONNECTING, relationship};
+
+        UsergridRequest request2 = new UsergridRequest(UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
+                config.baseUrl, null, query, segments2);
+        switch (direction) {
+            case OUT:
+                return requestManager.performRequest(request1);
+            case IN:
+                return requestManager.performRequest(request2);
+
+        }
         return null; // invalid connection getName.
     }
 
