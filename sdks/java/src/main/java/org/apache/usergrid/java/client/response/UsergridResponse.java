@@ -50,7 +50,7 @@ public class UsergridResponse {
     private String accessToken;
     private String path;
     public String uri;
-    public String status;
+    public String statusString;
     public long timestamp;
     private List<UsergridEntity> entities;
     private UUID next;
@@ -110,12 +110,12 @@ public class UsergridResponse {
     }
 
     @JsonSerialize(include = Inclusion.NON_NULL)
-    public String getStatus() {
-        return status;
+    public String getStatusString() {
+        return statusString;
     }
 
-    public void setStatus(@Nonnull final String status) {
-        this.status = status;
+    public void setStatusString(@Nonnull final String statusString) {
+        this.statusString = statusString;
     }
 
     // TODO : this can be null. @Nullable
@@ -294,8 +294,10 @@ public class UsergridResponse {
 
     @JsonSerialize(include = Inclusion.NON_NULL)
     public boolean ok() {
-        if (this.statuscode < 400)
+        if (this.statuscode < 400 && this.statuscode > 0)
             return true;
         return false;
     }
+
+
 }

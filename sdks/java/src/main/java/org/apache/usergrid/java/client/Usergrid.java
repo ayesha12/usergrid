@@ -4,7 +4,6 @@ import org.apache.usergrid.java.client.UsergridEnums.UsergridAuthMode;
 import org.apache.usergrid.java.client.model.UsergridAppAuth;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.model.UsergridUserAuth;
-import org.apache.usergrid.java.client.query.LegacyQueryResult;
 import org.apache.usergrid.java.client.query.QueryResult;
 import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;
@@ -186,12 +185,6 @@ public final class Usergrid {
         return Usergrid.getInstance().createEntity(properties);
     }
 
-    public static LegacyQueryResult queryUsersWithinLocation(@Nonnull final float distance,
-                                                             @Nonnull final float lattitude,
-                                                             @Nonnull final float longitude,
-                                                             @Nonnull final String ql) {
-        return Usergrid.getInstance().queryUsersWithinLocation(distance, lattitude, longitude, ql);
-    }
 
     public static UsergridResponse getEntity(@Nonnull final String type, @Nonnull final String id) {
         return Usergrid.getInstance().getEntity(type, id);
@@ -273,7 +266,7 @@ public final class Usergrid {
         return Usergrid.getInstance().disConnect(sourceVertex, connetionName, targetVertex);
     }
 
-    public static LegacyQueryResult queryEntityConnections(@Nonnull final String connectingEntityType,
+    public static QueryResult queryEntityConnections(@Nonnull final String connectingEntityType,
                                                            @Nonnull final String connectingEntityId,
                                                            @Nonnull final String connectionType, String ql) {
 
@@ -286,17 +279,6 @@ public final class Usergrid {
         ql = ql == null ? within : within + " and " + ql;
 
         return ql;
-    }
-
-    public static LegacyQueryResult queryEntityConnectionsWithinLocation(@Nonnull final String connectingEntityType,
-                                                                         @Nonnull final String connectingEntityId,
-                                                                         @Nonnull final String connectionType,
-                                                                         @Nonnull final float distance,
-                                                                         @Nonnull float latitude,
-                                                                         @Nonnull final float longitude,
-                                                                         @Nonnull final String ql) {
-
-        return Usergrid.getInstance().queryEntityConnectionsWithinLocation(connectingEntityType, connectingEntityId, connectionType, distance, latitude, longitude, ql);
     }
 
 }

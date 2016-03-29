@@ -43,6 +43,7 @@ public class UsergridRequestManager {
      */
 
     public UsergridResponse performRequest(UsergridRequest request) {
+        UsergridResponse ugResponse = new UsergridResponse();
         UsergridHttpMethod method = request.method;
         MediaType contentType = request.contentType;
         Entity entity = Entity.entity(request.data == null ? STR_BLANK : request.data, contentType);
@@ -74,10 +75,9 @@ public class UsergridRequestManager {
         }
         try {
             if (method == UsergridHttpMethod.POST || method == UsergridHttpMethod.PUT) {
-                UsergridResponse response = invocationBuilder.method(method.toString(), entity, UsergridResponse.class);
-                return response;
+                return invocationBuilder.method(method.toString(), entity, UsergridResponse.class);
             } else {
-                return invocationBuilder.method(method.toString(), null, UsergridResponse.class);
+                return  invocationBuilder.method(method.toString(), null, UsergridResponse.class);
             }
         } catch (Exception badRequestException) {
             return UsergridResponse.fromException(badRequestException);

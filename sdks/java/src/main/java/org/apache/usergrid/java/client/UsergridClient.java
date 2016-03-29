@@ -17,6 +17,7 @@
 package org.apache.usergrid.java.client;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
+import org.apache.usergrid.java.client.UsergridEnums.Direction;
 import org.apache.usergrid.java.client.UsergridEnums.UsergridAuthMode;
 import org.apache.usergrid.java.client.UsergridEnums.UsergridHttpMethod;
 import org.apache.usergrid.java.client.model.UsergridAppAuth;
@@ -24,11 +25,9 @@ import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.model.UsergridUser;
 import org.apache.usergrid.java.client.model.UsergridUserAuth;
 import org.apache.usergrid.java.client.query.EntityQueryResult;
-import org.apache.usergrid.java.client.query.LegacyQueryResult;
 import org.apache.usergrid.java.client.query.QueryResult;
 import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;
-import org.apache.usergrid.java.client.UsergridEnums.Direction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -367,7 +366,7 @@ public class UsergridClient {
         else{
             segments[len-1] = "revoketokens";
         }
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.PUT, MediaType.APPLICATION_JSON_TYPE,
                 config.baseUrl, param, null, segments);
         return requestManager.performRequest(request);
     }
@@ -432,57 +431,13 @@ public class UsergridClient {
      * @param segments
      * @return
      */
-    public LegacyQueryResult queryEntities(final String method,
+    public EntityQueryResult queryEntities(final String method,
                                            final Map<String, Object> params,
                                            final Object data,
                                            final String... segments) {
         UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
                 config.baseUrl, params, data, segments);
         return new EntityQueryResult(this, requestManager.performRequest(request), method, params, data, segments);
-    }
-
-    /**
-     * Perform a query of the users collection.
-     *
-     * @return
-     */
-    public LegacyQueryResult queryUsers() {
-        UsergridQuery q = new UsergridQuery("users").desc("created");
-
-        return queryEntities(UsergridHttpMethod.GET.toString(), null, null, config.orgId, config.appId, STR_USERS);
-    }
-
-    /**
-     * Perform a query of the users collection using the provided query command.
-     * For example: "getName contains 'ed'".
-     *
-     * @param ql
-     * @return
-     */
-    public LegacyQueryResult queryUsers(String ql) {
-
-        Map<String, Object> params = new HashMap<>();
-        params.put("ql", ql);
-
-        return queryEntities(UsergridHttpMethod.GET.toString(), params, null, config.orgId, config.appId, STR_USERS);
-    }
-
-    /**
-     * Perform a query of the users collection within the specified distance of
-     * the specified location and optionally using the provided query command.
-     * For example: "getName contains 'ed'".
-     *
-     * @return
-     */
-    public LegacyQueryResult queryUsersWithinLocation(final float distance,
-                                                      final float lattitude,
-                                                      final float longitude,
-                                                      final String ql) {
-
-        Map<String, Object> params = new HashMap<>();
-        params.put("ql", this.makeLocationQL(distance, lattitude, longitude, ql));
-
-        return queryEntities(UsergridHttpMethod.GET.toString(), params, null, config.orgId, config.appId, STR_USERS);
     }
 
     public UsergridResponse getEntitiesInCollection(String collectionName, Map<String, Object> paramsMap) {
@@ -716,7 +671,7 @@ public class UsergridClient {
      * @param ql
      * @return
      */
-    public LegacyQueryResult queryEntityConnections(final String connectingEntityType,
+    public EntityQueryResult queryEntityConnections(final String connectingEntityType,
                                                     final String connectingEntityId,
                                                     final String connectionType, String ql) {
 
@@ -732,31 +687,6 @@ public class UsergridClient {
         ql = ql == null ? within : within + " and " + ql;
 
         return ql;
-    }
-
-    /**
-     * QueryResult the connected entities within distance of a specific point.
-     *
-     * @param connectingEntityType
-     * @param connectingEntityId
-     * @param connectionType
-     * @param distance
-     * @param latitude
-     * @param longitude
-     * @return
-     */
-    public LegacyQueryResult queryEntityConnectionsWithinLocation(final String connectingEntityType,
-                                                                  final String connectingEntityId,
-                                                                  final String connectionType,
-                                                                  final float distance,
-                                                                  float latitude,
-                                                                  final float longitude,
-                                                                  final String ql) {
-
-        Map<String, Object> params = new HashMap<>();
-        params.put("ql", makeLocationQL(distance, latitude, longitude, ql));
-
-        return queryEntities(UsergridHttpMethod.GET.toString(), params, null, config.orgId, config.appId, connectingEntityType, connectingEntityId, connectionType);
     }
 
     public UsergridResponse queryCollections() {

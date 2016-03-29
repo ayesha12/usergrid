@@ -43,8 +43,9 @@ public class ClientInItTestSuite {
         try {
             UsergridResponse response = client2.authenticateApp(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
             assertTrue("no error thrown", response.responseError == null);
+            assertTrue("no error thrown", response.responseError.ok() == true);
         } catch (IllegalArgumentException e) {
-            assertTrue("no error thrown", e != null);
+            assertTrue(" error thrown", e != null);
         }
     }
 

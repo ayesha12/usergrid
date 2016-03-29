@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * Created by ApigeeCorporation on 7/27/15.
  */
-public class EntityQueryResult implements LegacyQueryResult {
+public class EntityQueryResult {
 
     final String method;
     final Map<String, Object> params;
@@ -72,7 +72,7 @@ public class EntityQueryResult implements LegacyQueryResult {
      *
      * @return query that contains results and where to get more from.
      */
-    public LegacyQueryResult next() {
+    public EntityQueryResult next() {
 
         if (more()) {
 
@@ -102,7 +102,6 @@ public class EntityQueryResult implements LegacyQueryResult {
         return null;
     }
 
-    @Override
     public UsergridEntity first() {
         return null;
     }

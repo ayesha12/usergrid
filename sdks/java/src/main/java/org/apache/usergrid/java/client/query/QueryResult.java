@@ -16,7 +16,7 @@ public class QueryResult
 
     private UsergridClient usergridClient;
     private String verb;
-    private UsergridResponse r;
+    public UsergridResponse resp;
     private String cursor;
     private UsergridQuery q;
     private QueryResult previousQueryResult;
@@ -33,7 +33,7 @@ public class QueryResult
 
         this.usergridClient = usergridClient;
         this.verb = verb;
-        this.r = r;
+        this.resp = r;
         this.q = q;
         this.cleared = false;
 
@@ -58,7 +58,7 @@ public class QueryResult
     public UsergridEntity first() {
 
         if (entities.size() > 0)
-            return r.getEntities().get(0);
+            return resp.getEntities().get(0);
 
         return null;
     }
@@ -67,7 +67,7 @@ public class QueryResult
     public UsergridEntity last() {
 
         if (entities.size() > 0)
-            return r.getEntities().get(r.getEntities().size() - 1);
+            return resp.getEntities().get(resp.getEntities().size() - 1);
 
         return null;
     }
@@ -90,7 +90,7 @@ public class QueryResult
             q.cursor(cursor);
             QueryResult next = usergridClient.GET(q);
 
-            this.r = next.r;
+            this.resp = next.resp;
         }
 
         return entities;
@@ -182,7 +182,7 @@ public class QueryResult
     }
 
     public void clear() {
-        this.r = null;
+        this.resp = null;
         this.entities.clear();
         this.cleared = true;
     }
@@ -217,7 +217,7 @@ public class QueryResult
         if (this.nextQueryResult != null)
             this.nextQueryResult.destroy();
 
-        this.r = null;
+        this.resp = null;
         this.q = null;
         this.entities.clear();
 
