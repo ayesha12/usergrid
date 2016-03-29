@@ -45,15 +45,11 @@ public class UsergridResponseError {
         fields.put("shape", "square");
 
         entityMap.put("testEntity1", fields);
-
-
         UsergridEntity e = SDKTestUtils.createEntity(collectionName, "testEntity1", fields);
         UsergridResponse eLookUp = client.GET(collectionName, "testEntity1");
         assertTrue("The returned entity is null!", eLookUp.responseError == null); //    entity has been created
 
         UsergridResponse response = client.GET(collectionName, "testEntity15");
         assertTrue("The returned entity is null!", response != null); //    entity has been created
-        assertTrue("instance of usergrid response error", response.responseError.getClass().isInstance(UsergridResponseError.class));
-
     }
 }

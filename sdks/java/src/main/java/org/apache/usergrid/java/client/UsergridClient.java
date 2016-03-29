@@ -24,7 +24,6 @@ import org.apache.usergrid.java.client.model.UsergridAppAuth;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.model.UsergridUser;
 import org.apache.usergrid.java.client.model.UsergridUserAuth;
-import org.apache.usergrid.java.client.query.EntityQueryResult;
 import org.apache.usergrid.java.client.query.QueryResult;
 import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;
@@ -420,33 +419,6 @@ public class UsergridClient {
         return requestManager.performRequest(request);
     }
 
-    /**
-     * Perform a query request and return a query object. The QueryResult object
-     * provides a simple way of dealing with result sets that need to be
-     * iterated or paged through.
-     *
-     * @param method
-     * @param params
-     * @param data
-     * @param segments
-     * @return
-     */
-    public EntityQueryResult queryEntities(final String method,
-                                           final Map<String, Object> params,
-                                           final Object data,
-                                           final String... segments) {
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl, params, data, segments);
-        return new EntityQueryResult(this, requestManager.performRequest(request), method, params, data, segments);
-    }
-
-    public UsergridResponse getEntitiesInCollection(String collectionName, Map<String, Object> paramsMap) {
-        String[] segments = {config.orgId, config.appId, collectionName};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl, paramsMap, null, segments);
-        return requestManager.performRequest(request);
-    }
-
     public UsergridResponse getEntity(final String type, final String id) {
 
         String[] segments = {config.orgId, config.appId, type, id};
@@ -660,54 +632,6 @@ public class UsergridClient {
         ValidateEntity(sourceVertex);
         ValidateEntity(targetVertex);
         return this.disConnect(sourceVertex.getType(), sourceVertex.getUuid().toString(), connetionName, targetVertex.getUuid().toString());
-    }
-
-    /**
-     * QueryResult the connected entities.
-     *
-     * @param connectingEntityType
-     * @param connectingEntityId
-     * @param connectionType
-     * @param ql
-     * @return
-     */
-    public EntityQueryResult queryEntityConnections(final String connectingEntityType,
-                                                    final String connectingEntityId,
-                                                    final String connectionType, String ql) {
-
-        Map<String, Object> params = new HashMap<>();
-        params.put("ql", ql);
-
-        return queryEntities(UsergridHttpMethod.GET.toString(), params, null, config.orgId, config.appId, connectingEntityType, connectingEntityId, connectionType);
-    }
-
-    protected String makeLocationQL(float distance, double lattitude,
-                                    double longitude, String ql) {
-        String within = String.format("within %d of %d , %d", distance, lattitude, longitude);
-        ql = ql == null ? within : within + " and " + ql;
-
-        return ql;
-    }
-
-    public UsergridResponse queryCollections() {
-
-        String[] segments = {config.orgId, config.appId};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl, null, null, segments);
-        return requestManager.performRequest(request);
-    }
-
-
-    public UsergridResponse queryConnection(final String... segments) {
-
-        String[] paramPath = new String[10];
-        paramPath[0] = this.config.orgId;
-        paramPath[1] = this.config.appId;
-        System.arraycopy(segments, 0, paramPath, 2, segments.length);
-
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl, null, null, paramPath);
-        return requestManager.performRequest(request);
     }
 
 

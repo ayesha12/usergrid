@@ -10,6 +10,7 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -75,9 +76,18 @@ public class UsergridRequestManager {
         }
         try {
             if (method == UsergridHttpMethod.POST || method == UsergridHttpMethod.PUT) {
-                return invocationBuilder.method(method.toString(), entity, UsergridResponse.class);
+                Response response = invocationBuilder.method(method.toString(),entity);
+                UsergridResponse usergridResponse = response.readEntity(UsergridResponse.class);
+                usergridResponse.setStatusIntCode(response.getStatus());
+                return usergridResponse;
+
             } else {
-                return  invocationBuilder.method(method.toString(), null, UsergridResponse.class);
+//                return  invocationBuilder.method(method.toString(), null, UsergridResponse.class);
+                Response response = invocationBuilder.method(method.toString());
+                UsergridResponse usergridResponse = response.readEntity(UsergridResponse.class);
+                usergridResponse.setStatusIntCode(response.getStatus());
+                return usergridResponse;
+
             }
         } catch (Exception badRequestException) {
             return UsergridResponse.fromException(badRequestException);

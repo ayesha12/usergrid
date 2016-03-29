@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.MediaType;
 import java.util.HashMap;
@@ -65,6 +66,9 @@ public class UsergridResponse {
     public UsergridUser user;
     public int statuscode;
     public Map<String, JsonNode> header;
+    private String error;
+    private String errorDescription;
+    private String errorUri;
 
     public static UsergridResponse fromException(Exception ex) {
         UsergridResponse response = new UsergridResponse();
@@ -72,10 +76,53 @@ public class UsergridResponse {
             ClientErrorException clientError = (ClientErrorException) ex;
             response.responseError = new UsergridResponseError(clientError.getResponse().getStatusInfo().toString(), clientError.getResponse().getStatus(),
                     clientError.getResponse().toString(), clientError.getClass().toString());
-        } else
+        }
+        else if(ex instanceof BadRequestException){
+            BadRequestException bre = (BadRequestException) ex;
+            response.responseError = new UsergridResponseError(bre.getResponse().getStatusInfo().toString(),
+                    bre.getResponse().getStatus(),
+                    bre.getResponse().toString(), bre.getClass().toString());
+
+        }
+        else
             response.responseError = new UsergridResponseError(ex.getClass().toString(), 0, ex.getMessage(), ex.getCause().toString());
         return response;
     }
+
+
+    @JsonProperty("error")
+    @JsonSerialize(include = Inclusion.NON_NULL)
+    public String getError() {
+        return error;
+    }
+
+    @JsonProperty("error")
+    public void setError(String error) {
+        this.error = error;
+    }
+
+    @JsonSerialize(include = Inclusion.NON_NULL)
+    @JsonProperty("error_description")
+    public String getErrorDescription() {
+        return errorDescription;
+    }
+
+    @JsonProperty("error_description")
+    public void setErrorDescription(String errorDescription) {
+        this.errorDescription = errorDescription;
+    }
+
+    @JsonSerialize(include = Inclusion.NON_NULL)
+    @JsonProperty("error_uri")
+    public String getErrorUri() {
+        return errorUri;
+    }
+
+    @JsonProperty("error_uri")
+    public void setErrorUri(String errorUri) {
+        this.errorUri = errorUri;
+    }
+
 
     @JsonAnyGetter
     @JsonSerialize(include = Inclusion.NON_NULL)
@@ -100,11 +147,13 @@ public class UsergridResponse {
         this.accessToken = accessToken;
     }
 
+    @JsonProperty("uri")
     @JsonSerialize(include = Inclusion.NON_NULL)
     public String getUri() {
         return uri;
     }
 
+    @JsonProperty("uri")
     public void setUri(@Nonnull final String uri) {
         this.uri = uri;
     }
@@ -283,21 +332,23 @@ public class UsergridResponse {
         return null;
     }
 
+    @JsonProperty("status")
     @JsonSerialize(include = Inclusion.NON_NULL)
     public int getStatusIntCode() {
         return this.statuscode;
     }
 
+    @JsonProperty("status")
+    @JsonSerialize(include = Inclusion.NON_NULL)
     public void setStatusIntCode(int status) {
         this.statuscode = status;
     }
 
     @JsonSerialize(include = Inclusion.NON_NULL)
     public boolean ok() {
-        if (this.statuscode < 400 && this.statuscode > 0)
+        if ((responseError == null) || (this.statuscode < 400 && this.statuscode > 0))
             return true;
         return false;
     }
-
 
 }

@@ -2,6 +2,7 @@ package org.apache.usergrid.java.client.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.usergrid.java.client.response.UsergridResponse;
+import org.apache.usergrid.java.client.response.UsergridResponseError;
 
 import javax.ws.rs.*;
 import javax.ws.rs.client.ClientRequestContext;
@@ -28,7 +29,7 @@ public class ErrorResponseFilter implements ClientResponseFilter {
 
                 UsergridResponse error = _MAPPER.readValue(responseContext.getEntityStream(), UsergridResponse.class);
 
-                String message = String.format("HTTP %s: (%s) %s", responseCode, error.responseError.getError(), error.responseError.getErrorDescription());
+                String message = String.format("HTTP %s: (%s) %s", responseCode, error.getError(), error.getErrorDescription());
 
                 Response.Status status = Response.Status.fromStatusCode(responseContext.getStatus());
                 WebApplicationException webAppException;

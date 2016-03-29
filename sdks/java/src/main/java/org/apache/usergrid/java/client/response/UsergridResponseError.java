@@ -65,11 +65,13 @@ public class UsergridResponseError {
         properties.put(key, value);
     }
 
+    @JsonProperty("exception")
     @JsonSerialize(include = Inclusion.NON_NULL)
     public String getError() {
         return errorException;
     }
 
+    @JsonProperty("exception")
     public void setError(@Nonnull final String error) {
         this.errorException = error;
     }
