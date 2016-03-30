@@ -30,7 +30,7 @@ public class UsergridAuth {
         boolean isExpired = false;
         Long currTime = System.currentTimeMillis() / 1000;
         if (token_expiry != null)  // TODO: Why not just return the result instead of the if statement. e.g. return !(token_expiry / 1000 < currTime);
-            isExpired = !(token_expiry / 1000 < currTime);
+            isExpired = (token_expiry / 1000 < currTime);
         else
             isExpired = !this.usingToken; //  todo : why !this.usingToken in swift ?
         return isExpired;

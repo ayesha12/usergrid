@@ -1,14 +1,13 @@
 package org.apache.usergrid.java.client;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.usergrid.java.client.UsergridEnums.UsergridHttpMethod;
-import org.apache.usergrid.java.client.filter.ErrorResponseFilter;
 import org.apache.usergrid.java.client.response.UsergridResponse;
+import org.apache.usergrid.java.client.response.UsergridResponseError;
 import org.glassfish.jersey.jackson.JacksonFeature;
 
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.Invocation;
-import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.ProcessingException;
+import javax.ws.rs.client.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.HashMap;
@@ -27,12 +26,15 @@ public class UsergridRequestManager {
     private static final String STRING_EXPIRES_IN = "expires_in";
     public UsergridClient client;
     public javax.ws.rs.client.Client restClient;
+    private static ObjectMapper _MAPPER = new ObjectMapper();
+    private Response response;
 
     public UsergridRequestManager(UsergridClient client) {
         this.client = client;
         this.restClient = ClientBuilder.newBuilder()
                 .register(JacksonFeature.class)
-                .register(new ErrorResponseFilter())
+                .register(ProcessingException.class)
+//                .register(new ErrorResponseFilter())
                 .build();
     }
 
@@ -76,21 +78,26 @@ public class UsergridRequestManager {
         }
         try {
             if (method == UsergridHttpMethod.POST || method == UsergridHttpMethod.PUT) {
-                Response response = invocationBuilder.method(method.toString(),entity);
-                UsergridResponse usergridResponse = response.readEntity(UsergridResponse.class);
-                usergridResponse.setStatusIntCode(response.getStatus());
-                return usergridResponse;
-
+                response = invocationBuilder.method(method.toString(),entity);
             } else {
-//                return  invocationBuilder.method(method.toString(), null, UsergridResponse.class);
-                Response response = invocationBuilder.method(method.toString());
-                UsergridResponse usergridResponse = response.readEntity(UsergridResponse.class);
-                usergridResponse.setStatusIntCode(response.getStatus());
-                return usergridResponse;
-
+                response = invocationBuilder.method(method.toString());
             }
-        } catch (Exception badRequestException) {
-            return UsergridResponse.fromException(badRequestException);
+            ugResponse = response.readEntity(UsergridResponse.class);
+            ugResponse.setStatusIntCode(response.getStatus());
+
+            if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+                ugResponse.responseError = new UsergridResponseError(response.getStatusInfo().getReasonPhrase(),
+                        response.getStatus(),
+                        response.getStatusInfo().getFamily().toString(),
+                        response.getStatusInfo().toString());
+            }
+            ugResponse.setOk(response.getStatusInfo().getReasonPhrase());
+            ugResponse.headers = UsergridResponse.putMultivaluedMap(response.getHeaders());
+
+            return ugResponse;
+
+        } catch (Exception requestException) {
+            return UsergridResponse.fromException(requestException);
         }
     }
 
@@ -130,7 +137,12 @@ public class UsergridRequestManager {
 
         if (!isEmpty(response.getAccessToken())) {
             client.config.appAuth.setAccessToken(response.getAccessToken());
-            client.config.appAuth.setTokenExpiry(response.getProperties().get(STRING_EXPIRES_IN).asLong() - 5);
+            client.config.appAuth.setTokenExpiry(System.currentTimeMillis() + response.getProperties().get(STRING_EXPIRES_IN).asLong() - 5);
+        }
+        else
+        {
+            throw new IllegalArgumentException("bad request : " + response.responseError.getErrorDescription()
+                    + " status code : " + response.getStatusIntCode());
         }
         return response;
     }
@@ -160,9 +172,14 @@ public class UsergridRequestManager {
 
         if (!isEmpty(response.getAccessToken()) && (response.currentUser() != null)) {
             client.config.userAuth.setAccessToken(response.getAccessToken());
-            client.config.userAuth.setTokenExpiry(response.getProperties().get(STRING_EXPIRES_IN).asLong() - 5);
+            client.config.userAuth.setTokenExpiry(System.currentTimeMillis() + response.getProperties().get(STRING_EXPIRES_IN).asLong() - 5);
             response.currentUser().userAuth = client.config.userAuth;
             client.setCurrentUser(response.currentUser());
+        }
+        else
+        {
+            throw new IllegalArgumentException("bad request " + response.responseError.getErrorDescription()
+                    + " status code : " + response.getStatusIntCode());
         }
         return response;
     }

@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize.Inclusion;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.UsergridEnums;
@@ -36,6 +37,8 @@ import javax.annotation.Nullable;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,13 +49,18 @@ import static org.apache.usergrid.java.client.utils.JsonUtils.toJsonString;
 public class UsergridResponse {
 
     private static final Logger log = LoggerFactory.getLogger(UsergridEntity.class);
-    private final Map<String, JsonNode> properties = new HashMap<String, JsonNode>();
+    public Map<String, JsonNode> properties = new HashMap<String, JsonNode>();
     public UsergridResponseError responseError = null;
-    private String accessToken;
-    private String path;
+    public boolean ok =false;
     public String uri;
     public String statusString;
     public long timestamp;
+    public UUID last;
+    public UsergridUser user;
+    public int statuscode;
+    public Map<String, JsonNode> headers;
+    private String accessToken;
+    private String path;
     private List<UsergridEntity> entities;
     private UUID next;
     private String cursor;
@@ -62,13 +70,6 @@ public class UsergridResponse {
     private Map<String, UUID> applications;
     private Map<String, JsonNode> metadata;
     private Map<String, List<String>> params;
-    public UUID last;
-    public UsergridUser user;
-    public int statuscode;
-    public Map<String, JsonNode> header;
-    private String error;
-    private String errorDescription;
-    private String errorUri;
 
     public static UsergridResponse fromException(Exception ex) {
         UsergridResponse response = new UsergridResponse();
@@ -89,40 +90,15 @@ public class UsergridResponse {
         return response;
     }
 
-
-    @JsonProperty("error")
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    public String getError() {
-        return error;
+    public static UsergridResponse fromExceptionResponse(Response exceptionResponse) {
+        UsergridResponse response = new UsergridResponse();
+        response.setStatusIntCode(exceptionResponse.getStatus());
+        response.responseError = new UsergridResponseError(exceptionResponse.getStatusInfo().getReasonPhrase(),
+                exceptionResponse.getStatus(),
+                exceptionResponse.getStatusInfo().getFamily().toString(),
+                exceptionResponse.getStatusInfo().toString());
+        return response;
     }
-
-    @JsonProperty("error")
-    public void setError(String error) {
-        this.error = error;
-    }
-
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    @JsonProperty("error_description")
-    public String getErrorDescription() {
-        return errorDescription;
-    }
-
-    @JsonProperty("error_description")
-    public void setErrorDescription(String errorDescription) {
-        this.errorDescription = errorDescription;
-    }
-
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    @JsonProperty("error_uri")
-    public String getErrorUri() {
-        return errorUri;
-    }
-
-    @JsonProperty("error_uri")
-    public void setErrorUri(String errorUri) {
-        this.errorUri = errorUri;
-    }
-
 
     @JsonAnyGetter
     @JsonSerialize(include = Inclusion.NON_NULL)
@@ -239,11 +215,11 @@ public class UsergridResponse {
 
     @Nullable
     public Map<String, JsonNode> getHeaders() {
-        return this.header;
+        return this.headers;
     }
 
     public void setHeaders(@Nonnull final Map<String, JsonNode> headers) {
-        this.header = headers;
+        this.headers = headers;
     }
 
     @JsonSerialize(include = Inclusion.NON_NULL)
@@ -344,11 +320,20 @@ public class UsergridResponse {
         this.statuscode = status;
     }
 
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    public boolean ok() {
-        if ((responseError == null) || (this.statuscode < 400 && this.statuscode > 0))
-            return true;
-        return false;
+    public static Map<String,JsonNode> putMultivaluedMap(MultivaluedMap<String, Object> headers) {
+        Map<String,JsonNode> multiValueMap = new HashMap<String, JsonNode>();
+        for (String objKey: headers.keySet()) {
+            multiValueMap.put(objKey,(JsonNodeFactory.instance.POJONode(headers.get(objKey))));
+        }
+        return multiValueMap;
     }
 
+    public void setOk(String reasonPhrase) {
+        if(reasonPhrase.equals("OK")){
+            ok = true;
+        }
+    }
+    public boolean getOk() {
+        return this.ok;
+    }
 }

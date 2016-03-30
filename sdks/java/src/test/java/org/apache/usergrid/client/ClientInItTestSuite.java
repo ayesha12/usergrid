@@ -2,6 +2,9 @@ package org.apache.usergrid.client;
 
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
+import org.apache.usergrid.java.client.UsergridEnums;
+import org.apache.usergrid.java.client.model.UsergridAppAuth;
+import org.apache.usergrid.java.client.model.UsergridUserAuth;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.codehaus.jettison.json.JSONException;
 import org.junit.After;
@@ -36,17 +39,42 @@ public class ClientInItTestSuite {
         } catch (NullPointerException e) {
         }
 
-        //should initialize using properties defined in config.json
-
         UsergridClient client2 = Usergrid.getInstance();
         client2.config.authMode = SDKTestConfiguration.authFallBack;
         try {
             UsergridResponse response = client2.authenticateApp(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
             assertTrue("no error thrown", response.responseError == null);
-            assertTrue("no error thrown", response.responseError.ok() == true);
+            assertTrue("response status is OK", response.ok == true);
+            assertTrue("should have a valid token",response.getAccessToken().length() > 10);
+            assertTrue("client.appAuth.token should be set to the token returned from Usergrid",
+                    client2.config.appAuth.accessToken.equals(response.getAccessToken()));
+            assertTrue("client.appAuth.isValid should be true",client2.config.appAuth.isValidToken() == true);
+            assertTrue("client.appAuth.expiry should be set to a future date",
+                    client2.config.appAuth.token_expiry > System.currentTimeMillis());
         } catch (IllegalArgumentException e) {
             assertTrue(" error thrown", e != null);
         }
+
+        //should authenticate by passing clientId and clientSecret in an object
+        client2 = Usergrid.getInstance();
+        client2.config.authMode = SDKTestConfiguration.authFallBack;
+        try {
+            UsergridAppAuth auth = new UsergridAppAuth(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
+            UsergridResponse response = client2.authenticateApp(auth);
+            assertTrue("no error thrown", response.responseError == null);
+            assertTrue("response status is OK", response.ok == true);
+            assertTrue("should have a valid token",response.getAccessToken().length() > 10);
+            assertTrue("client.appAuth.token should be set to the token returned from Usergrid",
+                    client2.config.appAuth.accessToken.equals(response.getAccessToken()));
+            assertTrue("client.appAuth.isValid should be true",client2.config.appAuth.isValidToken() == true);
+            assertTrue("client.appAuth.expiry should be set to a future date",
+                    client2.config.appAuth.token_expiry > System.currentTimeMillis());
+        } catch (IllegalArgumentException e) {
+            System.out.println(e.getMessage());
+            assertTrue(" error thrown", e == null);
+        }
+
+
     }
 
     @Test
@@ -59,7 +87,39 @@ public class ClientInItTestSuite {
         } catch (NullPointerException e) {
             assertTrue("no error thrown", e != null);
         }
-        //TODO : need to add tests
+
+        UsergridClient client2 = Usergrid.getInstance();
+        client2.config.authMode = UsergridEnums.UsergridAuthMode.USER;
+        try {
+            UsergridResponse response = client2.authenticateUser(SDKTestConfiguration.APP_UserName, SDKTestConfiguration.APP_Password);
+            assertTrue("no error thrown", response.responseError == null);
+            assertTrue("response status is OK", response.ok == true);
+            assertTrue("should have a valid token",response.getAccessToken().length() > 10);
+            assertTrue("client.appAuth.token should be set to the token returned from Usergrid",
+                    client2.config.userAuth.accessToken.equals(response.getAccessToken()));
+            assertTrue("client.appAuth.isValid should be true",client2.config.userAuth.isValidToken() == true);
+            assertTrue("client.appAuth.expiry should be set to a future date",
+                    client2.config.userAuth.token_expiry > System.currentTimeMillis());
+        } catch (IllegalArgumentException e) {
+            assertTrue(" error thrown", e != null);
+        }
+
+        client2 = Usergrid.getInstance();
+        client2.config.authMode = UsergridEnums.UsergridAuthMode.USER;
+        try {
+            UsergridUserAuth auth = new UsergridUserAuth(SDKTestConfiguration.APP_UserName, SDKTestConfiguration.APP_Password);
+            UsergridResponse response = client2.authenticateUser(auth);
+            assertTrue("no error thrown", response.responseError == null);
+            assertTrue("response status is OK", response.ok == true);
+            assertTrue("should have a valid token",response.getAccessToken().length() > 10);
+            assertTrue("client.appAuth.token should be set to the token returned from Usergrid",
+                    client2.config.userAuth.accessToken.equals(response.getAccessToken()));
+            assertTrue("client.appAuth.isValid should be true",client2.config.userAuth.isValidToken() == true);
+            assertTrue("client.appAuth.expiry should be set to a future date",
+                    client2.config.userAuth.token_expiry > System.currentTimeMillis());
+        } catch (IllegalArgumentException e) {
+            assertTrue(" error thrown", e != null);
+        }
 
     }
 

@@ -17,7 +17,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Created by ApigeeCorporation on 9/10/15.
  */
-public class UsergridResponseError {
+public class UsergridResponseErrorTest {
     public static UsergridClient client = null;
 
     @Before
@@ -50,6 +50,7 @@ public class UsergridResponseError {
         assertTrue("The returned entity is null!", eLookUp.responseError == null); //    entity has been created
 
         UsergridResponse response = client.GET(collectionName, "testEntity15");
-        assertTrue("The returned entity is null!", response != null); //    entity has been created
+        assertTrue("The returned entity is null!", response.responseError != null); //    entity has been created
+
     }
 }

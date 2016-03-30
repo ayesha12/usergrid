@@ -310,8 +310,7 @@ public class UsergridClient {
     @Nullable
     public UsergridResponse authenticateApp(UsergridAppAuth auth) {
         this.config.appAuth = auth;
-        UsergridResponse response = requestManager.AuthenticateApp();
-        return response;
+        return requestManager.AuthenticateApp();
     }
 
     public UsergridClient usingAuth(UsergridAuth ugAuth) {

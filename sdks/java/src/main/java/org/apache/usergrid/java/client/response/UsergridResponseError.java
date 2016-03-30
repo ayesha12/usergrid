@@ -37,7 +37,6 @@ public class UsergridResponseError {
     public static String errorName;
     public static String errorDescription;
     public static String errorException;
-    public static int code;
     private final Map<String, JsonNode> properties = new HashMap<String, JsonNode>();
     private int statuscode;
     private Map<String, JsonNode> header;
@@ -47,8 +46,9 @@ public class UsergridResponseError {
 
     // TODO : public init();
     public UsergridResponseError(String name, int code, String description, String errorException) {
+
         this.errorName = name;
-        this.code = code;
+        this.statuscode = code;
         this.errorDescription = description;
         this.errorException = errorException;
 

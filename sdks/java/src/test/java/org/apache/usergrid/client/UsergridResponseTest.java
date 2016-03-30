@@ -38,23 +38,19 @@ public class UsergridResponseTest {
     public void testLogoutUser() {
         Usergrid.authenticateUser(appUser);
         client = Usergrid.getInstance();
-
         String collectionName = "ect" + System.currentTimeMillis();
-
         Map<String, Map<String, String>> entityMap = new HashMap<>(7);
 
         Map<String, String> fields = new HashMap<>(3);
         fields.put("color", "red");
         fields.put("shape", "square");
-
         entityMap.put("testEntity1", fields);
-
 
         UsergridEntity e = SDKTestUtils.createEntity(collectionName, "testEntity1", fields);
         UsergridResponse response = client.GET(collectionName, "testEntity1");
         Object instanceObj = response.statuscode;
         assertTrue("The returned statusCode is and object of integer", instanceObj instanceof Integer);
-        instanceObj = response.ok();
+        instanceObj = response.ok;
         assertTrue("The returned statusCode is and object of boolean", instanceObj instanceof Boolean);
 
         UsergridResponse resp = client.logoutUser("Blueprints_usergrid_0302",null);
