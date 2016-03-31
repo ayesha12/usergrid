@@ -137,7 +137,7 @@ public class UsergridRequestManager {
 
         if (!isEmpty(response.getAccessToken())) {
             client.config.appAuth.setAccessToken(response.getAccessToken());
-            client.config.appAuth.setTokenExpiry(System.currentTimeMillis() + response.getProperties().get(STRING_EXPIRES_IN).asLong() - 5);
+            client.config.appAuth.setTokenExpiry(System.currentTimeMillis() + response.getProperties().get(STRING_EXPIRES_IN).asLong() - 5000);
         }
         else
         {
@@ -172,7 +172,7 @@ public class UsergridRequestManager {
 
         if (!isEmpty(response.getAccessToken()) && (response.currentUser() != null)) {
             client.config.userAuth.setAccessToken(response.getAccessToken());
-            client.config.userAuth.setTokenExpiry(System.currentTimeMillis() + response.getProperties().get(STRING_EXPIRES_IN).asLong() - 5);
+            client.config.userAuth.setTokenExpiry(System.currentTimeMillis() + response.getProperties().get(STRING_EXPIRES_IN).asLong() - 5000);
             response.currentUser().userAuth = client.config.userAuth;
             client.setCurrentUser(response.currentUser());
         }

@@ -16,14 +16,12 @@
  */
 package org.apache.usergrid.java.client.exception;
 
-import java.io.IOException;
-
 /**
  * Simple wrapper for client exceptions
  *
  * @author tnine
  */
-public class UsergridException extends IOException {
+public class UsergridException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
     private int responseCode;
@@ -32,25 +30,21 @@ public class UsergridException extends IOException {
      * @param message
      * @param cause
      */
-    public UsergridException(final String message,
-                             final Throwable cause) {
+    public UsergridException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public UsergridException(final String message,
-                             final Throwable cause,
-                             final int responseCode) {
+    public UsergridException(String message, Throwable cause, int responseCode) {
         super(message, cause);
         this.responseCode = responseCode;
     }
 
-    public UsergridException(final String message,
-                             final int responseCode) {
+    public UsergridException(String message, int responseCode) {
         super(message);
         this.responseCode = responseCode;
     }
 
-    public UsergridException(final String s) {
+    public UsergridException(String s) {
         super(s);
     }
 

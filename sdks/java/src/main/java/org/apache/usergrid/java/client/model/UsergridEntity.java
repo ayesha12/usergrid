@@ -26,7 +26,7 @@ import com.fasterxml.jackson.databind.node.POJONode;
 import org.apache.usergrid.java.client.UsergridEnums.Direction;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
-import org.apache.usergrid.java.client.exception.ClientException;
+import org.apache.usergrid.java.client.exception.UsergridException;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.apache.usergrid.java.client.utils.JsonUtils;
 import org.codehaus.jettison.json.JSONException;
@@ -316,22 +316,22 @@ public class UsergridEntity {
     }
 
     @Nonnull
-    public UsergridResponse connect(@Nonnull final String relationship, @Nonnull final String targetUUId) throws ClientException {
+    public UsergridResponse connect(@Nonnull final String relationship, @Nonnull final String targetUUId) throws UsergridException {
         return connect(Usergrid.getInstance(), relationship, targetUUId);
     }
 
     @Nonnull
-    public UsergridResponse connect(@Nonnull final UsergridClient client, @Nonnull final String relationship, @Nonnull final String targetUuid) throws ClientException {
+    public UsergridResponse connect(@Nonnull final UsergridClient client, @Nonnull final String relationship, @Nonnull final String targetUuid) throws UsergridException {
         return client.connect(this.getType(), this.getName(), relationship, targetUuid);
     }
 
     @Nonnull
-    public UsergridResponse connect(@Nonnull final String relationship, @Nonnull final UsergridEntity target) throws ClientException {
+    public UsergridResponse connect(@Nonnull final String relationship, @Nonnull final UsergridEntity target) throws UsergridException {
         return connect(Usergrid.getInstance(), relationship, target);
     }
 
     @Nonnull
-    public UsergridResponse connect(@Nonnull final UsergridClient client, @Nonnull final String relationship, @Nonnull final UsergridEntity target) throws ClientException {
+    public UsergridResponse connect(@Nonnull final UsergridClient client, @Nonnull final String relationship, @Nonnull final UsergridEntity target) throws UsergridException {
 
         if (target.getUuid() != null) {
             return client.connect(
@@ -355,37 +355,37 @@ public class UsergridEntity {
 
     @Nonnull
     public UsergridResponse disConnect(@Nonnull final String relationship,
-                                       @Nonnull final String targetuuid) throws ClientException {
+                                       @Nonnull final String targetuuid) throws UsergridException {
         return disConnect(Usergrid.getInstance(), relationship, targetuuid);
     }
 
     @Nonnull
     public UsergridResponse disConnect(@Nonnull final UsergridClient client, @Nonnull final String relationship,
-                                       @Nonnull final String targetuuid) throws ClientException {
+                                       @Nonnull final String targetuuid) throws UsergridException {
         return client.disConnect(this.getType(), this.getName(), relationship, targetuuid);
     }
 
     @Nonnull
     public UsergridResponse disConnect(@Nonnull final String relationship,
-                                       @Nonnull final String type, @Nonnull final String name) throws ClientException {
+                                       @Nonnull final String type, @Nonnull final String name) throws UsergridException {
         return disConnect(Usergrid.getInstance(), relationship, type, name);
     }
 
     @Nonnull
     public UsergridResponse disConnect(@Nonnull final UsergridClient client, @Nonnull final String relationship,
-                                       @Nonnull final String type, @Nonnull final String name) throws ClientException {
+                                       @Nonnull final String type, @Nonnull final String name) throws UsergridException {
         return client.disConnect(this.getType(), this.getName(), relationship, type, name);
     }
 
     @Nonnull
     public UsergridResponse disConnect(@Nonnull final String relationship,
-                                       @Nonnull final UsergridEntity target) throws ClientException {
+                                       @Nonnull final UsergridEntity target) throws UsergridException {
         return disConnect(Usergrid.getInstance(), relationship, target);
     }
 
     @Nonnull
     public UsergridResponse disConnect(@Nonnull final UsergridClient client, @Nonnull final String relationship,
-                                       @Nonnull final UsergridEntity target) throws ClientException {
+                                       @Nonnull final UsergridEntity target) throws UsergridException {
 
         if (target.getUuid() != null) {
             return client.disConnect(

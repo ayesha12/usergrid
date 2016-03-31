@@ -4,7 +4,6 @@ import org.apache.usergrid.java.client.UsergridEnums.UsergridAuthMode;
 import org.apache.usergrid.java.client.model.UsergridAppAuth;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.model.UsergridUserAuth;
-import org.apache.usergrid.java.client.query.QueryResult;
 import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.apache.usergrid.java.client.UsergridEnums.Direction;
@@ -131,7 +130,7 @@ public final class Usergrid {
         return Usergrid.getInstance().GET(uuid);
     }
 
-    public static QueryResult GET(@Nonnull final UsergridQuery q) {
+    public static UsergridResponse GET(@Nonnull final UsergridQuery q) {
 
         return Usergrid.getInstance().GET(q);
     }
@@ -154,7 +153,7 @@ public final class Usergrid {
         return Usergrid.getInstance().PUT(e);
     }
 
-    public static QueryResult PUT(@Nonnull final UsergridQuery q,
+    public static UsergridResponse PUT(@Nonnull final UsergridQuery q,
                                   @Nonnull final Map<String, Object> fields) {
         return Usergrid.getInstance().PUT(q, fields);
     }
@@ -173,7 +172,7 @@ public final class Usergrid {
         return Usergrid.getInstance().DELETE(uuid);
     }
 
-    public static QueryResult DELETE(@Nonnull final UsergridQuery q) {
+    public static UsergridResponse DELETE(@Nonnull final UsergridQuery q) {
         return Usergrid.getInstance().DELETE(q);
     }
 
@@ -266,19 +265,5 @@ public final class Usergrid {
         return Usergrid.getInstance().disConnect(sourceVertex, connetionName, targetVertex);
     }
 
-    public static QueryResult queryEntityConnections(@Nonnull final String connectingEntityType,
-                                                           @Nonnull final String connectingEntityId,
-                                                           @Nonnull final String connectionType, String ql) {
-
-        return queryEntityConnections(connectingEntityType, connectingEntityId, connectionType, ql);
-    }
-
-    protected static String makeLocationQL(@Nonnull float distance, @Nonnull double lattitude,
-                                           @Nonnull double longitude, String ql) {
-        String within = String.format("within %d of %d , %d", distance, lattitude, longitude);
-        ql = ql == null ? within : within + " and " + ql;
-
-        return ql;
-    }
 
 }

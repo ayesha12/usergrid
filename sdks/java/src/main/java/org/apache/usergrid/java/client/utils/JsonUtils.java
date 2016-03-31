@@ -22,7 +22,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.*;
-import org.apache.usergrid.java.client.exception.ClientException;
+import org.apache.usergrid.java.client.exception.UsergridException;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -146,11 +146,11 @@ public class JsonUtils {
         try {
             return mapper.writeValueAsString(obj);
         } catch (JsonGenerationException e) {
-            throw new ClientException("Unable to generate json", e);
+            throw new UsergridException("Unable to generate json", e);
         } catch (JsonMappingException e) {
-            throw new ClientException("Unable to map json", e);
+            throw new UsergridException("Unable to map json", e);
         } catch (IOException e) {
-            throw new ClientException("IO error", e);
+            throw new UsergridException("IO error", e);
         }
     }
 
@@ -159,11 +159,11 @@ public class JsonUtils {
         try {
             return mapper.readValue(json, c);
         } catch (JsonGenerationException e) {
-            throw new ClientException("Unable to generate json", e);
+            throw new UsergridException("Unable to generate json", e);
         } catch (JsonMappingException e) {
-            throw new ClientException("Unable to map json", e);
+            throw new UsergridException("Unable to map json", e);
         } catch (IOException e) {
-            throw new ClientException("IO error", e);
+            throw new UsergridException("IO error", e);
         }
     }
 
@@ -177,11 +177,11 @@ public class JsonUtils {
             JsonParser jp = json.traverse();
             return mapper.readValue(jp, c);
         } catch (JsonGenerationException e) {
-            throw new ClientException("Unable to generate json", e);
+            throw new UsergridException("Unable to generate json", e);
         } catch (JsonMappingException e) {
-            throw new ClientException("Unable to map json", e);
+            throw new UsergridException("Unable to map json", e);
         } catch (IOException e) {
-            throw new ClientException("IO error", e);
+            throw new UsergridException("IO error", e);
         }
     }
 

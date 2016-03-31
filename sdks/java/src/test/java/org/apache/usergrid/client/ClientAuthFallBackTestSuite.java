@@ -2,7 +2,6 @@ package org.apache.usergrid.client;
 
 import org.apache.usergrid.java.client.*;
 import org.apache.usergrid.java.client.model.UsergridAppAuth;
-import org.apache.usergrid.java.client.query.QueryResult;
 import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.codehaus.jettison.json.JSONException;
@@ -57,9 +56,9 @@ public class ClientAuthFallBackTestSuite {
         //should fall back to using no authentication when currentUser is not authenticated and authFallback is set to NONE
         client.config.authMode = UsergridEnums.UsergridAuthMode.NONE;
         UsergridQuery q = new UsergridQuery("users").desc("created");
-        QueryResult resp = client.GET(q);
+        UsergridResponse resp = client.GET(q);
         assertTrue("The returned resonse should have error", resp != null);
-        assertTrue("The returned resonse should have error", resp.resp.responseError != null);
+        assertTrue("The returned resonse should have error", resp.responseError != null);
 
     }
 
@@ -68,9 +67,9 @@ public class ClientAuthFallBackTestSuite {
         //should fall back to using no authentication when currentUser is not authenticated and authFallback is set to NONE
         client.config.authMode = UsergridEnums.UsergridAuthMode.APP;
         UsergridQuery q = new UsergridQuery("users").desc("created");
-        QueryResult resp = client.GET(q);
+        UsergridResponse resp = client.GET(q);
         assertTrue("The returned resonse should not have error", resp != null);
-        assertTrue("The returned resonse should not have error", resp.resp.responseError == null);
+        assertTrue("The returned resonse should not have error", resp.responseError == null);
 
     }
 

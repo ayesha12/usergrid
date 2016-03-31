@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.node.DoubleNode;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.model.UsergridEntity;
-import org.apache.usergrid.java.client.query.QueryResult;
 import org.apache.usergrid.java.client.query.UsergridQuery;
+import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -61,7 +61,7 @@ public class QueryTestSuite {
 
         UsergridQuery qDelete = new UsergridQuery(COLLECTION);
 
-        QueryResult r = Usergrid.DELETE(qDelete);
+        UsergridResponse r = Usergrid.DELETE(qDelete);
 
 
         Map<String, UsergridEntity> entityMapByUUID = SDKTestUtils.createColorShapes(COLLECTION);
@@ -180,7 +180,7 @@ public class QueryTestSuite {
                 .collectionName(collectionName)
                 .locationWithin(611.00000, centerLat, centerLon);
 
-        QueryResult qr = Usergrid.GET(q1);
+        UsergridResponse qr = Usergrid.GET(q1);
         System.out.println(qr.getEntities().size());
         UsergridEntity lastEntity = null;
 
@@ -211,7 +211,7 @@ public class QueryTestSuite {
                 .collectionName(collectionName)
                 .locationWithin(150, centerLat, centerLon);
 
-        QueryResult qr2 = Usergrid.GET(q2);
+        UsergridResponse qr2 = Usergrid.GET(q2);
         System.out.println(qr.getEntities().size());
 
         for (UsergridEntity entity : qr2.getEntities()) {

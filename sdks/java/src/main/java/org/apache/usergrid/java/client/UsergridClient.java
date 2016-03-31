@@ -24,7 +24,6 @@ import org.apache.usergrid.java.client.model.UsergridAppAuth;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.model.UsergridUser;
 import org.apache.usergrid.java.client.model.UsergridUserAuth;
-import org.apache.usergrid.java.client.query.QueryResult;
 import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.slf4j.Logger;
@@ -672,7 +671,7 @@ public class UsergridClient {
      * @param q the UsergridQuery object
      * @return QueryResult
      */
-    public QueryResult GET(final UsergridQuery q) {
+    public UsergridResponse GET(final UsergridQuery q) {
 
         String[] segments = {config.orgId, config.appId, q.getCollectionName()};
         UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET,
@@ -683,10 +682,11 @@ public class UsergridClient {
                 segments);
         request.query = q;
 
-        return new QueryResult(this,
-                UsergridHttpMethod.GET.toString(),
-                requestManager.performRequest(request),
-                q);
+        return requestManager.performRequest(request);
+//        return new QueryResult(this,
+//                UsergridHttpMethod.GET.toString(),
+//                requestManager.performRequest(request),
+//                q);
     }
 
     /**
@@ -731,7 +731,7 @@ public class UsergridClient {
      * @param fields the fields to be applied as an update to the results (entities) of the query
      * @return QueryResult
      */
-    public QueryResult PUT(final UsergridQuery q, Map<String, Object> fields) {
+    public UsergridResponse PUT(final UsergridQuery q, Map<String, Object> fields) {
 
 
         String[] segments = {config.orgId, config.appId, q.getCollectionName()};
@@ -739,11 +739,7 @@ public class UsergridClient {
                 config.baseUrl, null, null, segments);
         request.query = q;
 
-        return new QueryResult(this,
-                UsergridHttpMethod.PUT.toString(),
-                requestManager.performRequest(request),
-                q,
-                fields);
+        return requestManager.performRequest(request);
     }
 
     /**
@@ -830,7 +826,7 @@ public class UsergridClient {
      * @param q the UsergridQuery object
      * @return QueryResult
      */
-    public QueryResult DELETE(final UsergridQuery q) {
+    public UsergridResponse DELETE(final UsergridQuery q) {
 
 
         String[] segments = {config.orgId, config.appId, q.getCollectionName()};
@@ -839,10 +835,7 @@ public class UsergridClient {
         request.query = q;
 
 
-        return new QueryResult(this,
-                UsergridHttpMethod.DELETE.toString(),
-                requestManager.performRequest(request),
-                q);
+        return requestManager.performRequest(request);
     }
 
 

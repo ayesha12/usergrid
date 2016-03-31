@@ -51,6 +51,8 @@ public class UsergridResponseErrorTest {
 
         UsergridResponse response = client.GET(collectionName, "testEntity15");
         assertTrue("The returned entity is null!", response.responseError != null); //    entity has been created
+        assertTrue("StatusCode returned is not OK",response.ok == false);
+        assertTrue("StatusCode equals than 404", response.responseError.getStatusCode() == 404);
 
     }
 }

@@ -54,20 +54,15 @@ public class UsergridResponse {
     public boolean ok =false;
     public String uri;
     public String statusString;
-    public long timestamp;
-    public UUID last;
     public UsergridUser user;
     public int statuscode;
     public Map<String, JsonNode> headers;
     private String accessToken;
-    private String path;
     private List<UsergridEntity> entities;
     private UUID next;
     private String cursor;
-    private String action;
     private List<Object> list;
     private Object data;
-    private Map<String, UUID> applications;
     private Map<String, JsonNode> metadata;
     private Map<String, List<String>> params;
 
