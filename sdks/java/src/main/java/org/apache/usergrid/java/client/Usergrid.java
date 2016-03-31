@@ -176,18 +176,6 @@ public final class Usergrid {
         return Usergrid.getInstance().DELETE(q);
     }
 
-    public static UsergridResponse createEntity(@Nonnull final UsergridEntity usergridEntity) {
-        return Usergrid.getInstance().createEntity(usergridEntity);
-    }
-
-    public static UsergridResponse createEntity(@Nonnull final Map<String, Object> properties) {
-        return Usergrid.getInstance().createEntity(properties);
-    }
-
-
-    public static UsergridResponse getEntity(@Nonnull final String type, @Nonnull final String id) {
-        return Usergrid.getInstance().getEntity(type, id);
-    }
 
     public static UsergridResponse getConnections(@Nonnull final Direction direction,
                                                   @Nonnull final UsergridEntity sourceVertex,

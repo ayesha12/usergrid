@@ -115,7 +115,7 @@ public class UsergridUser extends UsergridEntity {
             if (getName() == null)
                 this.setName(getUsername());
             this.setType(ENTITY_TYPE);
-            entityResponse = client.createEntity(this);
+            entityResponse = client.POST(this);
             this.properties = entityResponse.entity().properties;
         }
     }

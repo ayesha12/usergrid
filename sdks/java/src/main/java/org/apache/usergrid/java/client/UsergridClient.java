@@ -375,57 +375,6 @@ public class UsergridClient {
         }
     }
 
-    /**
-     * Create a new usergridEntity on the server.
-     *
-     * @param usergridEntity
-     * @return an UsergridResponse with the new usergridEntity in it.
-     */
-    public UsergridResponse createEntity(final UsergridEntity usergridEntity) {
-
-        if (isEmpty(usergridEntity.getType())) {
-            throw new IllegalArgumentException("Missing usergridEntity type");
-        }
-
-
-        String[] segments = {config.orgId, config.appId, usergridEntity.getType()};
-
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl, null, usergridEntity, segments);
-        return requestManager.performRequest(request);
-    }
-
-    /**
-     * Create a new entity on the server from a set of properties. Properties
-     * must include a "type" property.
-     *
-     * @param properties
-     * @return an UsergridResponse with the new entity in it.
-     */
-    public UsergridResponse createEntity(Map<String, Object> properties) {
-
-
-        if (isEmpty(properties.get("type"))) {
-            throw new IllegalArgumentException("Missing entity type");
-        }
-
-        String[] segments = {config.orgId, config.appId, properties.get("type").toString()};
-
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl, null, properties, segments);
-
-        return requestManager.performRequest(request);
-    }
-
-    public UsergridResponse getEntity(final String type, final String id) {
-
-        String[] segments = {config.orgId, config.appId, type, id};
-
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
-                config.baseUrl, null, null, segments);
-        return requestManager.performRequest(request);
-    }
-
     public UsergridResponse getConnections(Direction direction, UsergridEntity sourceVertex, String relationship) {
 
         ValidateEntity(sourceVertex);

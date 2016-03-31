@@ -50,8 +50,8 @@ public class ClientRestTestSuite {
         UsergridEntity entitytwo = new UsergridEntity(collectionName);
         entitytwo.putProperties(fields);
         client.POST(entitytwo);
-        entityone = Usergrid.getEntity(collectionName,"john").first();
-        entitytwo = Usergrid.getEntity(collectionName,"amici").first();
+        entityone = Usergrid.GET(collectionName,"john").first();
+        entitytwo = Usergrid.GET(collectionName,"amici").first();
         client.connect(entityone, "likes", entitytwo);
         client.connect(entityone, "visited", entitytwo.getUuid().toString());
 
