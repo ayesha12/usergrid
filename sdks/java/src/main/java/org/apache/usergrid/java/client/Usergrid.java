@@ -115,12 +115,6 @@ public final class Usergrid {
         return Usergrid.getInstance().authForRequests();
     }
 
-    public static RequestBuilder collection(@Nonnull final String collection) {
-        RequestBuilder builder = new RequestBuilder();
-        builder.collection = collection;
-        return builder;
-    }
-
     public static UsergridResponse GET(@Nonnull final String type,
                                        @Nonnull final String uriSuffix) {
         return Usergrid.getInstance().GET(type, uriSuffix);

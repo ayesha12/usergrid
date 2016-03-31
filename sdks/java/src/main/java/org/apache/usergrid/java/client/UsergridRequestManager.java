@@ -20,21 +20,19 @@ import static org.apache.usergrid.java.client.utils.ObjectUtils.isEmpty;
  */
 public class UsergridRequestManager {
 
-    public static final String STR_BLANK = "";
-    public static final String HEADER_AUTHORIZATION = "Authorization";
-    public static final String BEARER = "Bearer ";
+    private static final String STR_BLANK = "";
+    private static final String HEADER_AUTHORIZATION = "Authorization";
+    private static final String BEARER = "Bearer ";
     private static final String STRING_EXPIRES_IN = "expires_in";
+
     public UsergridClient client;
-    public javax.ws.rs.client.Client restClient;
-    private static ObjectMapper _MAPPER = new ObjectMapper();
-    private Response response;
+    private javax.ws.rs.client.Client restClient;
 
     public UsergridRequestManager(UsergridClient client) {
         this.client = client;
         this.restClient = ClientBuilder.newBuilder()
                 .register(JacksonFeature.class)
                 .register(ProcessingException.class)
-//                .register(new ErrorResponseFilter())
                 .build();
     }
 
@@ -46,7 +44,6 @@ public class UsergridRequestManager {
      */
 
     public UsergridResponse performRequest(UsergridRequest request) {
-        UsergridResponse ugResponse = new UsergridResponse();
         UsergridHttpMethod method = request.method;
         MediaType contentType = request.contentType;
         Entity entity = Entity.entity(request.data == null ? STR_BLANK : request.data, contentType);
@@ -77,12 +74,13 @@ public class UsergridRequestManager {
             invocationBuilder.header(HEADER_AUTHORIZATION, auth);
         }
         try {
+            Response response;
             if (method == UsergridHttpMethod.POST || method == UsergridHttpMethod.PUT) {
                 response = invocationBuilder.method(method.toString(),entity);
             } else {
                 response = invocationBuilder.method(method.toString());
             }
-            ugResponse = response.readEntity(UsergridResponse.class);
+            UsergridResponse ugResponse = response.readEntity(UsergridResponse.class);
             ugResponse.setStatusIntCode(response.getStatus());
 
             if (response.getStatus() != Response.Status.OK.getStatusCode()) {
