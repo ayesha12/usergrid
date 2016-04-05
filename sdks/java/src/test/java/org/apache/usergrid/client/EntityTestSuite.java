@@ -3,7 +3,7 @@ package org.apache.usergrid.client;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.TextNode;
-import org.apache.usergrid.java.client.UsergridEnums.Direction;
+import org.apache.usergrid.java.client.UsergridEnums.UsergridDirection;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.model.UsergridAppAuth;
@@ -29,7 +29,7 @@ public class EntityTestSuite {
 
     @Before
     public void before() {
-        Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.authFallBack);
+        Usergrid.initSharedInstance(SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.authFallBack);
         UsergridAppAuth appAuth = new UsergridAppAuth(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
         Usergrid.authenticateApp(appAuth);
         client = Usergrid.getInstance();
@@ -84,7 +84,7 @@ public class EntityTestSuite {
         UsergridEntity eLookup = client.GET(collectionName, "testEntity2").first();
 
         assertTrue("The returned entity is null!", eLookup != null);
-        assertTrue("The returned entity does not have the same UUID", e.getUuidString().equals(eLookup.getUuidString()));
+        assertTrue("The returned entity does not have the same UUID", e.getUuid().equals(eLookup.getUuid()));
     }
 
 
@@ -106,7 +106,7 @@ public class EntityTestSuite {
 
         UsergridResponse r = client.POST(e); //should fail
 
-        assertTrue("Second entity create should not succeed!", r.responseError != null);
+        assertTrue("Second entity create should not succeed!", r.getResponseError() != null);
     }
 
     @Test
@@ -124,7 +124,7 @@ public class EntityTestSuite {
         UsergridEntity eLookup = client.GET(collectionName, entityName).first();
 
         assertTrue("The returned entity is null!", eLookup != null);
-        assertTrue("The returned entity does not have the same UUID", e.getUuidString().equals(eLookup.getUuidString()));
+        assertTrue("The returned entity does not have the same UUID", e.getUuid().equals(eLookup.getUuid()));
     }
 
     @Test
@@ -139,10 +139,10 @@ public class EntityTestSuite {
 
         UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
 
-        UsergridEntity eLookup = client.GET(collectionName, e.getUuidString()).first();
+        UsergridEntity eLookup = client.GET(collectionName, e.getUuid()).first();
 
         assertTrue("The returned entity is null!", eLookup != null);
-        assertTrue("The returned entity does not have the same UUID", e.getUuidString().equals(eLookup.getUuidString()));
+        assertTrue("The returned entity does not have the same UUID", e.getUuid().equals(eLookup.getUuid()));
     }
 
     @Test
@@ -168,7 +168,7 @@ public class EntityTestSuite {
 
         eLookup = Usergrid.GET(q).first();
         assertTrue("The entity was not returned on lookup", eLookup != null);
-        assertTrue("The returned entity does not have the same UUID", e.getUuidString().equals(eLookup.getUuidString()));
+        assertTrue("The returned entity does not have the same UUID", e.getUuid().equals(eLookup.getUuid()));
 
         q = new UsergridQuery(collectionName)
                 .eq("name", entityName);
@@ -176,7 +176,7 @@ public class EntityTestSuite {
         eLookup = Usergrid.GET(q).first();
 
         assertTrue("The entity was not returned on lookup", eLookup != null);
-        assertTrue("The returned entity does not have the same UUID", e.getUuidString().equals(eLookup.getUuidString()));
+        assertTrue("The returned entity does not have the same UUID", e.getUuid().equals(eLookup.getUuid()));
 
         q = new UsergridQuery()
                 .collectionName(collectionName)
@@ -185,7 +185,7 @@ public class EntityTestSuite {
         eLookup = Usergrid.GET(q).first();
 
         assertTrue("The entity was not returned on lookup", eLookup != null);
-        assertTrue("The returned entity does not have the same UUID", e.getUuidString().equals(eLookup.getUuidString()));
+        assertTrue("The returned entity does not have the same UUID", e.getUuid().equals(eLookup.getUuid()));
 
         q = new UsergridQuery(collectionName)
                 .eq("shape", "circle");
@@ -219,16 +219,16 @@ public class EntityTestSuite {
 
         eLookup = Usergrid.GET(q).first();
 
-        assertTrue("The returned entity does not have the same UUID when querying by field", e.getUuidString().equals(eLookup.getUuidString()));
+        assertTrue("The returned entity does not have the same UUID when querying by field", e.getUuid().equals(eLookup.getUuid()));
 
         e.putProperty("orientation", "down");
 
         client.PUT(e);
 
 
-        eLookup = client.GET(collectionName, e.getUuidString()).first();
+        eLookup = client.GET(collectionName, e.getUuid()).first();
 
-        assertTrue("The returned entity does not have the same UUID", e.getUuidString().equals(eLookup.getUuidString()));
+        assertTrue("The returned entity does not have the same UUID", e.getUuid().equals(eLookup.getUuid()));
         assertTrue("The field was not updated!", eLookup.getStringProperty("orientation").equals("down"));
 
         SDKTestUtils.sleep(1000);
@@ -266,11 +266,11 @@ public class EntityTestSuite {
         eLookup = Usergrid.GET(q).first();
 
         assertTrue("The returned entity was null!", eLookup != null);
-        assertTrue("The returned entity does not have the same UUID when querying by field", e.getUuidString().equals(eLookup.getUuidString()));
+        assertTrue("The returned entity does not have the same UUID when querying by field", e.getUuid().equals(eLookup.getUuid()));
 
         client.DELETE(e);
 
-        eLookup = client.GET(collectionName, e.getUuidString()).first();
+        eLookup = client.GET(collectionName, e.getUuid()).first();
 
         assertTrue("The entity was not expected to be returned by UUID", eLookup == null);
 
@@ -745,41 +745,41 @@ public class EntityTestSuite {
         e1.save();
         UsergridEntity eLookUp = client.GET(collectionName, "testEntity1").first();
         assertTrue("The entity returned is not null.", eLookUp != null);
-        assertTrue("The entity returned is not null.", eLookUp.getConnections(Direction.OUT, "likes").get(0).getName().equals("testEntity2"));
+        assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "likes").get(0).getName().equals("testEntity2"));
         UsergridEntity eLookUp2 = client.GET(collectionName, "testEntity2").first();
-        assertTrue("The entity returned is not null.", eLookUp2.getConnections(Direction.IN, "likes").get(0).getName().equals("testEntity1"));
+        assertTrue("The entity returned is not null.", eLookUp2.getConnections(UsergridDirection.IN, "likes").get(0).getName().equals("testEntity1"));
 
 
-        e1.disConnect("likes", e2);
+        e1.disconnect("likes", e2);
         e1.save();
         eLookUp = client.GET(collectionName, "testEntity1").first();
         assertTrue("The entity returned is not null.", eLookUp != null);
-        assertTrue("The entity returned is not null.", eLookUp.getConnections(Direction.OUT, "likes").size() == 0);
+        assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "likes").size() == 0);
 
         //should connect entities by passing target uuid as a parameter
         e1.connect("visited", e2.getUuid().toString());
         e1.save();
         eLookUp = client.GET(collectionName, "testEntity1").first();
         assertTrue("The entity returned is not null.", eLookUp != null);
-        assertTrue("The entity returned is not null.", eLookUp.getConnections(Direction.OUT, "visited").get(0).getName().equals("testEntity2"));
+        assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "visited").get(0).getName().equals("testEntity2"));
 
-        e1.disConnect("visited", e2.getUuid().toString());
+        e1.disconnect("visited", e2.getUuid().toString());
         e1.save();
         eLookUp = client.GET(collectionName, "testEntity1").first();
         assertTrue("The entity returned is not null.", eLookUp != null);
-        assertTrue("The entity returned is not null.", eLookUp.getConnections(Direction.OUT, "visited").size() == 0);
+        assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "visited").size() == 0);
 
         //should connect entities by passing target type and name as parameters
         e1.connect("revisit", e2.getType(), e2.getName());
         e1.save();
         eLookUp = client.GET(collectionName, "testEntity1").first();
         assertTrue("The entity returned is not null.", eLookUp != null);
-        assertTrue("The entity returned is not null.", eLookUp.getConnections(Direction.OUT, "revisit").get(0).getName().equals("testEntity2"));
+        assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "revisit").get(0).getName().equals("testEntity2"));
 
-        e1.disConnect("revisit", e2.getType(), e2.getName());
+        e1.disconnect("revisit", e2.getType(), e2.getName());
         e1.save();
         eLookUp = client.GET(collectionName, "testEntity1").first();
         assertTrue("The entity returned is not null.", eLookUp != null);
-        assertTrue("The entity returned is not null.", eLookUp.getConnections(Direction.OUT, "revisit").size() == 0);
+        assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "revisit").size() == 0);
     }
 }

@@ -3,249 +3,268 @@ package org.apache.usergrid.java.client;
 import org.apache.usergrid.java.client.UsergridEnums.UsergridAuthMode;
 import org.apache.usergrid.java.client.model.UsergridAppAuth;
 import org.apache.usergrid.java.client.model.UsergridEntity;
+import org.apache.usergrid.java.client.model.UsergridUser;
 import org.apache.usergrid.java.client.model.UsergridUserAuth;
 import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;
-import org.apache.usergrid.java.client.UsergridEnums.Direction;
+import org.apache.usergrid.java.client.UsergridEnums.UsergridDirection;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
+import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-
-import static org.apache.usergrid.java.client.utils.ObjectUtils.isEmpty;
-
 
 /**
  * Created by Jeff West on 9/2/15.
  */
+@SuppressWarnings("unused")
 public final class Usergrid {
 
     private static UsergridClient sharedClient;
+    private Usergrid() { /** Private constructor because we only have static methods. **/ }
 
-    private Usergrid() {
-        // Private constructor because we only have static methods.
-    }
-
-    /**
-     * Instantiate a new instance of usergrid.
-     *
-     * @param apiUrl
-     * @param orgName
-     * @param appName
-     */
-    public static UsergridClient initSharedInstance(@Nonnull final String apiUrl, @Nonnull final String orgName, @Nonnull final String appName) {
-        return Usergrid.initSharedInstance(new UsergridClientConfig(orgName, appName, apiUrl));
-    }
-
-    public static UsergridClient initSharedInstance(@Nonnull final String apiUrl, @Nonnull final String orgName, @Nonnull final String appName, @Nonnull final UsergridAuthMode authMode) {
-        return Usergrid.initSharedInstance(new UsergridClientConfig(orgName, appName, apiUrl, authMode));
-    }
-
-    public static UsergridClient init(@Nonnull final String apiUrl, @Nonnull final String orgName, @Nonnull final String appName) {
-        return Usergrid.initSharedInstance(new UsergridClientConfig(orgName, appName, apiUrl));
-    }
-
-    /**
-     * Instantiate a new instance of usergrid.
-     *
-     * @param ugConfig
-     */
-    public static UsergridClient initSharedInstance(@Nonnull final UsergridClientConfig ugConfig) {
-        if (isEmpty(ugConfig) || isEmpty(ugConfig.appId) || isEmpty(ugConfig.orgId) || isEmpty(ugConfig.baseUrl)) {
-            throw new IllegalArgumentException("One of the input arguments is empty.");
-        } else if (isInitialized()) {
-            System.out.print("The Usergrid shared instance was already initialized. All subsequent initialization attempts (including this) will be ignored.");
-        } else {
-            sharedClient = new UsergridClient(ugConfig);
-        }
-        return sharedClient;
-    }
-
-    @Nonnull
     public static boolean isInitialized() {
-        return (sharedClient != null);
+        return (Usergrid.sharedClient != null);
     }
+    public static void reset() { Usergrid.sharedClient = null; }
 
-    public static void reset() {
-        sharedClient = null;
-    }
-
-    public static UsergridClient getInstance() {
+    public static UsergridClient getInstance() throws NullPointerException {
         if (!Usergrid.isInitialized()) {
             throw new NullPointerException("Shared client has not been initialized!");
         }
         return Usergrid.sharedClient;
     }
 
-    public static UsergridResponse authorizeAppClient(@Nonnull final String appClientId,
-                                                      @Nonnull final String appClientSecret) {
-
-        UsergridAppAuth ugAppAuth = new UsergridAppAuth(appClientId, appClientSecret);
-        return getInstance().authenticateApp(ugAppAuth);
+    @NotNull
+    public static UsergridClient initSharedInstance(@NotNull final UsergridClientConfig config) {
+        if (Usergrid.isInitialized()) {
+            System.out.print("The Usergrid shared instance was already initialized. All subsequent initialization attempts (including this) will be ignored.");
+        } else {
+            Usergrid.sharedClient = new UsergridClient(config);
+        }
+        return Usergrid.sharedClient;
     }
 
-    public static UsergridResponse authorizeAppUser(@Nonnull String username,@Nonnull String password) {
-        UsergridUserAuth ugUserAuth = new UsergridUserAuth(username, password);
-        return getInstance().authenticateUser(ugUserAuth);
-
+    @NotNull
+    public static UsergridClient initSharedInstance(@NotNull final String orgId, @NotNull final String appId) {
+        return Usergrid.initSharedInstance(new UsergridClientConfig(orgId, appId));
     }
 
-
-    public static UsergridResponse authenticateApp(@Nonnull final String clientId, @Nonnull final String clientSecret) {
-        return Usergrid.getInstance().authenticateApp(clientId, clientSecret);
+    @NotNull
+    public static UsergridClient initSharedInstance(@NotNull final String orgId, @NotNull final String appId, @NotNull final String baseUrl) {
+        return Usergrid.initSharedInstance(new UsergridClientConfig(orgId, appId, baseUrl));
     }
 
-    public static UsergridResponse authenticateApp(@Nonnull final UsergridAppAuth auth) {
-        return Usergrid.getInstance().authenticateApp(auth);
+    @NotNull
+    public static UsergridClient initSharedInstance(@NotNull final String orgId, @NotNull final String appId, @NotNull final String baseUrl, @NotNull final UsergridAuthMode authMode) {
+        return Usergrid.initSharedInstance(new UsergridClientConfig(orgId, appId, baseUrl, authMode));
     }
 
-    public static UsergridResponse authenticateUser(@Nonnull final String username, @Nonnull final String password) {
-        return Usergrid.getInstance().authenticateUser(username, password);
-    }
+    @NotNull public static UsergridClientConfig getConfig() { return Usergrid.getInstance().getConfig(); }
+    public static void setConfig(@NotNull UsergridClientConfig config) { Usergrid.getInstance().setConfig(config); }
 
-    public static UsergridResponse authenticateUser(@Nonnull final UsergridUserAuth auth) {
-        return Usergrid.getInstance().authenticateUser(auth);
-    }
+    @NotNull public static String getAppId() { return Usergrid.getInstance().getAppId(); }
+    public static void setAppId(@NotNull String appId) { Usergrid.getInstance().setAppId(appId); }
 
-    public static UsergridClient usingAuth(@Nonnull UsergridAuth ugAuth) {
-        return Usergrid.getInstance().usingAuth(ugAuth);
-    }
+    @NotNull public static String getOrgId() { return Usergrid.getInstance().getOrgId(); }
+    public static void setOrgId(@NotNull String orgId) { Usergrid.getInstance().setOrgId(orgId); }
 
+    @NotNull public static String getBaseUrl() { return Usergrid.getInstance().getBaseUrl(); }
+    public static void setBaseUrl(@NotNull String baseUrl) { Usergrid.getInstance().setBaseUrl(baseUrl); }
+
+    @NotNull public static String clientAppUrl() { return Usergrid.getInstance().clientAppUrl(); }
+
+    @NotNull public static UsergridAuthMode getAuthMode() { return Usergrid.getInstance().getAuthMode(); }
+    public static void setAuthMode(@NotNull final UsergridAuthMode authMode) { Usergrid.getInstance().setAuthMode(authMode); }
+
+    @Nullable public static UsergridAppAuth getAppAuth() { return Usergrid.getInstance().getAppAuth(); }
+    public static void setAppAuth(@Nullable final UsergridAppAuth appAuth) { Usergrid.getInstance().setAppAuth(appAuth); }
+
+    @Nullable public static UsergridUser getCurrentUser() { return Usergrid.getInstance().getCurrentUser(); }
+    public static void setCurrentUser(@Nullable final UsergridUser currentUser) { Usergrid.getInstance().setCurrentUser(currentUser); }
+
+    @Nullable
     public static UsergridAuth authForRequests() {
         return Usergrid.getInstance().authForRequests();
     }
 
-    public static UsergridResponse GET(@Nonnull final String type,
-                                       @Nonnull final String uriSuffix) {
-        return Usergrid.getInstance().GET(type, uriSuffix);
+    @NotNull
+    public static UsergridClient usingAuth(@NotNull final UsergridAuth auth) {
+        return Usergrid.getInstance().usingAuth(auth);
     }
 
-    public static UsergridResponse GET(@Nonnull final UUID uuid) {
-        return Usergrid.getInstance().GET(uuid);
+    @NotNull
+    public static UsergridClient usingToken(@NotNull final String accessToken) {
+        return Usergrid.getInstance().usingToken(accessToken);
     }
 
-    public static UsergridResponse GET(@Nonnull final UsergridQuery q) {
-
-        return Usergrid.getInstance().GET(q);
+    @NotNull
+    public static UsergridResponse resetPassword(@NotNull final UsergridUser user, @NotNull final String oldPassword, @NotNull final String newPassword) {
+        return Usergrid.getInstance().resetPassword(user, oldPassword, newPassword);
     }
 
-    public static UsergridResponse POST(@Nonnull final UsergridEntity e) {
-        return Usergrid.getInstance().POST(e);
+    @NotNull
+    public static UsergridResponse authenticateApp() {
+        return Usergrid.getInstance().authenticateApp();
     }
 
-    public static UsergridResponse POST(@Nonnull final String type,
-                                        @Nonnull final String entityId) {
-        return Usergrid.getInstance().POST(type, entityId);
+    @NotNull
+    public static UsergridResponse authenticateApp(@NotNull final UsergridAppAuth appAuth) {
+        return Usergrid.getInstance().authenticateApp(appAuth);
     }
 
-    public static UsergridResponse PUT(@Nonnull final String type,
-                                       @Nonnull final String entityId) {
-        return Usergrid.getInstance().PUT(type, entityId);
+    @NotNull
+    public static UsergridResponse authenticateUser(@NotNull final UsergridUserAuth userAuth) {
+        return Usergrid.getInstance().authenticateUser(userAuth);
     }
 
-    public static UsergridResponse PUT(@Nonnull final UsergridEntity e) {
-        return Usergrid.getInstance().PUT(e);
+    @NotNull
+    public static UsergridResponse authenticateUser(@NotNull final UsergridUserAuth userAuth, boolean setAsCurrentUser) {
+        return Usergrid.getInstance().authenticateUser(userAuth,setAsCurrentUser);
     }
 
-    public static UsergridResponse PUT(@Nonnull final UsergridQuery q,
-                                  @Nonnull final Map<String, Object> fields) {
-        return Usergrid.getInstance().PUT(q, fields);
+    @NotNull
+    public static UsergridResponse logoutCurrentUser() {
+        return Usergrid.getInstance().logoutCurrentUser();
     }
 
-    public static UsergridResponse DELETE(@Nonnull final UsergridEntity e) {
-        return Usergrid.getInstance().DELETE(e);
+    @NotNull
+    public static UsergridResponse logoutUserAllTokens(@NotNull final String uuidOrUsername) {
+        return Usergrid.getInstance().logoutUserAllTokens(uuidOrUsername);
     }
 
-    public static UsergridResponse DELETE(@Nonnull final String collection,
-                                          @Nonnull final String entityId) {
-
-        return Usergrid.getInstance().DELETE(collection, entityId);
+    @NotNull
+    public static UsergridResponse logoutUser(@NotNull final String uuidOrUsername, @Nullable final String token) {
+        return Usergrid.getInstance().logoutUser(uuidOrUsername,token);
     }
 
-    public static UsergridResponse DELETE(@Nonnull final UUID uuid) {
-        return Usergrid.getInstance().DELETE(uuid);
+    @NotNull
+    public static UsergridResponse sendRequest(@NotNull final UsergridRequest request) {
+        return Usergrid.getInstance().sendRequest(request);
     }
 
-    public static UsergridResponse DELETE(@Nonnull final UsergridQuery q) {
-        return Usergrid.getInstance().DELETE(q);
+    @NotNull
+    public static UsergridResponse GET(@NotNull final String type, @NotNull final String uuidOrName) {
+        return Usergrid.getInstance().GET(type, uuidOrName);
     }
 
-
-    public static UsergridResponse getConnections(@Nonnull final Direction direction,
-                                                  @Nonnull final UsergridEntity sourceVertex,
-                                                  @Nonnull final String relationship) {
-        return Usergrid.getInstance().getConnections(direction, sourceVertex, relationship);
+    @NotNull
+    public static UsergridResponse GET(@NotNull final String type) {
+        return Usergrid.getInstance().GET(type);
     }
 
-    public static UsergridResponse deleteEntity(@Nonnull final String type,
-                                                @Nonnull final String id) {
-        return Usergrid.getInstance().deleteEntity(type, id);
+    @NotNull
+    public static UsergridResponse GET(@NotNull final UsergridQuery query) {
+        return Usergrid.getInstance().GET(query);
     }
 
-    public static UsergridResponse connect(@Nonnull final UsergridEntity sourceVertex,
-                                           @Nonnull final String connetionName,
-                                           @Nonnull final UsergridEntity targetVertex
-    ) {
-        return Usergrid.getInstance().connect(sourceVertex, connetionName, targetVertex);
+    @NotNull
+    public static UsergridResponse PUT(@NotNull final String type, @NotNull final String uuidOrName, @NotNull final Map<String, Object> jsonBody) {
+        return Usergrid.getInstance().PUT(type, uuidOrName, jsonBody);
     }
 
-
-    public static UsergridResponse connect(@Nonnull final UsergridEntity sourceVertex,
-                                           @Nonnull final String connetionName,
-                                           @Nonnull final String targetVertexUUid
-    ) {
-        return Usergrid.getInstance().connect(sourceVertex, connetionName, targetVertexUUid);
+    @NotNull
+    public static UsergridResponse PUT(@NotNull final String type, @NotNull final Map<String, Object> jsonBody) {
+        return Usergrid.getInstance().PUT(type, jsonBody);
     }
 
-    public static UsergridResponse connect(@Nonnull final String connectingEntityType,
-                                           @Nonnull final String connectingEntityId,
-                                           @Nonnull final String connectionType,
-                                           @Nonnull final String connectedEntityId) {
-
-        return Usergrid.getInstance().connect(connectingEntityType, connectingEntityId, connectionType, connectedEntityId);
+    @NotNull
+    public static UsergridResponse PUT(@NotNull final UsergridEntity entity) {
+        return Usergrid.getInstance().PUT(entity);
     }
 
-    /**
-     * Connect two entities together using type and getName
-     *
-     * @param connectingEntityType
-     * @param connectingEntityId
-     * @param connectionType
-     * @param connectedEntityName
-     * @param connectedEntityType
-     * @return
-     */
-    public static UsergridResponse connect(@Nonnull final String connectingEntityType,
-                                           @Nonnull final String connectingEntityId,
-                                           @Nonnull final String connectionType,
-                                           @Nonnull final String connectedEntityType,
-                                           @Nonnull final String connectedEntityName) {
-
-        return Usergrid.getInstance().connect(connectingEntityType, connectingEntityId, connectionType, connectedEntityType, connectedEntityName);
+    @NotNull
+    public static UsergridResponse PUT(@NotNull final UsergridQuery query, @NotNull final Map<String, Object> jsonBody) {
+        return Usergrid.getInstance().PUT(query, jsonBody);
     }
 
-    public static UsergridResponse disConnect(@Nonnull final String connectingEntityType,
-                                              @Nonnull final String connectingEntityId,
-                                              @Nonnull final String connectionType,
-                                              @Nonnull final String connectedEntityId) {
-
-        return disConnect(connectingEntityType, connectingEntityId, connectionType, connectedEntityId);
+    @NotNull
+    public static UsergridResponse POST(@NotNull final String type, @NotNull final String uuidOrName, @NotNull final Map<String, Object> jsonBody) {
+        return Usergrid.getInstance().POST(type, uuidOrName, jsonBody);
     }
 
-    public static UsergridResponse disConnect(@Nonnull final String connectingEntityType,
-                                              @Nonnull final String connectingEntityId,
-                                              @Nonnull final String connectionType,
-                                              @Nonnull final String connectedEntitytype,
-                                              @Nonnull final String connectedEntityName) {
-
-        return Usergrid.getInstance().disConnect(connectingEntityType, connectingEntityId, connectionType, connectedEntitytype, connectedEntityName);
+    @NotNull
+    public static UsergridResponse POST(@NotNull final String type, @NotNull final Map<String, Object> jsonBody) {
+        return Usergrid.getInstance().POST(type, jsonBody);
     }
 
-    public static UsergridResponse disConnect(@Nonnull final UsergridEntity sourceVertex,
-                                              @Nonnull final String connetionName,
-                                              @Nonnull final UsergridEntity targetVertex) {
-        return Usergrid.getInstance().disConnect(sourceVertex, connetionName, targetVertex);
+    @NotNull
+    public static UsergridResponse POST(@NotNull final String type, @NotNull final List<Map<String, Object>> jsonBodies) {
+        return Usergrid.getInstance().POST(type, jsonBodies);
     }
 
+    @NotNull
+    public static UsergridResponse POST(@NotNull final UsergridEntity entity) throws NullPointerException {
+        return Usergrid.getInstance().POST(entity);
+    }
 
+    @NotNull
+    public static UsergridResponse POST(@NotNull final List<UsergridEntity> entities) {
+        return Usergrid.getInstance().POST(entities);
+    }
+
+    @NotNull
+    public static UsergridResponse DELETE(@NotNull final String type, @NotNull final String uuidOrName) {
+        return Usergrid.getInstance().DELETE(type, uuidOrName);
+    }
+
+    @NotNull
+    public static UsergridResponse DELETE(@NotNull final UsergridEntity entity) {
+        return Usergrid.getInstance().DELETE(entity);
+    }
+
+    @NotNull
+    public static UsergridResponse DELETE(@NotNull final UsergridQuery query) {
+        return Usergrid.getInstance().DELETE(query);
+    }
+
+    @NotNull
+    public static UsergridResponse connect(@NotNull final UsergridEntity entity, @NotNull final String relationship, @NotNull final UsergridEntity to) {
+        return Usergrid.getInstance().connect(entity, relationship, to);
+    }
+
+    @NotNull
+    public static UsergridResponse connect(@NotNull final String entityType, @NotNull final String entityId, @NotNull final String relationship, @NotNull final String fromUuid) {
+        return Usergrid.getInstance().connect(entityType,entityId,relationship,fromUuid);
+    }
+
+    @NotNull
+    public static UsergridResponse connect(@NotNull final String entityType, @NotNull final String entityId, @NotNull final String relationship, @NotNull final String toType, @NotNull final String toName) {
+        return Usergrid.getInstance().connect(entityType,entityId,relationship,toType,toName);
+    }
+
+    @NotNull
+    public static UsergridResponse disconnect(@NotNull final UsergridEntity entity, @NotNull final String relationship, @NotNull final UsergridEntity from) {
+        return Usergrid.getInstance().disconnect(entity, relationship, from);
+    }
+
+    @NotNull
+    public static UsergridResponse disconnect(@NotNull final String entityType, @NotNull final String entityId, @NotNull final String relationship, @NotNull final String fromUuid) {
+        return Usergrid.getInstance().disconnect(entityType, entityId, relationship, fromUuid);
+    }
+
+    @NotNull
+    public static UsergridResponse disconnect(@NotNull final String entityType, @NotNull final String entityId, @NotNull final String relationship, @NotNull final String fromType, @NotNull final String fromName) {
+        return Usergrid.getInstance().disconnect(entityType, entityId, relationship, fromType, fromName);
+    }
+
+    @NotNull
+    public static UsergridResponse getConnections(@NotNull final UsergridDirection direction, @NotNull final UsergridEntity entity, @NotNull final String relationship) {
+        return Usergrid.getInstance().getConnections(direction, entity, relationship);
+    }
+
+    @NotNull
+    public static UsergridResponse getConnections(@NotNull final UsergridDirection direction, @NotNull final UsergridEntity entity, @NotNull final String relationship, @Nullable final UsergridQuery query) {
+        return Usergrid.getInstance().getConnections(direction, entity, relationship, query);
+    }
+
+    @NotNull
+    public static UsergridResponse getConnections(@NotNull final UsergridDirection direction, @NotNull final String type, @NotNull final String uuidOrName, @NotNull final String relationship, @Nullable final UsergridQuery query) {
+        return Usergrid.getInstance().getConnections(direction,type,uuidOrName,relationship,query);
+    }
+
+    @NotNull
+    public static UsergridResponse getConnections(@NotNull final UsergridDirection direction, @NotNull final String uuid, @NotNull final String relationship, @Nullable final UsergridQuery query) {
+        return Usergrid.getInstance().getConnections(direction, uuid, relationship, query);
+    }
 }

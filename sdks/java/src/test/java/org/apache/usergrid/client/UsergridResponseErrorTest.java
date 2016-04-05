@@ -22,7 +22,7 @@ public class UsergridResponseErrorTest {
 
     @Before
     public void before() {
-        Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.authFallBack);
+        Usergrid.initSharedInstance(SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.authFallBack);
         UsergridAppAuth appAuth = new UsergridAppAuth(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
         Usergrid.authenticateApp(appAuth);
         client = Usergrid.getInstance();
@@ -47,12 +47,12 @@ public class UsergridResponseErrorTest {
         entityMap.put("testEntity1", fields);
         UsergridEntity e = SDKTestUtils.createEntity(collectionName, "testEntity1", fields);
         UsergridResponse eLookUp = client.GET(collectionName, "testEntity1");
-        assertTrue("The returned entity is null!", eLookUp.responseError == null); //    entity has been created
+        assertTrue("The returned entity is null!", eLookUp.getResponseError() == null); //    entity has been created
 
         UsergridResponse response = client.GET(collectionName, "testEntity15");
-        assertTrue("The returned entity is null!", response.responseError != null); //    entity has been created
-        assertTrue("StatusCode returned is not OK",response.ok == false);
-        assertTrue("StatusCode equals than 404", response.responseError.getStatusCode() == 404);
+        assertTrue("The returned entity is null!", response.getResponseError() != null); //    entity has been created
+        assertTrue("StatusCode returned is not OK",response.ok() == false);
+        assertTrue("StatusCode equals than 404", response.getStatusCode() == 404);
 
     }
 }

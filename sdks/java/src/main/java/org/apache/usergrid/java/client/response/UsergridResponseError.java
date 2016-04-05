@@ -22,85 +22,78 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize.Inclusion;
-import org.apache.usergrid.java.client.model.UsergridEntity;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
+@SuppressWarnings("unused")
+@JsonSerialize(include = Inclusion.NON_NULL)
 public class UsergridResponseError {
 
-    private static final Logger log = LoggerFactory.getLogger(UsergridEntity.class);
-    public static String errorName;
-    public static String errorDescription;
-    public static String errorException;
-    private final Map<String, JsonNode> properties = new HashMap<String, JsonNode>();
-    private int statuscode;
-    private Map<String, JsonNode> header;
+    @Nullable private String errorName;
+    @Nullable private String errorDescription;
+    @Nullable private String errorException;
+
+    @NotNull private final Map<String, JsonNode> properties = new HashMap<>();
 
     public UsergridResponseError() {
+        this(null,null,null);
     }
-
-    // TODO : public init();
-    public UsergridResponseError(String name, int code, String description, String errorException) {
-
-        this.errorName = name;
-        this.statuscode = code;
-        this.errorDescription = description;
+    public UsergridResponseError(@Nullable final String errorName) {
+        this(errorName, null, null);
+    }
+    public UsergridResponseError(@Nullable final String errorName, @Nullable final String errorDescription) {
+        this(errorName,errorDescription,null);
+    }
+    public UsergridResponseError(@Nullable final String errorName, @Nullable final String errorDescription, @Nullable final String errorException) {
+        this.errorName = errorName;
+        this.errorDescription = errorDescription;
         this.errorException = errorException;
-
     }
 
+    @NotNull
     @JsonAnyGetter
-    @Nullable
     public Map<String, JsonNode> getProperties() {
         return properties;
     }
 
     @JsonAnySetter
-    public void setProperty(@Nonnull final String key, @Nonnull final JsonNode value) {
+    public void setProperty(@NotNull final String key, @NotNull final JsonNode value) {
         properties.put(key, value);
     }
 
+    @Nullable
+    @JsonProperty("error")
+    public String getErrorName() {
+        return errorName;
+    }
+
+    @JsonProperty("error")
+    public void setErrorName(@NotNull final String errorName) {
+        this.errorName = errorName;
+    }
+
+    @Nullable
     @JsonProperty("exception")
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    public String getError() {
+    public String getErrorException() {
         return errorException;
     }
 
     @JsonProperty("exception")
-    public void setError(@Nonnull final String error) {
-        this.errorException = error;
+    public void setErrorException(@NotNull final String errorException) {
+        this.errorException = errorException;
     }
 
-    @JsonSerialize(include = Inclusion.NON_NULL)
+    @Nullable
     @JsonProperty("error_description")
     public String getErrorDescription() {
         return errorDescription;
     }
 
-    @JsonSerialize(include = Inclusion.NON_NULL)
     @JsonProperty("error_description")
-    public void setErrorDescription(@Nonnull final String errorDescription) {
+    public void setErrorDescription(@NotNull final String errorDescription) {
         this.errorDescription = errorDescription;
-    }
-
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    public int getStatusCode() {
-        return this.statuscode;
-    }
-
-    public void setStatusCode(@Nonnull final int status) {
-        this.statuscode = status;
-    }
-
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    public boolean ok() {
-        if (this.statuscode < 400)
-            return true;
-        return false;
     }
 }

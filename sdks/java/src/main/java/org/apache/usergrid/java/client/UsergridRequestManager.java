@@ -1,11 +1,12 @@
 package org.apache.usergrid.java.client;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.usergrid.java.client.UsergridEnums.UsergridHttpMethod;
+import org.apache.usergrid.java.client.model.UsergridAppAuth;
+import org.apache.usergrid.java.client.model.UsergridUserAuth;
 import org.apache.usergrid.java.client.response.UsergridResponse;
-import org.apache.usergrid.java.client.response.UsergridResponseError;
 import org.glassfish.jersey.jackson.JacksonFeature;
 
+import javax.annotation.Nonnull;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.MediaType;
@@ -36,13 +37,6 @@ public class UsergridRequestManager {
                 .build();
     }
 
-    /**
-     * High-level Usergrid API request.
-     *
-     * @param request : UsergridRequest object.
-     * @return a UsergridResponse object
-     */
-
     public UsergridResponse performRequest(UsergridRequest request) {
         UsergridHttpMethod method = request.method;
         MediaType contentType = request.contentType;
@@ -69,8 +63,8 @@ public class UsergridRequestManager {
         Invocation.Builder invocationBuilder = webTarget.request(contentType);
 
         UsergridAuth authForRequest = client.authForRequests();
-        if (authForRequest != null && authForRequest.accessToken != null) {
-            String auth = BEARER + authForRequest.accessToken;
+        if (authForRequest != null && authForRequest.getAccessToken() != null) {
+            String auth = BEARER + authForRequest.getAccessToken();
             invocationBuilder.header(HEADER_AUTHORIZATION, auth);
         }
         try {
@@ -80,20 +74,7 @@ public class UsergridRequestManager {
             } else {
                 response = invocationBuilder.method(method.toString());
             }
-            UsergridResponse ugResponse = response.readEntity(UsergridResponse.class);
-            ugResponse.setStatusIntCode(response.getStatus());
-
-            if (response.getStatus() != Response.Status.OK.getStatusCode()) {
-                ugResponse.responseError = new UsergridResponseError(response.getStatusInfo().getReasonPhrase(),
-                        response.getStatus(),
-                        response.getStatusInfo().getFamily().toString(),
-                        response.getStatusInfo().toString());
-            }
-            ugResponse.setOk(response.getStatusInfo().getReasonPhrase());
-            ugResponse.headers = UsergridResponse.putMultivaluedMap(response.getHeaders());
-
-            return ugResponse;
-
+            return UsergridResponse.fromResponse(request,response);
         } catch (Exception requestException) {
             return UsergridResponse.fromException(requestException);
         }
@@ -114,70 +95,56 @@ public class UsergridRequestManager {
     }
 
 
-    public UsergridResponse AuthenticateApp() {
-
-        validateNonEmptyParam(client.config.appAuth.clientId, "client identifier");
-        validateNonEmptyParam(client.config.appAuth.clientSecret, "client secret");
-
+    public UsergridResponse authenticateApp(@Nonnull final UsergridAppAuth appAuth) {
         Map<String, Object> data = new HashMap<>();
         data.put("grant_type", "client_credentials");
-        data.put("client_id", client.config.appAuth.clientId);
-        data.put("client_secret", client.config.appAuth.clientSecret);
-        validateNotNull(client.config.orgId,"org id");
-        validateNotNull(client.config.appId,"app id");
-        String[] segments = {client.config.orgId, client.config.appId, "token"};
+        data.put("client_id", appAuth.getClientId());
+        data.put("client_secret", appAuth.getClientSecret());
+
+        String[] segments = {client.getOrgId(), client.getAppId(), "token"};
         UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
-                client.config.baseUrl, null, data, segments);
+                client.getBaseUrl(), null, data, segments);
         UsergridResponse response = performRequest(request);
         if (response == null) {
             return null;
         }
 
         if (!isEmpty(response.getAccessToken())) {
-            client.config.appAuth.setAccessToken(response.getAccessToken());
-            client.config.appAuth.setTokenExpiry(System.currentTimeMillis() + response.getProperties().get(STRING_EXPIRES_IN).asLong() - 5000);
-        }
-        else
-        {
-            throw new IllegalArgumentException("bad request : " + response.responseError.getErrorDescription()
-                    + " status code : " + response.getStatusIntCode());
+            appAuth.setAccessToken(response.getAccessToken());
+            long expiresIn = response.getProperties().get(STRING_EXPIRES_IN).asLong();
+            appAuth.setExpiry(System.currentTimeMillis() + expiresIn - 5000);
+        } else {
+            throw new IllegalArgumentException("bad request : " + response.getResponseError().getErrorDescription()
+                    + " status code : " + response.getStatusCode());
         }
         return response;
     }
 
 
-    public UsergridResponse AuthenticateUser() {
-
-        validateNonEmptyParam(client.config.userAuth.username, "username");
-        validateNonEmptyParam(client.config.userAuth.password, "password");
-
+    public UsergridResponse authenticateUser(@Nonnull UsergridUserAuth userAuth) {
         Map<String, Object> formData = new HashMap<>();
         formData.put("grant_type", "password");
-        formData.put("username", client.config.userAuth.username);
-        formData.put("password", client.config.userAuth.password);
+        formData.put("username", userAuth.getUsername());
+        formData.put("password", userAuth.getPassword());
 
-        validateNotNull(client.config.orgId,"org id");
-        validateNotNull(client.config.appId,"app id");
-
-        String[] segments = {client.config.orgId, client.config.appId, "token"};
+        String[] segments = {client.getOrgId(), client.getAppId(), "token"};
 
         UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
-                client.config.baseUrl, null, formData, segments);
+                client.getBaseUrl(), null, formData, segments);
         UsergridResponse response = performRequest(request);
         if (response == null) {
             return null;
         }
 
         if (!isEmpty(response.getAccessToken()) && (response.currentUser() != null)) {
-            client.config.userAuth.setAccessToken(response.getAccessToken());
-            client.config.userAuth.setTokenExpiry(System.currentTimeMillis() + response.getProperties().get(STRING_EXPIRES_IN).asLong() - 5000);
-            response.currentUser().userAuth = client.config.userAuth;
-            client.setCurrentUser(response.currentUser());
+            userAuth.setAccessToken(response.getAccessToken());
+            userAuth.setExpiry(System.currentTimeMillis() + response.getProperties().get(STRING_EXPIRES_IN).asLong() - 5000);
+            response.currentUser().userAuth = userAuth;
         }
         else
         {
-            throw new IllegalArgumentException("bad request " + response.responseError.getErrorDescription()
-                    + " status code : " + response.getStatusIntCode());
+            throw new IllegalArgumentException("bad request " + response.getResponseError().getErrorDescription()
+                    + " status code : " + response.getStatusCode());
         }
         return response;
     }

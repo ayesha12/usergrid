@@ -16,14 +16,11 @@
  */
 package org.apache.usergrid.java.client;
 
+import org.apache.usergrid.java.client.model.UsergridEntity;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-/**
- * The Client class for accessing the Usergrid API. Start by instantiating this
- * class though the appropriate constructor.
- */
+@SuppressWarnings("unused")
 public class UsergridEnums {
     public enum UsergridAuthMode {
         NONE,
@@ -31,39 +28,40 @@ public class UsergridEnums {
         APP
     }
 
-    public enum Direction {
-        OUT,
-        IN,
-        BOTH
+    public enum UsergridDirection {
+        IN("connecting"),
+        OUT("connections");
+
+        @NotNull private final String connectionValue;
+
+        UsergridDirection(@NotNull final String connectionValue) {
+            this.connectionValue = connectionValue;
+        }
+
+        @NotNull
+        public String connectionValue() {
+            return this.connectionValue;
+        }
     }
 
-    /**
-     * An enumeration for defining the HTTP methods used by Usergrid.
-     */
     public enum UsergridHttpMethod {
-        GET {
-            @Override
-            public String toString() {
-                return "GET";
+        GET,
+        PUT,
+        POST,
+        DELETE;
+
+        @Nullable
+        public static UsergridHttpMethod fromString(@NotNull final String stringValue) {
+            try {
+                return UsergridHttpMethod.valueOf(stringValue.toUpperCase());
+            } catch(Exception e) {
+                return null;
             }
-        },
-        POST {
-            @Override
-            public String toString() {
-                return "POST";
-            }
-        },
-        PUT {
-            @Override
-            public String toString() {
-                return "PUT";
-            }
-        },
-        DELETE {
-            @Override
-            public String toString() {
-                return "DELETE";
-            }
+        }
+
+        @Override @NotNull
+        public String toString() {
+            return super.toString().toUpperCase();
         }
     }
 
@@ -74,14 +72,13 @@ public class UsergridEnums {
         LESS_THAN("<"),
         LESS_THAN_EQUAL_TO("<=");
 
-        @Nonnull
-        private final String operatorValue;
+        @NotNull private final String operatorValue;
 
-        private UsergridQueryOperator(@Nonnull final String operatorValue) {
+        UsergridQueryOperator(@NotNull final String operatorValue) {
             this.operatorValue = operatorValue;
         }
 
-        @Nonnull
+        @NotNull
         public String operatorValue() {
             return this.operatorValue;
         }
@@ -92,19 +89,83 @@ public class UsergridEnums {
         DESC;
 
         @Nullable
-        public static UsergridQuerySortOrder fromString(@Nonnull final String stringValue) {
+        public static UsergridQuerySortOrder fromString(@NotNull final String stringValue) {
             try {
                 return UsergridQuerySortOrder.valueOf(stringValue.toUpperCase());
-            } catch (Exception e) {
+            } catch(Exception e) {
                 return null;
             }
         }
 
-        @Override
-        @Nonnull
+        @Override @NotNull
         public String toString() {
             return super.toString().toLowerCase();
         }
     }
 
+    public enum UsergridEntityProperties {
+        TYPE,
+        UUID,
+        NAME,
+        CREATED,
+        MODIFIED,
+        LOCATION;
+
+        @Nullable
+        public static UsergridEntityProperties fromString(@NotNull final String stringValue) {
+            try {
+                return UsergridEntityProperties.valueOf(stringValue.toUpperCase());
+            } catch(Exception e) {
+                return null;
+            }
+        }
+
+        @Override @NotNull
+        public String toString() {
+            return super.toString().toLowerCase();
+        }
+
+        public boolean isMutableForEntity(@NotNull final UsergridEntity entity) {
+            switch(this) {
+                case LOCATION: {
+                    return true;
+                }
+                case NAME: {
+                    return entity.isUser();
+                }
+                case TYPE:
+                case UUID:
+                case CREATED:
+                case MODIFIED:
+                default: {
+                    return false;
+                }
+            }
+        }
+    }
+
+    public enum UsergridUserProperties {
+        NAME,
+        USERNAME,
+        PASSWORD,
+        EMAIL,
+        AGE,
+        ACTIVATED,
+        DISABLED,
+        PICTURE;
+
+        @Nullable
+        public static UsergridUserProperties fromString(@NotNull final String stringValue) {
+            try {
+                return UsergridUserProperties.valueOf(stringValue.toUpperCase());
+            } catch(Exception e) {
+                return null;
+            }
+        }
+
+        @Override @NotNull
+        public String toString() {
+            return super.toString().toLowerCase();
+        }
+    }
 }

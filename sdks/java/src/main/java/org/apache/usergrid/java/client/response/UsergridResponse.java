@@ -22,268 +22,189 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize.Inclusion;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.UsergridEnums;
 import org.apache.usergrid.java.client.UsergridRequest;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.model.UsergridUser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.usergrid.java.client.query.UsergridQuery;
+import org.apache.usergrid.java.client.utils.JsonUtils;
+import org.apache.usergrid.java.client.utils.MapUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static org.apache.usergrid.java.client.utils.JsonUtils.toJsonString;
 
+@JsonSerialize(include = Inclusion.NON_NULL)
 public class UsergridResponse {
 
-    private static final Logger log = LoggerFactory.getLogger(UsergridEntity.class);
-    public Map<String, JsonNode> properties = new HashMap<String, JsonNode>();
-    public UsergridResponseError responseError = null;
-    public boolean ok =false;
-    public String uri;
-    public String statusString;
+    // FIXME: NEED TO REFACTOR THESE.
     public UsergridUser user;
-    public int statuscode;
-    public Map<String, JsonNode> headers;
     private String accessToken;
-    private List<UsergridEntity> entities;
-    private UUID next;
-    private String cursor;
-    private List<Object> list;
-    private Object data;
-    private Map<String, JsonNode> metadata;
-    private Map<String, List<String>> params;
 
-    public static UsergridResponse fromException(Exception ex) {
-        UsergridResponse response = new UsergridResponse();
-        if (ex instanceof ClientErrorException) {
-            ClientErrorException clientError = (ClientErrorException) ex;
-            response.responseError = new UsergridResponseError(clientError.getResponse().getStatusInfo().toString(), clientError.getResponse().getStatus(),
-                    clientError.getResponse().toString(), clientError.getClass().toString());
-        }
-        else if(ex instanceof BadRequestException){
-            BadRequestException bre = (BadRequestException) ex;
-            response.responseError = new UsergridResponseError(bre.getResponse().getStatusInfo().toString(),
-                    bre.getResponse().getStatus(),
-                    bre.getResponse().toString(), bre.getClass().toString());
+    private Map<String, JsonNode> properties = new HashMap<>();
+    private int statusCode = 0;
+    @Nullable private JsonNode responseJson = null;
+    @Nullable private String cursor;
+    @Nullable private List<UsergridEntity> entities;
+    @Nullable private Map<String, String> headers;
+    @Nullable private UsergridQuery query;
+    @Nullable private UsergridResponseError responseError = null;
 
+    public boolean ok() { return (statusCode > 0 && statusCode < 400); }
+    public int count()  { return (entities == null) ? 0 : entities.size(); }
+    public boolean hasNextPage() { return (cursor != null); }
+
+    @Nullable
+    public UsergridEntity first() { return (entities == null || entities.isEmpty()) ? null : entities.get(0); }
+    @Nullable
+    public UsergridEntity entity() {
+        return first();
+    }
+    @Nullable
+    public UsergridEntity last() { return (entities == null || entities.isEmpty()) ? null : entities.get(entities.size() - 1); }
+
+    @Nullable
+    public UsergridUser user() {
+        UsergridEntity entity = this.first();
+        if( entity != null && entity instanceof UsergridUser ) {
+            return (UsergridUser) entity;
         }
-        else
-            response.responseError = new UsergridResponseError(ex.getClass().toString(), 0, ex.getMessage(), ex.getCause().toString());
+        return null;
+    }
+
+    @Nullable
+    public List<UsergridUser> users() {
+        ArrayList<UsergridUser> users = null;
+        if( entities != null && !entities.isEmpty() ) {
+            for( UsergridEntity entity : entities ) {
+                if( entity instanceof UsergridUser ) {
+                    if( users == null )  {
+                        users = new ArrayList<>();
+                    }
+                    users.add((UsergridUser)entity);
+                }
+            }
+        }
+        return users;
+    }
+
+    public int getStatusCode() { return this.statusCode; }
+
+    @Nullable
+    public JsonNode getResponseJson() {
+        return responseJson;
+    }
+    private void setResponseJson(@Nullable final JsonNode responseJson) {
+        this.responseJson = responseJson;
+    }
+
+    @Nullable
+    public UsergridQuery getQuery() {
+        return query;
+    }
+    private void setQuery(@Nullable final UsergridQuery query) {
+        this.query = query;
+    }
+
+    @Nullable
+    public UsergridResponseError getResponseError() {
+        return responseError;
+    }
+    private void setResponseError(@Nullable final UsergridResponseError responseError) { this.responseError = responseError; }
+
+    @Nullable
+    public Map<String, String> getHeaders() {
+        return headers;
+    }
+    public void setHeaders(@Nullable final Map<String, String> headers) { this.headers = headers; }
+
+    @Nullable
+    public List<UsergridEntity> getEntities() { return entities; }
+    public void setEntities(@NotNull final List<UsergridEntity> entities) {
+        this.entities = entities;
+    }
+
+    @Nullable
+    @JsonProperty("cursor")
+    public String getCursor() {
+        return cursor;
+    }
+    @JsonProperty("cursor")
+    public void setCursor(@NotNull final String cursor) {
+        this.cursor = cursor;
+    }
+
+    @NotNull
+    public static UsergridResponse fromResponse(@NotNull final UsergridRequest request, @NotNull final Response requestResponse) {
+        UsergridResponse response;
+        JsonNode responseJson = requestResponse.readEntity(JsonNode.class);
+        if ( responseJson.has("error") )  {
+            response = new UsergridResponse();
+            response.responseError = JsonUtils.fromJsonNode(responseJson,UsergridResponseError.class);;
+        } else {
+            response = JsonUtils.fromJsonNode(responseJson,UsergridResponse.class);
+        }
+        response.responseJson = responseJson;
+        response.statusCode = requestResponse.getStatus();
+        response.headers = MapUtils.putMultivaluedMap(requestResponse.getHeaders());
+        response.query = request.query;
         return response;
     }
 
-    public static UsergridResponse fromExceptionResponse(Response exceptionResponse) {
+    public UsergridUser currentUser() {
+        return user;
+    }
+    public void setUser(@NotNull final UsergridUser user) {
+        this.user = user;
+    }
+
+    @NotNull
+    public static UsergridResponse fromException(Exception ex) {
         UsergridResponse response = new UsergridResponse();
-        response.setStatusIntCode(exceptionResponse.getStatus());
-        response.responseError = new UsergridResponseError(exceptionResponse.getStatusInfo().getReasonPhrase(),
-                exceptionResponse.getStatus(),
-                exceptionResponse.getStatusInfo().getFamily().toString(),
-                exceptionResponse.getStatusInfo().toString());
+        if (ex instanceof ClientErrorException)
+        {
+            ClientErrorException clientError = (ClientErrorException) ex;
+            response.statusCode = clientError.getResponse().getStatus();
+            response.responseError = new UsergridResponseError(clientError.getResponse().getStatusInfo().toString(),
+                    clientError.getResponse().toString(), clientError.getClass().toString());
+        }
+        else
+        {
+            response.responseError = new UsergridResponseError(ex.getClass().toString(), ex.getMessage(), ex.getCause().toString());
+        }
         return response;
     }
 
     @JsonAnyGetter
-    @JsonSerialize(include = Inclusion.NON_NULL)
     public Map<String, JsonNode> getProperties() {
         return properties;
     }
 
-    @JsonSerialize(include = Inclusion.NON_NULL)
     @JsonAnySetter
-    public void setProperty(@Nonnull final  String key, @Nonnull final JsonNode value) {
+    public void setProperty(@NotNull final  String key, @NotNull final JsonNode value) {
         properties.put(key, value);
     }
 
     @JsonProperty("access_token")
-    @JsonSerialize(include = Inclusion.NON_NULL)
     public String getAccessToken() {
         return accessToken;
     }
 
     @JsonProperty("access_token")
-    public void setAccessToken(@Nonnull final String accessToken) {
+    public void setAccessToken(@NotNull final String accessToken) {
         this.accessToken = accessToken;
-    }
-
-    @JsonProperty("uri")
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    public String getUri() {
-        return uri;
-    }
-
-    @JsonProperty("uri")
-    public void setUri(@Nonnull final String uri) {
-        this.uri = uri;
-    }
-
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    public String getStatusString() {
-        return statusString;
-    }
-
-    public void setStatusString(@Nonnull final String statusString) {
-        this.statusString = statusString;
-    }
-
-    // TODO : this can be null. @Nullable
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    public List<UsergridEntity> getEntities() {
-        return entities;
-    }
-
-    public void setEntities(@Nonnull final List<UsergridEntity> entities) {
-        this.entities = entities;
-    }
-
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    public int getEntityCount() {
-        if (entities == null) {
-            return 0;
-        }
-        return entities.size();
-    }
-
-    public <T extends UsergridEntity> List<T> getEntities(Class<T> t) {
-        return UsergridEntity.toType(entities, t);
-    }
-
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    public UUID getNext() {
-        return next;
-    }
-
-    public void setNext(@Nonnull final UUID next) {
-        this.next = next;
-    }
-
-    //TODO : can be null
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    public String getCursor() {
-        return cursor;
-    }
-
-    public void setCursor(@Nonnull final String cursor) {
-        this.cursor = cursor;
-    }
-
-    //TODO : can be null
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    public List<Object> getList() {
-        return list;
-    }
-
-    public void setList(@Nonnull final List<Object> list) {
-        this.list = list;
-    }
-
-    //todo : can be null ?
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    public Object getData() {
-        return data;
-    }
-
-    public void setData(@Nonnull final Object data) {
-        this.data = data;
-    }
-
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    public Map<String, JsonNode> getMetadata() {
-        return metadata;
-    }
-
-    public void setMetadata(@Nonnull final Map<String, JsonNode> metadata) {
-        this.metadata = metadata;
-    }
-
-    @Nullable
-    public Map<String, JsonNode> getHeaders() {
-        return this.headers;
-    }
-
-    public void setHeaders(@Nonnull final Map<String, JsonNode> headers) {
-        this.headers = headers;
-    }
-
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    public Map<String, List<String>> getParams() {
-        return params;
-    }
-
-    public void setParams(@Nonnull final Map<String, List<String>> params) {
-        this.params = params;
-    }
-
-    //TODO: @Nullable ?
-    public UsergridUser currentUser() {
-        return user;
-    }
-
-    public void setUser(@Nonnull final UsergridUser user) {
-        this.user = user;
     }
 
     @Override
     public String toString() {
         return toJsonString(this);
-    }
-
-    /**
-     * get the first entity in the 'entities' array in the response
-     *
-     * @return A UsergridEntity if the entities array has elements, null otherwise
-     */
-    @Nullable
-    public UsergridEntity first() {
-        if (getEntities() != null && getEntities().size() > 0) {
-            return getEntities().get(0);
-        }
-
-        return null;
-    }
-
-
-    /**
-     * .entity is an alias for .first
-     *
-     * @return
-     */
-
-    @Nullable
-    public UsergridEntity entity() {
-        return first();
-    }
-
-    /**
-     * get the last entity in the 'entities' array in the response
-     *
-     * @return A UsergridEntity if the entities array has elements, null otherwise
-     */
-    @Nullable
-    public UsergridEntity last() {
-        if (getEntities() != null && getEntities().size() > 0) {
-            return getEntities().get(getEntities().size() - 1);
-        }
-
-        return null;
-    }
-
-    public boolean hasNextPage() {
-        if (getCursor() != null)
-            return true;
-        return false;
     }
 
     public List<UsergridEntity> loadNextpage() {
@@ -295,40 +216,11 @@ public class UsergridResponse {
             String[] segments = {client.getOrgId(), client.getAppId(), this.first().getType()};
 
             UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
-                    client.config.baseUrl, paramsMap, null, segments);
-            UsergridResponse resp = client.requestManager.performRequest(request); //client.apiRequest("GET",paramsMap,null,client.getOrgId(),client.getAppId(),this.first().getType());
+                    client.getBaseUrl(), paramsMap, null, segments);
+            request.query = this.query;
+            UsergridResponse resp = client.sendRequest(request); 
             return resp.entities;
         }
-        log.info("there are no more enetities to load. Cursor is empty.");
         return null;
-    }
-
-    @JsonProperty("status")
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    public int getStatusIntCode() {
-        return this.statuscode;
-    }
-
-    @JsonProperty("status")
-    @JsonSerialize(include = Inclusion.NON_NULL)
-    public void setStatusIntCode(int status) {
-        this.statuscode = status;
-    }
-
-    public static Map<String,JsonNode> putMultivaluedMap(MultivaluedMap<String, Object> headers) {
-        Map<String,JsonNode> multiValueMap = new HashMap<String, JsonNode>();
-        for (String objKey: headers.keySet()) {
-            multiValueMap.put(objKey,(JsonNodeFactory.instance.POJONode(headers.get(objKey))));
-        }
-        return multiValueMap;
-    }
-
-    public void setOk(String reasonPhrase) {
-        if(reasonPhrase.equals("OK")){
-            ok = true;
-        }
-    }
-    public boolean getOk() {
-        return this.ok;
     }
 }

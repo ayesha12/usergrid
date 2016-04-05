@@ -23,27 +23,27 @@ public class ClientAuthFallBackTestSuite {
 
     @Before
     public void before() {
-        Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.authFallBack);
+        Usergrid.initSharedInstance(SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.authFallBack);
         UsergridAppAuth appAuth = new UsergridAppAuth(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
         Usergrid.authenticateApp(appAuth);
         client = Usergrid.getInstance();
-        String[] segments = {client.config.orgId, client.config.appId,"roles","guest","permissions"};
+        String[] segments = {client.getOrgId(), client.getAppId(),"roles","guest","permissions"};
         Map<String, Object> params = new HashMap<>();
         params.put("permission","get,post,put,delete:/**");
         UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.DELETE, MediaType.APPLICATION_JSON_TYPE,
-                client.config.baseUrl, params, null, segments);
+                client.getBaseUrl(), params, null, segments);
         UsergridResponse resp = new UsergridRequestManager(client).performRequest(request);
     }
 
     @After
     public void after() {
-        UsergridClient client1 = client.usingAuth(client.config.appAuth);
-        client1.config.authMode = UsergridEnums.UsergridAuthMode.NONE;
-        String[] segments = {client1.config.orgId, client1.config.appId,"roles","guest","permissions"};
+        UsergridClient client1 = client.usingAuth(client.getAppAuth());
+        client1.setAuthMode(UsergridEnums.UsergridAuthMode.NONE);
+        String[] segments = {client1.getOrgId(), client1.getAppId(),"roles","guest","permissions"};
         Map<String, Object> params = new HashMap<>();
         params.put("permission","get,post,put,delete:/**");
         UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
-                client1.config.baseUrl, params, null, segments);
+                client1.getBaseUrl(), params, null, segments);
         //TODO : throws error.
         UsergridResponse resp = new UsergridRequestManager(client1).performRequest(request);
 //        System.out.println(resp);
@@ -54,22 +54,22 @@ public class ClientAuthFallBackTestSuite {
     @Test
     public void authFallBackNONETest() throws JSONException {
         //should fall back to using no authentication when currentUser is not authenticated and authFallback is set to NONE
-        client.config.authMode = UsergridEnums.UsergridAuthMode.NONE;
+        client.setAuthMode(UsergridEnums.UsergridAuthMode.NONE);
         UsergridQuery q = new UsergridQuery("users").desc("created");
         UsergridResponse resp = client.GET(q);
         assertTrue("The returned resonse should have error", resp != null);
-        assertTrue("The returned resonse should have error", resp.responseError != null);
+        assertTrue("The returned resonse should have error", resp.getResponseError() != null);
 
     }
 
     @Test
     public void authFallBackAPPTest() throws JSONException {
         //should fall back to using no authentication when currentUser is not authenticated and authFallback is set to NONE
-        client.config.authMode = UsergridEnums.UsergridAuthMode.APP;
+        client.setAuthMode(UsergridEnums.UsergridAuthMode.APP);
         UsergridQuery q = new UsergridQuery("users").desc("created");
         UsergridResponse resp = client.GET(q);
         assertTrue("The returned resonse should not have error", resp != null);
-        assertTrue("The returned resonse should not have error", resp.responseError == null);
+        assertTrue("The returned resonse should not have error", resp.getResponseError() == null);
 
     }
 

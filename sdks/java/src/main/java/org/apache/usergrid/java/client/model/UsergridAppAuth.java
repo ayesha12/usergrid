@@ -17,17 +17,23 @@
 package org.apache.usergrid.java.client.model;
 
 import org.apache.usergrid.java.client.UsergridAuth;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
-
+@SuppressWarnings("unused")
 public class UsergridAppAuth extends UsergridAuth {
 
-    public String clientId = null;
-    public String clientSecret = null;
+    @NotNull private String clientId;
+    @NotNull private String clientSecret;
 
-    public UsergridAppAuth(@Nonnull final String client_id, @Nonnull final String client_secret) {
+    @NotNull public String getClientId() { return clientId; }
+    public void setClientId(@NotNull final String clientId) { this.clientId = clientId; }
+
+    @NotNull public String getClientSecret() { return clientSecret; }
+    public void setClientSecret(@NotNull final String clientSecret) { this.clientSecret = clientSecret; }
+
+    public UsergridAppAuth(@NotNull final String clientId, @NotNull final String clientSecret) {
         super();
-        this.clientId = client_id;
-        this.clientSecret = client_secret;
+        this.clientId = clientId;
+        this.clientSecret = clientSecret;
     }
 }

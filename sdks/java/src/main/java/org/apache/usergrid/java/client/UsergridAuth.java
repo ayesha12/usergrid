@@ -1,60 +1,53 @@
 package org.apache.usergrid.java.client;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Created by Jeff West on 9/2/15.
  */
+@SuppressWarnings("unused")
 public class UsergridAuth {
 
-    /**
-     * TODO: These should be private with getters/setters.
-     * In java start with private and add getters and setters and proceed from there.  Only use public if you absolutely need to.
-     */
-    public String accessToken = null;
-    public boolean usingToken = false;
-    public Long token_expiry;
+    private String accessToken = null;
+    private Long expiry = null;
+    private boolean usingToken = false;
 
-    public UsergridAuth() {
-    }
+    public UsergridAuth() { }
 
-    public UsergridAuth(String aToken, Long expiryTime) {
+    public UsergridAuth(@Nullable final String accessToken) {
         this.usingToken = true;
-        setAccessToken(aToken);
-        setTokenExpiry(expiryTime);
+        setAccessToken(accessToken);
     }
 
-    public boolean hasToken() {
-        return (accessToken != null); // TODO: Why not just return the result instead of the if statement. e.g. return (accessToken != null);
+    public UsergridAuth(@Nullable final String accessToken, @Nullable final Long expiry) {
+        this.usingToken = true;
+        setAccessToken(accessToken);
+        setExpiry(expiry);
     }
 
-    public boolean isExprired() { // TODO: Methods need to be camel cased.
-        boolean isExpired = false;
-        Long currTime = System.currentTimeMillis() / 1000;
-        if (token_expiry != null)  // TODO: Why not just return the result instead of the if statement. e.g. return !(token_expiry / 1000 < currTime);
-            isExpired = (token_expiry / 1000 < currTime);
-        else
-            isExpired = !this.usingToken; //  todo : why !this.usingToken in swift ?
-        return isExpired;
-    }
-
-    public boolean isValidToken() {
-        return (hasToken() && !isExprired());
-
-    }
-
-    public void setAccessToken(String acToken) {
-        this.accessToken = acToken;
-    }
-
-    public void setTokenExpiry(Long tokenExpriy) {
-        this.token_expiry = tokenExpriy;
-    }
-
-    /**
-     * Destroys/removes the access token and expiry.
-     */
     public void destroy() {
-        this.accessToken = null;
-        this.token_expiry = null;
+        setAccessToken(null);
+        setExpiry(null);
     }
 
+    @Nullable public String getAccessToken() { return accessToken; }
+    public void setAccessToken(@Nullable final String accessToken) {
+        this.accessToken = accessToken;
+    }
+
+    @Nullable public Long getExpiry() { return expiry; }
+    public void setExpiry(@Nullable final Long tokenExpiry) { this.expiry = tokenExpiry; }
+
+    public boolean isValidToken() { return (hasToken() && !isExpired()); }
+
+    public boolean hasToken() { return accessToken != null; }
+
+    public boolean isExpired() {
+        if (expiry != null) {
+            Long currentTime = System.currentTimeMillis() / 1000;
+            return ((expiry / 1000) < currentTime);
+        } else {
+            return !this.usingToken;
+        }
+    }
 }

@@ -17,15 +17,21 @@
 package org.apache.usergrid.java.client.model;
 
 import org.apache.usergrid.java.client.UsergridAuth;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
-
+@SuppressWarnings("unused")
 public class UsergridUserAuth extends UsergridAuth {
 
-    public String username = null;
-    public String password = null;
+    @NotNull private String username;
+    @NotNull private String password;
 
-    public UsergridUserAuth(@Nonnull final String username, @Nonnull final String password) {
+    @NotNull public String getUsername() { return username; }
+    public void setUsername(@NotNull final String username) { this.username = username; }
+
+    @NotNull public String getPassword() { return password; }
+    public void setPassword(@NotNull final String password) { this.password = password; }
+
+    public UsergridUserAuth(@NotNull final String username, @NotNull final String password) {
         super();
         this.username = username;
         this.password = password;

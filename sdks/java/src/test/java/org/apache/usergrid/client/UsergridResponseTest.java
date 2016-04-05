@@ -24,7 +24,7 @@ public class UsergridResponseTest {
 
     @Before
     public void before() {
-        Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, UsergridEnums.UsergridAuthMode.USER);
+        Usergrid.initSharedInstance(SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.USERGRID_URL, UsergridEnums.UsergridAuthMode.USER);
         appUser = new UsergridUserAuth(SDKTestConfiguration.APP_UserName, SDKTestConfiguration.APP_Password);
 
 
@@ -49,16 +49,16 @@ public class UsergridResponseTest {
 
         UsergridEntity e = SDKTestUtils.createEntity(collectionName, "testEntity1", fields);
         UsergridResponse response = client.GET(collectionName, "testEntity1");
-        Object instanceObj = response.statuscode;
+        Object instanceObj = response.getStatusCode();
         assertTrue("The returned statusCode is and object of integer", instanceObj instanceof Integer);
-        instanceObj = response.ok;
+        instanceObj = response.ok();
         assertTrue("The returned statusCode is and object of boolean", instanceObj instanceof Boolean);
 
         UsergridResponse resp = client.logoutUser("Blueprints_usergrid_0302",null);
         System.out.println(resp);
 
         response = client.GET(collectionName, "testEntity1");
-        assertTrue("The response should throw an error",response.responseError != null);
+        assertTrue("The response should throw an error",response.getResponseError() != null);
 
     }
 
@@ -80,11 +80,11 @@ public class UsergridResponseTest {
 
         UsergridEntity e = SDKTestUtils.createEntity(collectionName, "testEntity12", fields);
         UsergridResponse response = client.GET(collectionName, "testEntity12");
-        assertTrue("The response should not throw an error",response.responseError == null);
+        assertTrue("The response should not throw an error",response.getResponseError() == null);
 
         client.logoutCurrentUser();
         response = client.GET(collectionName, "testEntity1");
-        assertTrue("The response should throw an error",response.responseError != null);
+        assertTrue("The response should throw an error",response.getResponseError() != null);
 
     }
 

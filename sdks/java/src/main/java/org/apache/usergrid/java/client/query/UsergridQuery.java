@@ -2,9 +2,9 @@ package org.apache.usergrid.java.client.query;
 
 import org.apache.usergrid.java.client.UsergridEnums.UsergridQueryOperator;
 import org.apache.usergrid.java.client.UsergridEnums.UsergridQuerySortOrder;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.net.URLEncoder;
 import java.util.*;
 
@@ -52,7 +52,7 @@ public final class UsergridQuery {
         this.requirementStrings.add(UsergridQuery.EMPTY_STRING);
     }
 
-    private static boolean isUUID(@Nonnull final String string) {
+    private static boolean isUUID(@NotNull final String string) {
         try {
             UUID uuid = UUID.fromString(string);
             return true;
@@ -61,8 +61,8 @@ public final class UsergridQuery {
         }
     }
 
-    @Nonnull
-    private static String encode(@Nonnull final String stringValue) {
+    @NotNull
+    private static String encode(@NotNull final String stringValue) {
         String escapedString;
         try {
             escapedString = URLEncoder.encode(stringValue, UTF8);
@@ -72,8 +72,8 @@ public final class UsergridQuery {
         return escapedString;
     }
 
-    @Nonnull
-    public static String strJoin(@Nonnull final List<String> array, @Nonnull final String separator) {
+    @NotNull
+    public static String strJoin(@NotNull final List<String> array, @NotNull final String separator) {
         StringBuilder stringBuilder = new StringBuilder();
         for (int i = 0, il = array.size(); i < il; i++) {
             if (i > 0) {
@@ -84,8 +84,8 @@ public final class UsergridQuery {
         return stringBuilder.toString();
     }
 
-    @Nonnull
-    public UsergridQuery fromString(@Nonnull final String stringValue) {
+    @NotNull
+    public UsergridQuery fromString(@NotNull final String stringValue) {
         this.fromStringValue = stringValue;
         return this;
     }
@@ -105,36 +105,36 @@ public final class UsergridQuery {
         return this.collectionName;
     }
 
-    @Nonnull
+    @NotNull
     public UsergridQuery type(@Nullable final String type) {
         this.collectionName = type;
         return this;
     }
 
-    @Nonnull
+    @NotNull
     public UsergridQuery collection(@Nullable final String collectionName) {
         return this.type(collectionName);
     }
 
-    @Nonnull
+    @NotNull
     public UsergridQuery collectionName(@Nullable final String collectionName) {
         return this.type(collectionName);
     }
 
-    @Nonnull
+    @NotNull
     public UsergridQuery cursor(@Nullable final String value) {
         this.cursor = value;
         return this;
     }
 
-    @Nonnull
-    public UsergridQuery limit(@Nonnull final Integer limit) {
+    @NotNull
+    public UsergridQuery limit(@NotNull final Integer limit) {
         this.limit = limit;
         return this;
     }
 
-    @Nonnull
-    private UsergridQuery addConditionalSeparator(@Nonnull final String separator) {
+    @NotNull
+    private UsergridQuery addConditionalSeparator(@NotNull final String separator) {
         if (!this.requirementStrings.get(0).isEmpty()) {
             this.requirementStrings.add(0, separator);
             this.requirementStrings.add(0, UsergridQuery.EMPTY_STRING);
@@ -142,124 +142,124 @@ public final class UsergridQuery {
         return this;
     }
 
-    @Nonnull
+    @NotNull
     public UsergridQuery and() {
         return this.addConditionalSeparator(UsergridQuery.AND);
     }
 
-    @Nonnull
+    @NotNull
     public UsergridQuery or() {
         return this.addConditionalSeparator(UsergridQuery.OR);
     }
 
-    @Nonnull
+    @NotNull
     public UsergridQuery not() {
         return this.addConditionalSeparator(UsergridQuery.NOT);
     }
 
-    @Nonnull
-    public UsergridQuery sort(@Nonnull final String term, @Nonnull final UsergridQuerySortOrder sortOrder) {
+    @NotNull
+    public UsergridQuery sort(@NotNull final String term, @NotNull final UsergridQuerySortOrder sortOrder) {
         this.orderClauses.put(term, sortOrder);
         return this;
     }
 
-    @Nonnull
-    public UsergridQuery ascending(@Nonnull final String term) {
+    @NotNull
+    public UsergridQuery ascending(@NotNull final String term) {
         return this.asc(term);
     }
 
-    @Nonnull
-    public UsergridQuery asc(@Nonnull final String term) {
+    @NotNull
+    public UsergridQuery asc(@NotNull final String term) {
         return this.sort(term, UsergridQuerySortOrder.ASC);
     }
 
-    @Nonnull
-    public UsergridQuery descending(@Nonnull final String term) {
+    @NotNull
+    public UsergridQuery descending(@NotNull final String term) {
         return this.desc(term);
     }
 
-    @Nonnull
-    public UsergridQuery desc(@Nonnull final String term) {
+    @NotNull
+    public UsergridQuery desc(@NotNull final String term) {
         return this.sort(term, UsergridQuerySortOrder.DESC);
     }
 
-    @Nonnull
-    public UsergridQuery contains(@Nonnull final String term, @Nonnull final String value) {
+    @NotNull
+    public UsergridQuery contains(@NotNull final String term, @NotNull final String value) {
         return this.containsWord(term, value);
     }
 
-    @Nonnull
-    public UsergridQuery containsString(@Nonnull final String term, @Nonnull final String value) {
+    @NotNull
+    public UsergridQuery containsString(@NotNull final String term, @NotNull final String value) {
         return this.containsWord(term, value);
     }
 
-    @Nonnull
-    public UsergridQuery containsWord(@Nonnull final String term, @Nonnull final String value) {
+    @NotNull
+    public UsergridQuery containsWord(@NotNull final String term, @NotNull final String value) {
         return this.addRequirement(term + SPACE + CONTAINS + SPACE + ((UsergridQuery.isUUID(value)) ? EMPTY_STRING : APOSTROPHE) + value + ((UsergridQuery.isUUID(value)) ? EMPTY_STRING : APOSTROPHE));
     }
 
-    @Nonnull
-    public UsergridQuery filter(@Nonnull final String term, @Nonnull final Object value) {
+    @NotNull
+    public UsergridQuery filter(@NotNull final String term, @NotNull final Object value) {
         return this.eq(term, value);
     }
 
-    @Nonnull
-    public UsergridQuery equals(@Nonnull final String term, @Nonnull final Object value) {
+    @NotNull
+    public UsergridQuery equals(@NotNull final String term, @NotNull final Object value) {
         return this.eq(term, value);
     }
 
-    @Nonnull
-    public UsergridQuery eq(@Nonnull final String term, @Nonnull final Object value) {
+    @NotNull
+    public UsergridQuery eq(@NotNull final String term, @NotNull final Object value) {
         return this.addOperationRequirement(term, UsergridQueryOperator.EQUAL, value);
     }
 
-    @Nonnull
-    public UsergridQuery greaterThan(@Nonnull final String term, @Nonnull final Object value) {
+    @NotNull
+    public UsergridQuery greaterThan(@NotNull final String term, @NotNull final Object value) {
         return this.gt(term, value);
     }
 
-    @Nonnull
-    public UsergridQuery gt(@Nonnull final String term, @Nonnull final Object value) {
+    @NotNull
+    public UsergridQuery gt(@NotNull final String term, @NotNull final Object value) {
         return this.addOperationRequirement(term, UsergridQueryOperator.GREATER_THAN, value);
     }
 
-    @Nonnull
-    public UsergridQuery greaterThanOrEqual(@Nonnull final String term, @Nonnull final Object value) {
+    @NotNull
+    public UsergridQuery greaterThanOrEqual(@NotNull final String term, @NotNull final Object value) {
         return this.gte(term, value);
     }
 
-    @Nonnull
-    public UsergridQuery gte(@Nonnull final String term, @Nonnull final Object value) {
+    @NotNull
+    public UsergridQuery gte(@NotNull final String term, @NotNull final Object value) {
         return this.addOperationRequirement(term, UsergridQueryOperator.GREATER_THAN_EQUAL_TO, value);
     }
 
-    @Nonnull
-    public UsergridQuery lessThan(@Nonnull final String term, @Nonnull final Object value) {
+    @NotNull
+    public UsergridQuery lessThan(@NotNull final String term, @NotNull final Object value) {
         return this.lt(term, value);
     }
 
-    @Nonnull
-    public UsergridQuery lt(@Nonnull final String term, @Nonnull final Object value) {
+    @NotNull
+    public UsergridQuery lt(@NotNull final String term, @NotNull final Object value) {
         return this.addOperationRequirement(term, UsergridQueryOperator.LESS_THAN, value);
     }
 
-    @Nonnull
-    public UsergridQuery lessThanOrEqual(@Nonnull final String term, @Nonnull final Object value) {
+    @NotNull
+    public UsergridQuery lessThanOrEqual(@NotNull final String term, @NotNull final Object value) {
         return this.lte(term, value);
     }
 
-    @Nonnull
-    public UsergridQuery lte(@Nonnull final String term, @Nonnull final Object value) {
+    @NotNull
+    public UsergridQuery lte(@NotNull final String term, @NotNull final Object value) {
         return this.addOperationRequirement(term, UsergridQueryOperator.LESS_THAN_EQUAL_TO, value);
     }
 
-    @Nonnull
+    @NotNull
     public UsergridQuery locationWithin(final double distance, final double latitude, final double longitude) {
         return this.addRequirement(LOCATION + SPACE + WITHIN + SPACE + distance + SPACE + OF + SPACE + latitude + SPACE + COMMA + longitude);
     }
 
-    @Nonnull
-    public UsergridQuery urlTerm(@Nonnull final String term, @Nonnull final String equalsValue) {
+    @NotNull
+    public UsergridQuery urlTerm(@NotNull final String term, @NotNull final String equalsValue) {
         if (term.equalsIgnoreCase(QL)) {
             this.ql(equalsValue);
         } else {
@@ -268,13 +268,13 @@ public final class UsergridQuery {
         return this;
     }
 
-    @Nonnull
-    public UsergridQuery ql(@Nonnull final String value) {
+    @NotNull
+    public UsergridQuery ql(@NotNull final String value) {
         return this.addRequirement(value);
     }
 
-    @Nonnull
-    public UsergridQuery addRequirement(@Nonnull final String requirement) {
+    @NotNull
+    public UsergridQuery addRequirement(@NotNull final String requirement) {
         String requirementString = this.requirementStrings.remove(0);
         if (!requirement.isEmpty() && !requirementString.isEmpty()) {
             requirementString += SPACE + AND + SPACE;
@@ -284,13 +284,13 @@ public final class UsergridQuery {
         return this;
     }
 
-    @Nonnull
-    public UsergridQuery addOperationRequirement(@Nonnull final String term, @Nonnull final UsergridQueryOperator operation, final int intValue) {
+    @NotNull
+    public UsergridQuery addOperationRequirement(@NotNull final String term, @NotNull final UsergridQueryOperator operation, final int intValue) {
         return this.addOperationRequirement(term, operation, Integer.valueOf(intValue));
     }
 
-    @Nonnull
-    public UsergridQuery addOperationRequirement(@Nonnull final String term, @Nonnull final UsergridQueryOperator operation, @Nonnull final Object value) {
+    @NotNull
+    public UsergridQuery addOperationRequirement(@NotNull final String term, @NotNull final UsergridQueryOperator operation, @NotNull final Object value) {
         if (value instanceof String) {
             String valueString = value.toString();
             if (!UsergridQuery.isUUID(valueString)) {
@@ -302,7 +302,7 @@ public final class UsergridQuery {
         }
     }
 
-    @Nonnull
+    @NotNull
     private String constructOrderByString() {
         String orderByString = EMPTY_STRING;
         if (!this.orderClauses.isEmpty()) {
@@ -319,7 +319,7 @@ public final class UsergridQuery {
         return orderByString;
     }
 
-    @Nonnull
+    @NotNull
     private String constructURLTermsString() {
         String urlTermsString = EMPTY_STRING;
         if (!this.urlTerms.isEmpty()) {
@@ -328,7 +328,7 @@ public final class UsergridQuery {
         return urlTermsString;
     }
 
-    @Nonnull
+    @NotNull
     private String constructRequirementString() {
         ArrayList<String> requirementStrings = new ArrayList<>(this.requirementStrings);
         String firstString = requirementStrings.get(0);
@@ -349,12 +349,12 @@ public final class UsergridQuery {
         return requirementsString;
     }
 
-    @Nonnull
+    @NotNull
     private String constructURLAppend() {
         return this.constructURLAppend(true);
     }
 
-    @Nonnull
+    @NotNull
     private String constructURLAppend(final boolean autoURLEncode) {
         if (this.fromStringValue != null) {
             String requirementsString = this.fromStringValue;
@@ -407,12 +407,12 @@ public final class UsergridQuery {
         return urlAppend;
     }
 
-    @Nonnull
+    @NotNull
     public String build() {
         return this.build(true);
     }
 
-    @Nonnull
+    @NotNull
     public String build(final boolean autoURLEncode) {
         return this.constructURLAppend(autoURLEncode);
     }

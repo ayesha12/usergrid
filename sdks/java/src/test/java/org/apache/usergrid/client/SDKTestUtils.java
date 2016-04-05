@@ -48,7 +48,7 @@ public class SDKTestUtils {
         for (Map.Entry<String, Map<String, String>> entity : entities.entrySet()) {
 
             UsergridEntity e = createEntity(collection, entity.getKey(), entity.getValue());
-            entityMap.put(e.getUuidString(), e);
+            entityMap.put(e.getUuid(), e);
         }
 
         return entityMap;
@@ -67,8 +67,8 @@ public class SDKTestUtils {
 
         UsergridResponse r = Usergrid.getInstance().POST(e);
 
-        if (r.responseError != null) {
-            assertTrue("UUID should not be null", e.getUuidString() != null);
+        if (r.getResponseError() != null) {
+            assertTrue("UUID should not be null", e.getUuid() != null);
 
             for (Map.Entry<String, String> field : fields.entrySet()) {
                 assertTrue("attempted to set a property which did not persist on the entity", e.getStringProperty(field.getKey()).equals(field.getValue()));

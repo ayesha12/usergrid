@@ -16,39 +16,33 @@
  */
 package org.apache.usergrid.java.client.exception;
 
-/**
- * Simple wrapper for client exceptions
- *
- * @author tnine
- */
-public class UsergridException extends RuntimeException {
+import org.jetbrains.annotations.NotNull;
 
-    private static final long serialVersionUID = 1L;
+@SuppressWarnings("unused")
+public final class UsergridException extends RuntimeException {
+
     private int responseCode;
 
-    /**
-     * @param message
-     * @param cause
-     */
-    public UsergridException(String message, Throwable cause) {
+    public int getResponseCode() {
+        return responseCode;
+    }
+    public void setResponseCode(int responseCode) { this.responseCode = responseCode; }
+
+    public UsergridException(@NotNull final String message) {
+        super(message);
+    }
+
+    public UsergridException(@NotNull final String message, @NotNull final Throwable cause) {
         super(message, cause);
     }
 
-    public UsergridException(String message, Throwable cause, int responseCode) {
-        super(message, cause);
-        this.responseCode = responseCode;
-    }
-
-    public UsergridException(String message, int responseCode) {
+    public UsergridException(@NotNull final String message, int responseCode) {
         super(message);
         this.responseCode = responseCode;
     }
 
-    public UsergridException(String s) {
-        super(s);
-    }
-
-    public int getResponseCode() {
-        return responseCode;
+    public UsergridException(@NotNull final String message, @NotNull final Throwable cause, int responseCode) {
+        super(message, cause);
+        this.responseCode = responseCode;
     }
 }

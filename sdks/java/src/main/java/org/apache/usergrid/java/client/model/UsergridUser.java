@@ -24,8 +24,9 @@ import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.apache.usergrid.java.client.utils.JsonUtils;
 import org.codehaus.jettison.json.JSONException;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.List;
 
@@ -54,26 +55,26 @@ public class UsergridUser extends UsergridEntity {
         setType(ENTITY_TYPE);
     }
 
-    public UsergridUser(@Nonnull final UsergridEntity usergridEntity) {
+    public UsergridUser(@NotNull final UsergridEntity usergridEntity) {
         super();
         properties = usergridEntity.properties;
         setType(ENTITY_TYPE);
     }
 
-    public UsergridUser(@Nonnull final String name, HashMap<String, Object> propertyMap) throws JSONException {
+    public UsergridUser(@NotNull final String name, HashMap<String, Object> propertyMap) throws JSONException {
         super();
         setType(ENTITY_TYPE);
         setName(name);
         putProperties(propertyMap);
     }
 
-    public UsergridUser(@Nonnull final String username, @Nonnull final String userPassword) {
+    public UsergridUser(@NotNull final String username, @NotNull final String userPassword) {
         super();
         setUsername(username);
         setPassword(userPassword);
     }
 
-    public UsergridUser(@Nonnull final String name, @Nonnull final String username, @Nonnull final String emailid, @Nonnull final String password) {
+    public UsergridUser(@NotNull final String name, @NotNull final String username, @NotNull final String emailid, @NotNull final String password) {
         super();
         setName(name);
         setUsername(username);
@@ -101,7 +102,7 @@ public class UsergridUser extends UsergridEntity {
         create(Usergrid.getInstance());
     }
 
-    public void create(@Nonnull final UsergridClient client) throws JSONException {
+    public void create(@NotNull final UsergridClient client) throws JSONException {
         UsergridEntity entity = null;
         UsergridResponse entityResponse = null;
         try {
@@ -124,29 +125,38 @@ public class UsergridUser extends UsergridEntity {
         remove(Usergrid.getInstance());
     }
 
-    public void remove(@Nonnull final UsergridClient client) {
+    public void remove(@NotNull final UsergridClient client) {
         client.DELETE(this);
     }
 
-    public void setUsername(@Nonnull final String username) {
+    public void setUsername(@NotNull final String username) {
         setStringProperty(properties, PROPERTY_USERNAME, username);
     }
 
-    public void setName(@Nonnull final String name) {
+    public void setName(@NotNull final String name) {
         setStringProperty(properties, PROPERTY_NAME, name);
     }
 
-    public void setEmail(@Nonnull final String email) {
+    public void setEmail(@NotNull final String email) {
         setStringProperty(properties, PROPERTY_EMAIL, email);
     }
 
-    public void setPassword(@Nonnull final String password) {
+    public void setPassword(@NotNull final String password) {
         setStringProperty(properties, PROPERTY_PASSWORD, password);
     }
 
     @JsonSerialize(include = NON_NULL)
     public String getUsername() {
         return JsonUtils.getStringProperty(properties, PROPERTY_USERNAME);
+    }
+
+    @Nullable
+    public String getUsernameOrEmail() {
+        String usernameOrEmail = this.getUsername();
+        if( usernameOrEmail == null ) {
+            usernameOrEmail = this.getEmail();
+        }
+        return usernameOrEmail;
     }
 
     @JsonSerialize(include = NON_NULL)
@@ -159,11 +169,11 @@ public class UsergridUser extends UsergridEntity {
         return JsonUtils.getStringProperty(properties, PROPERTY_EMAIL);
     }
 
-    public boolean checkAvailable(@Nonnull final String email, @Nonnull final String username) {
+    public boolean checkAvailable(@NotNull final String email, @NotNull final String username) {
         return checkAvailable(Usergrid.getInstance(), email, username);
     }
 
-    public boolean checkAvailable(@Nonnull final UsergridClient client, @Nonnull final String email, @Nonnull final String username) {
+    public boolean checkAvailable(@NotNull final UsergridClient client, @NotNull final String email, @NotNull final String username) {
         UsergridQuery qry = null;
         if (email == null && username == null)
             new IllegalArgumentException("email and username both are null ");
@@ -185,7 +195,7 @@ public class UsergridUser extends UsergridEntity {
         return getBooleanProperty(properties, PROPERTY_ACTIVATED);
     }
 
-    public void setActivated(@Nonnull final Boolean activated) {
+    public void setActivated(@NotNull final Boolean activated) {
         setBooleanProperty(properties, PROPERTY_ACTIVATED, activated);
     }
 

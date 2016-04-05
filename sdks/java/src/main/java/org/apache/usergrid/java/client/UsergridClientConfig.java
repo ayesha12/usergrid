@@ -18,46 +18,40 @@ package org.apache.usergrid.java.client;
 
 import org.apache.usergrid.java.client.UsergridEnums.UsergridAuthMode;
 import org.apache.usergrid.java.client.model.UsergridAppAuth;
-import org.apache.usergrid.java.client.model.UsergridUserAuth;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-/**
- * The Client class for accessing the Usergrid API. Start by instantiating this
- * class though the appropriate constructor.
- */
 public class UsergridClientConfig {
 
     // The organization identifier.
-    public String orgId = null;
+    @NotNull public String orgId;
 
     // The application identifier.
-    public String appId = null;
+    @NotNull public String appId;
 
     // The base URL that all calls will be made with.
-    public String baseUrl = UsergridClient.DEFAULT_BASE_URL;
+    @NotNull public String baseUrl = UsergridClient.DEFAULT_BASE_URL;
 
     // The `UsergridAuthMode` value used to determine what type of token will be sent, if any.
-    public UsergridAuthMode authMode = UsergridAuthMode.USER;
+    @NotNull public UsergridAuthMode authMode = UsergridAuthMode.USER;
 
-    public UsergridAppAuth appAuth;
+    @Nullable public UsergridAppAuth appAuth = null;
 
-    public UsergridUserAuth userAuth;
-
-    public UsergridClientConfig(String orgId, String appId) {
+    public UsergridClientConfig(@NotNull final String orgId, @NotNull final String appId) {
         this.orgId = orgId;
         this.appId = appId;
     }
 
-    public UsergridClientConfig(String orgId, String appId, String baseUrl) {
+    public UsergridClientConfig(@NotNull final String orgId, @NotNull final String appId, @NotNull final String baseUrl) {
         this.orgId = orgId;
         this.appId = appId;
         this.baseUrl = baseUrl;
     }
 
-    public UsergridClientConfig(String orgId, String appId, String baseUrl, UsergridAuthMode authMode) {
+    public UsergridClientConfig(@NotNull final String orgId, @NotNull final String appId, @NotNull final String baseUrl, @NotNull final UsergridAuthMode authMode) {
         this.orgId = orgId;
         this.appId = appId;
         this.baseUrl = baseUrl;
         this.authMode = authMode;
     }
-
 }
