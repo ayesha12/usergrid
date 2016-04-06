@@ -16,84 +16,83 @@
  */
 package org.apache.usergrid.java.client.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.UsergridEnums.*;
+import org.apache.usergrid.java.client.exception.UsergridException;
 import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;
-import org.apache.usergrid.java.client.utils.JsonUtils;
 import org.codehaus.jettison.json.JSONException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
-import java.util.List;
 
 import static com.fasterxml.jackson.databind.annotation.JsonSerialize.Inclusion.NON_NULL;
 
 @SuppressWarnings("unused")
 @JsonSerialize(include = NON_NULL)
 public class UsergridUser extends UsergridEntity {
+    @NotNull public final static String USER_ENTITY_TYPE = "user";
 
-    public final static String USER_ENTITY_TYPE = "user";
+    @Nullable public UsergridUserAuth userAuth = null;
 
-    public UsergridUserAuth userAuth = null;
+    @Nullable private String username;
+    @Nullable private String email;
+    @Nullable private String password;
+    @Nullable private String picture;
+
+    private boolean activated = false;
+    private boolean disabled = false;
 
     public UsergridUser() {
-        super();
-        setType(USER_ENTITY_TYPE);
+        super(USER_ENTITY_TYPE);
     }
 
     public UsergridUser(@NotNull final UsergridEntity usergridEntity) {
-        super();
-        properties = usergridEntity.properties;
-        setType(USER_ENTITY_TYPE);
+        super(USER_ENTITY_TYPE, null, usergridEntity.properties);
     }
 
-    public UsergridUser(@NotNull final String name, HashMap<String, Object> propertyMap) throws JSONException {
-        super();
-        setType(USER_ENTITY_TYPE);
-        setName(name);
+    public UsergridUser(@NotNull final String name, @NotNull final HashMap<String, Object> propertyMap) throws JSONException {
+        super(USER_ENTITY_TYPE);
         putProperties(propertyMap);
+        setName(name);
     }
 
-    public UsergridUser(@NotNull final String username, @NotNull final String password) {
-        super();
+    public UsergridUser(@NotNull final String username, @Nullable final String password) {
+        super(USER_ENTITY_TYPE);
         setUsername(username);
         setPassword(password);
     }
 
-    public UsergridUser(@NotNull final String name, @NotNull final String username, @NotNull final String email, @NotNull final String password) {
-        super();
+    public UsergridUser(@Nullable final String name, @Nullable final String username, @Nullable final String email, @Nullable final String password) {
+        super(USER_ENTITY_TYPE);
         setName(name);
         setUsername(username);
         setEmail(email);
         setPassword(password);
     }
 
-    @Nullable
-    public String getUsername() { return JsonUtils.getStringProperty(properties, UsergridUserProperties.USERNAME.toString()); }
-    public void setUsername(@NotNull final String username) { JsonUtils.setStringProperty(properties, UsergridUserProperties.USERNAME.toString(), username); }
+    public void setName(@Nullable final String name) { super.setName(name); }
 
-    @Nullable
-    public String getName() { return JsonUtils.getStringProperty(properties, UsergridUserProperties.NAME.toString()); }
-    public void setName(@NotNull final String name) { JsonUtils.setStringProperty(properties, UsergridUserProperties.NAME.toString(), name); }
+    @Nullable public String getUsername() { return this.username; }
+    public void setUsername(@Nullable final String username) { this.username = username; }
 
-    @Nullable
-    public String getEmail() { return JsonUtils.getStringProperty(properties, UsergridUserProperties.EMAIL.toString()); }
-    public void setEmail(@NotNull final String email) { JsonUtils.setStringProperty(properties, UsergridUserProperties.EMAIL.toString(), email); }
+    @Nullable public String getEmail() { return this.email; }
+    public void setEmail(@Nullable final String email) { this.email = email; }
 
-    @Nullable
-    public String getPassword() { return JsonUtils.getStringProperty(properties, UsergridUserProperties.PASSWORD.toString()); }
-    public void setPassword(@NotNull final String password) { JsonUtils.setStringProperty(properties, UsergridUserProperties.PASSWORD.toString(), password); }
+    @Nullable public String getPassword() { return this.password; }
+    public void setPassword(@Nullable final String password) { this.password = password; }
 
-    public boolean isActivated() { return JsonUtils.getBooleanProperty(properties, UsergridUserProperties.ACTIVATED.toString()); }
-    public void setActivated(@NotNull final Boolean activated) { JsonUtils.setBooleanProperty(properties, UsergridUserProperties.ACTIVATED.toString(), activated); }
+    @Nullable public String setPicture() { return this.picture; }
+    public void setPicture(@Nullable final String picture) { this.picture = picture; }
 
-    public boolean isDisabled() { return JsonUtils.getBooleanProperty(properties, UsergridUserProperties.DISABLED.toString()); }
-    public void setDisabled(@NotNull final Boolean disabled) { JsonUtils.setBooleanProperty(properties, UsergridUserProperties.DISABLED.toString(), disabled); }
+    public boolean isActivated() { return this.activated; }
+    public void setActivated(final boolean activated) { this.activated = activated; }
+
+    public boolean isDisabled() { return this.disabled; }
+    public void setDisabled(final boolean disabled) { this.disabled = disabled; }
 
     @Nullable
     public String uuidOrUsername() {
@@ -121,39 +120,86 @@ public class UsergridUser extends UsergridEntity {
         if (email == null && username == null) {
             throw new IllegalArgumentException("email and username both are null ");
         }
-
         UsergridQuery query = new UsergridQuery(USER_ENTITY_TYPE);
-        if (username == null) {
-            query.eq(UsergridUserProperties.EMAIL.toString(), email);
-        } else if (email == null) {
+        if (username != null) {
             query.eq(UsergridUserProperties.USERNAME.toString(), username);
-        } else {
-            query.eq(UsergridUserProperties.EMAIL.toString(), email).or().eq(UsergridUserProperties.USERNAME.toString(), username);
+        }
+        if (email != null) {
+            query.or().eq(UsergridUserProperties.EMAIL.toString(), email);
         }
         return client.GET(query).first() != null;
     }
 
-    public void create() throws JSONException {
-        create(Usergrid.getInstance());
+    @NotNull
+    public UsergridResponse create() {
+        return this.create(Usergrid.getInstance());
     }
 
-    // FIXME: FIX THIS AND THE METHOD ABOVE TO RETURN SOMETHING
-    public void create(@NotNull final UsergridClient client) throws JSONException {
-        UsergridEntity entity = null;
-        UsergridResponse entityResponse = null;
-        try {
-            entityResponse = client.GET(USER_ENTITY_TYPE, this.getUsername());
-            entity = entityResponse.entity();
-        } catch (Exception e) {
+    @NotNull
+    public UsergridResponse create(@NotNull final UsergridClient client) {
+        UsergridResponse response = client.POST(this);
+        UsergridUser createdUser = response.user();
+        if( createdUser != null ) {
+            this.properties = new HashMap<>(createdUser.properties);
         }
-        if (entity != null) {
-            this.properties = entity.properties;
-        } else {
-            if (getName() == null)
-                this.setName(getUsername());
-            this.setType(USER_ENTITY_TYPE);
-            entityResponse = client.POST(this);
-            this.properties = entityResponse.entity().properties;
+        return response;
+    }
+
+    @NotNull
+    public UsergridResponse login(@NotNull final String username, @NotNull final String password) {
+        return this.login(Usergrid.getInstance(),username,password);
+    }
+
+    @NotNull
+    public UsergridResponse login(@NotNull final UsergridClient client, @NotNull final String username, @NotNull final String password) {
+        UsergridUserAuth userAuth = new UsergridUserAuth(username,password);
+        UsergridResponse response = client.authenticateUser(userAuth,false);
+        if( response.ok() ) {
+            this.userAuth = userAuth;
         }
+        return response;
+    }
+
+    @NotNull
+    public UsergridResponse resetPassword(@NotNull final String oldPassword, @NotNull final String newPassword) {
+        return this.resetPassword(Usergrid.getInstance(),oldPassword,newPassword);
+    }
+
+    @NotNull
+    public UsergridResponse resetPassword(@NotNull final UsergridClient client, @NotNull final String oldPassword, @NotNull final String newPassword) {
+        return client.resetPassword(this,oldPassword,newPassword);
+    }
+
+    @NotNull
+    public UsergridResponse reauthenticate() {
+        return this.reauthenticate(Usergrid.getInstance());
+    }
+
+    @NotNull
+    public UsergridResponse reauthenticate(@NotNull final UsergridClient client) throws UsergridException {
+        if( this.userAuth == null ) {
+            throw new UsergridException("No UsergridUserAuth found on the UsergridUser.");
+        }
+        return client.authenticateUser(this.userAuth, false);
+    }
+
+    @NotNull
+    public UsergridResponse logout() {
+        return this.logout(Usergrid.getInstance());
+    }
+
+    @NotNull
+    public UsergridResponse logout(@NotNull final UsergridClient client) throws UsergridException {
+        String uuidOrUsername = this.uuidOrUsername();
+        String accessToken = (this.userAuth != null) ? this.userAuth.getAccessToken() : null;
+        if (uuidOrUsername == null || accessToken == null ) {
+            throw new UsergridException("uuid, username or access token not found on UsergridUser object.");
+        }
+
+        UsergridResponse response = client.logoutUser(uuidOrUsername, accessToken);
+        if( response.ok() ) {
+            this.userAuth = null;
+        }
+        return response;
     }
 }

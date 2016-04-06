@@ -1,3 +1,19 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.usergrid.client;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -16,14 +32,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertTrue;
 
-/**
- * Created by ApigeeCorporation on 9/10/15.
- */
 public class EntityTestSuite {
     public static UsergridClient client = null;
 
@@ -333,7 +347,7 @@ public class EntityTestSuite {
         eLookUp = client.GET(collectionName, "entityNew").first();
 
         //should not be able to set the name key (name is immutable)
-        e.setName("entityNew");
+        e.putProperty("name","entityNew");
         e.save();
         eLookUp = client.GET(collectionName, "testEntity9").first();
         assertTrue("The entity putProperty() was successfull ", eLookUp.getName().equals("testEntity9"));
@@ -389,7 +403,7 @@ public class EntityTestSuite {
         assertTrue("The entity returned is not null.", eLookUp != null);
 
         String[] removeProperties = {"shape", "color"};
-        e.removeProperties(removeProperties);
+        e.removeProperties(Arrays.asList(removeProperties));
         e.save();
 
         eLookUp = client.GET(collectionName, "testEntity9").first();
@@ -495,7 +509,7 @@ public class EntityTestSuite {
         lenArr2.add(6);
         lenArr2.add(7);
 
-        e.prepend("lenArray", lenArr2);
+        e.insert("lenArray", lenArr2, 0);
         e.save();
         UsergridEntity eLookUp = client.GET(collectionName, "testEntity1").first();
         assertTrue("The entity returned is not null.", eLookUp != null);

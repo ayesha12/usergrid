@@ -36,6 +36,11 @@ public class JsonUtils {
 
     @NotNull private static ObjectMapper mapper = new ObjectMapper();
 
+    @NotNull
+    public static ObjectNode createObjectNode() {
+        return mapper.createObjectNode();
+    }
+
     @Nullable
     public static String getStringProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name) {
         JsonNode value = properties.get(name);
@@ -114,7 +119,6 @@ public class JsonUtils {
         return null;
     }
 
-    @NotNull
     public static void setUUIDProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name, @Nullable final UUID value) {
         if (value == null) {
             properties.remove(name);

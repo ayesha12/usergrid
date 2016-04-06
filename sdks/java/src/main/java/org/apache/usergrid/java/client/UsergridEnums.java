@@ -149,7 +149,6 @@ public class UsergridEnums {
         USERNAME,
         PASSWORD,
         EMAIL,
-        AGE,
         ACTIVATED,
         DISABLED,
         PICTURE;

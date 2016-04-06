@@ -148,8 +148,8 @@ public class UsergridClient {
     @NotNull
     public UsergridResponse authenticateUser(@NotNull final UsergridUserAuth userAuth, boolean setAsCurrentUser) {
         UsergridResponse response = this.requestManager.authenticateUser(userAuth);
-        if( setAsCurrentUser ) {
-            this.setCurrentUser(response.currentUser());
+        if( response.ok() && setAsCurrentUser ) {
+            this.setCurrentUser(response.user());
         }
         return response;
     }

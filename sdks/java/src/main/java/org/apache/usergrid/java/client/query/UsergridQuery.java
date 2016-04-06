@@ -26,35 +26,14 @@ import java.util.*;
 
 @SuppressWarnings("unused")
 public final class UsergridQuery {
-    private static final int LIMIT_DEFAULT = 10;
-    private static final String AMPERSAND = "&";
-    private static final String AND = "and";
-    private static final String APOSTROPHE = "'";
-    private static final String COMMA = ",";
-    private static final String CONTAINS = "contains";
-    private static final String CURSOR = "cursor";
-    private static final String EMPTY_STRING = "";
-    private static final String EQUALS = "=";
-    private static final String LIMIT = "limit";
-    private static final String LOCATION = "location";
-    private static final String NOT = "not";
-    private static final String OF = "of";
-    private static final String OR = "or";
-    private static final String ORDER_BY = "order by";
-    private static final String QL = "ql";
-    private static final String QUESTION_MARK = "?";
-    private static final String SELECT_ALL = "select *";
-    private static final String SPACE = " ";
-    private static final String UTF8 = "UTF-8";
-    private static final String WHERE = "where";
-    private static final String WITHIN = "within";
-    private final ArrayList<String> requirementStrings = new ArrayList<>();
-    private final ArrayList<String> urlTerms = new ArrayList<>();
-    private final HashMap<String, UsergridQuerySortOrder> orderClauses = new HashMap<>();
-    private Integer limit = UsergridQuery.LIMIT_DEFAULT;
-    private String cursor = null;
-    private String fromStringValue = null;
-    private String collectionName = null;
+
+    @NotNull private final ArrayList<String> requirementStrings = new ArrayList<>();
+    @NotNull private final ArrayList<String> urlTerms = new ArrayList<>();
+    @NotNull private final HashMap<String, UsergridQuerySortOrder> orderClauses = new HashMap<>();
+    @NotNull private Integer limit = UsergridQuery.LIMIT_DEFAULT;
+    @Nullable private String cursor = null;
+    @Nullable private String fromStringValue = null;
+    @Nullable private String collectionName = null;
 
     public UsergridQuery() {
         this(null);
@@ -429,4 +408,27 @@ public final class UsergridQuery {
     public String build(final boolean autoURLEncode) {
         return this.constructURLAppend(autoURLEncode);
     }
+
+    private static final int LIMIT_DEFAULT = 10;
+    private static final String AMPERSAND = "&";
+    private static final String AND = "and";
+    private static final String APOSTROPHE = "'";
+    private static final String COMMA = ",";
+    private static final String CONTAINS = "contains";
+    private static final String CURSOR = "cursor";
+    private static final String EMPTY_STRING = "";
+    private static final String EQUALS = "=";
+    private static final String LIMIT = "limit";
+    private static final String LOCATION = "location";
+    private static final String NOT = "not";
+    private static final String OF = "of";
+    private static final String OR = "or";
+    private static final String ORDER_BY = "order by";
+    private static final String QL = "ql";
+    private static final String QUESTION_MARK = "?";
+    private static final String SELECT_ALL = "select *";
+    private static final String SPACE = " ";
+    private static final String UTF8 = "UTF-8";
+    private static final String WHERE = "where";
+    private static final String WITHIN = "within";
 }

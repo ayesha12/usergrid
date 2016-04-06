@@ -45,11 +45,7 @@ import static org.apache.usergrid.java.client.utils.JsonUtils.toJsonString;
 @JsonSerialize(include = Inclusion.NON_NULL)
 public class UsergridResponse {
 
-    // FIXME: NEED TO REFACTOR THESE.
-    public UsergridUser user;
-    private String accessToken;
-
-    private UsergridClient client; // FIXME: CHECK IF THIS WORKS IN LOAD NEXT PAGE.
+    private UsergridClient client;
     private Map<String, JsonNode> properties = new HashMap<>();
     private int statusCode = 0;
     @Nullable private JsonNode responseJson = null;
@@ -59,12 +55,15 @@ public class UsergridResponse {
     @Nullable private UsergridQuery query;
     @Nullable private UsergridResponseError responseError = null;
 
-    @Override public String toString() {
-        return toJsonString(this);
-    }
+    @Nullable private String accessToken;
+    @Nullable private Long expires;
+
     public boolean ok() { return (statusCode > 0 && statusCode < 400); }
     public int count()  { return (entities == null) ? 0 : entities.size(); }
     public boolean hasNextPage() { return (cursor != null); }
+    @Override public String toString() {
+        return toJsonString(this);
+    }
 
     @Nullable
     public UsergridEntity first() { return (entities == null || entities.isEmpty()) ? null : entities.get(0); }
@@ -136,20 +135,29 @@ public class UsergridResponse {
     public List<UsergridEntity> getEntities() { return entities; }
     private void setEntities(@NotNull final List<UsergridEntity> entities) { this.entities = entities; }
 
-    @Nullable
-    @JsonProperty("cursor")
+    @Nullable @JsonProperty("cursor")
     public String getCursor() {
         return cursor;
     }
     @JsonProperty("cursor")
     private void setCursor(@NotNull final String cursor) { this.cursor = cursor; }
 
-    // FIXME: DELETE THESE AT SOME POINT.
-    public UsergridUser currentUser() {
-        return user;
-    }
-    public void setUser(@NotNull final UsergridUser user) {
-        this.user = user;
+    @Nullable @JsonProperty("access_token")
+    public String getAccessToken() { return this.accessToken; }
+    @JsonProperty("access_token")
+    private void setAccessToken(@NotNull final String accessToken) { this.accessToken = accessToken; }
+
+    @Nullable @JsonProperty("expires_in")
+    public Long getExpires() { return this.expires; }
+    @JsonProperty("expires_in")
+    private void setExpires(@NotNull final Long expires) { this.expires = expires; }
+
+    @JsonProperty("user")
+    private void setUser(@NotNull final UsergridUser user) {
+        if( this.entities == null ) {
+            this.entities = new ArrayList<>();
+        }
+        this.entities.add(user);
     }
 
     @NotNull
@@ -158,7 +166,7 @@ public class UsergridResponse {
         JsonNode responseJson = requestResponse.readEntity(JsonNode.class);
         if ( responseJson.has("error") )  {
             response = new UsergridResponse();
-            response.responseError = JsonUtils.fromJsonNode(responseJson,UsergridResponseError.class);;
+            response.responseError = JsonUtils.fromJsonNode(responseJson,UsergridResponseError.class);
         } else {
             response = JsonUtils.fromJsonNode(responseJson,UsergridResponse.class);
         }
@@ -170,49 +178,36 @@ public class UsergridResponse {
     }
 
     @NotNull
-    public static UsergridResponse fromException(Exception ex) {
+    public static UsergridResponse fromException(@NotNull final Exception ex) {
         UsergridResponse response = new UsergridResponse();
-        if (ex instanceof ClientErrorException)
-        {
+        if (ex instanceof ClientErrorException)  {
             ClientErrorException clientError = (ClientErrorException) ex;
             response.statusCode = clientError.getResponse().getStatus();
             response.responseError = new UsergridResponseError(clientError.getResponse().getStatusInfo().toString(),
                     clientError.getResponse().toString(), clientError.getClass().toString());
-        }
-        else
-        {
+        }  else  {
             response.responseError = new UsergridResponseError(ex.getClass().toString(), ex.getMessage(), ex.getCause().toString());
         }
         return response;
     }
 
-    @JsonAnyGetter
+    @NotNull @JsonAnyGetter
     public Map<String, JsonNode> getProperties() {
         return properties;
     }
-
     @JsonAnySetter
     public void setProperty(@NotNull final  String key, @NotNull final JsonNode value) {
         properties.put(key, value);
     }
 
-    @JsonProperty("access_token")
-    public String getAccessToken() {
-        return accessToken;
-    }
-
-    @JsonProperty("access_token")
-    public void setAccessToken(@NotNull final String accessToken) {
-        this.accessToken = accessToken;
-    }
-
-    public List<UsergridEntity> loadNextPage() {
+    @Nullable
+    public UsergridResponse loadNextPage() {
         if (hasNextPage() && this.client != null) {
-            Map<String, Object> paramsMap = new HashMap<String, Object>();
+            Map<String, Object> paramsMap = new HashMap<>();
             paramsMap.put("cursor", getCursor());
+
             UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE, this.client.clientAppUrl(), paramsMap, null, null, this.getQuery(), this.first().getType());
-            UsergridResponse resp = this.client.sendRequest(request);
-            return resp.entities;
+            return this.client.sendRequest(request);
         }
         return null;
     }

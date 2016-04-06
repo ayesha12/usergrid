@@ -18,11 +18,12 @@ package org.apache.usergrid.java.client;
 
 import org.apache.usergrid.java.client.UsergridEnums.UsergridHttpMethod;
 import org.apache.usergrid.java.client.model.UsergridAppAuth;
+import org.apache.usergrid.java.client.model.UsergridUser;
 import org.apache.usergrid.java.client.model.UsergridUserAuth;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.glassfish.jersey.jackson.JacksonFeature;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.MediaType;
@@ -36,12 +37,11 @@ public class UsergridRequestManager {
 
     private static final String HEADER_AUTHORIZATION = "Authorization";
     private static final String BEARER = "Bearer ";
-    private static final String EXPIRES_IN = "expires_in";
 
     public UsergridClient client;
     private javax.ws.rs.client.Client restClient;
 
-    public UsergridRequestManager(UsergridClient client) {
+    public UsergridRequestManager(@NotNull final UsergridClient client) {
         this.client = client;
         this.restClient = ClientBuilder.newBuilder()
                 .register(JacksonFeature.class)
@@ -49,7 +49,8 @@ public class UsergridRequestManager {
                 .build();
     }
 
-    public UsergridResponse performRequest(UsergridRequest request) {
+    @NotNull
+    public UsergridResponse performRequest(@NotNull final UsergridRequest request) {
         UsergridHttpMethod method = request.getMethod();
         MediaType contentType = request.getContentType();
         Entity entity = Entity.entity(request.getData() == null ? "" : request.getData(), contentType);
@@ -95,38 +96,19 @@ public class UsergridRequestManager {
         return usergridResonse;
     }
 
-    private void validateNonEmptyParam(final Object param,
-                                       final String paramName) {
-        if (isEmpty(param)) {
-            throw new IllegalArgumentException(paramName + " cannot be null or empty");
-        }
-    }
-
-    private void validateNotNull(final Object param,
-                                       final String paramName) {
-        if (isEmpty(param)) {
-            throw new NullPointerException(paramName + " cannot be null or empty");
-        }
-    }
-
-
-    public UsergridResponse authenticateApp(@Nonnull final UsergridAppAuth appAuth) {
+    @NotNull
+    public UsergridResponse authenticateApp(@NotNull final UsergridAppAuth appAuth) {
         Map<String, Object> data = new HashMap<>();
         data.put("grant_type", "client_credentials");
         data.put("client_id", appAuth.getClientId());
         data.put("client_secret", appAuth.getClientSecret());
 
-        String[] segments = {client.getOrgId(), client.getAppId(), "token"};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
-                client.getBaseUrl(), null, data, segments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE, client.clientAppUrl(), null, data, "token");
         UsergridResponse response = performRequest(request);
-        if (response == null) {
-            return null;
-        }
 
-        if (!isEmpty(response.getAccessToken())) {
+        if (!isEmpty(response.getAccessToken()) && !isEmpty(response.getExpires())) {
             appAuth.setAccessToken(response.getAccessToken());
-            long expiresIn = response.getProperties().get(EXPIRES_IN).asLong();
+            long expiresIn = response.getExpires();
             appAuth.setExpiry(System.currentTimeMillis() + expiresIn - 5000);
         } else {
             throw new IllegalArgumentException("bad request : " + response.getResponseError().getErrorDescription()
@@ -135,29 +117,22 @@ public class UsergridRequestManager {
         return response;
     }
 
-
-    public UsergridResponse authenticateUser(@Nonnull UsergridUserAuth userAuth) {
+    @NotNull
+    public UsergridResponse authenticateUser(@NotNull final UsergridUserAuth userAuth) {
         Map<String, Object> formData = new HashMap<>();
         formData.put("grant_type", "password");
         formData.put("username", userAuth.getUsername());
         formData.put("password", userAuth.getPassword());
 
-        String[] segments = {client.getOrgId(), client.getAppId(), "token"};
-
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE,
-                client.getBaseUrl(), null, formData, segments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE, client.clientAppUrl(), null, formData, "token");
         UsergridResponse response = performRequest(request);
-        if (response == null) {
-            return null;
-        }
-
-        if (!isEmpty(response.getAccessToken()) && (response.currentUser() != null)) {
+        UsergridUser responseUser = response.user();
+        if (!isEmpty(response.getAccessToken()) && !isEmpty(response.getExpires()) && responseUser != null) {
             userAuth.setAccessToken(response.getAccessToken());
-            userAuth.setExpiry(System.currentTimeMillis() + response.getProperties().get(EXPIRES_IN).asLong() - 5000);
-            response.currentUser().userAuth = userAuth;
-        }
-        else
-        {
+            long expiresIn = response.getExpires();
+            userAuth.setExpiry(System.currentTimeMillis() + expiresIn - 5000);
+            responseUser.userAuth = userAuth;
+        } else  {
             throw new IllegalArgumentException("bad request " + response.getResponseError().getErrorDescription()
                     + " status code : " + response.getStatusCode());
         }

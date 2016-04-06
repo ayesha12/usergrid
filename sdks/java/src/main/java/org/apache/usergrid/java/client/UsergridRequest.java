@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.ws.rs.core.MediaType;
 import java.util.Map;
 
+@SuppressWarnings("unused")
 public class UsergridRequest {
 
     @NotNull private UsergridHttpMethod method;
