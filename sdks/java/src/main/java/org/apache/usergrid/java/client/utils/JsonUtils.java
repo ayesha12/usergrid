@@ -23,34 +23,29 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.*;
 import org.apache.usergrid.java.client.exception.UsergridException;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
 
+@SuppressWarnings("unused")
 public class JsonUtils {
 
-
-    static ObjectMapper mapper = new ObjectMapper();
+    @NotNull private static ObjectMapper mapper = new ObjectMapper();
 
     @Nullable
-    public static String getStringProperty(final Map<String, JsonNode> properties,
-                                           final String name) {
-
+    public static String getStringProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name) {
         JsonNode value = properties.get(name);
-
         if (value != null) {
             return value.asText();
         }
-
         return null;
     }
 
-    public static void setStringProperty(final Map<String, JsonNode> properties,
-                                         final String name,
-                                         final String value) {
+    public static void setStringProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name, @Nullable final String value) {
         if (value == null) {
             properties.remove(name);
         } else {
@@ -58,9 +53,7 @@ public class JsonUtils {
         }
     }
 
-    public static void setArrayProperty(final Map<String, JsonNode> properties,
-                                        final String name,
-                                        final ArrayList<Object> value) {
+    public static void setArrayProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name, @Nullable final ArrayList<Object> value) {
         if (value == null) {
             properties.remove(name);
         } else {
@@ -68,22 +61,16 @@ public class JsonUtils {
         }
     }
 
-
     @Nullable
-    public static Long getLongProperty(final Map<String, JsonNode> properties,
-                                       final String name) {
+    public static Long getLongProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name) {
         JsonNode value = properties.get(name);
-
         if (value != null) {
             return value.asLong(0);
         }
-
         return null;
     }
 
-    public static void setLongProperty(final Map<String, JsonNode> properties,
-                                       final String name,
-                                       final Long value) {
+    public static void setLongProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name, @Nullable final Long value) {
         if (value == null) {
             properties.remove(name);
         } else {
@@ -91,9 +78,7 @@ public class JsonUtils {
         }
     }
 
-    public static void setFloatProperty(final Map<String, JsonNode> properties,
-                                        final String name,
-                                        final Float value) {
+    public static void setFloatProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name, @Nullable final Float value) {
         if (value == null) {
             properties.remove(name);
         } else {
@@ -101,14 +86,13 @@ public class JsonUtils {
         }
     }
 
-    public static Boolean getBooleanProperty(final Map<String, JsonNode> properties,
-                                             final String name) {
+    @NotNull
+    public static Boolean getBooleanProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name) {
         JsonNode value = properties.get(name);
         return value != null && value.asBoolean();
     }
 
-    public static void setBooleanProperty(final Map<String, JsonNode> properties,
-                                          final String name, Boolean value) {
+    public static void setBooleanProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name, @Nullable Boolean value) {
         if (value == null) {
             properties.remove(name);
         } else {
@@ -117,8 +101,7 @@ public class JsonUtils {
     }
 
     @Nullable
-    public static UUID getUUIDProperty(final Map<String, JsonNode> properties,
-                                       final String name) {
+    public static UUID getUUIDProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name) {
         JsonNode value = properties.get(name);
         if (value != null) {
             UUID uuid = null;
@@ -131,18 +114,17 @@ public class JsonUtils {
         return null;
     }
 
-    public static void setUUIDProperty(final Map<String, JsonNode> properties,
-                                       final String name,
-                                       final UUID value) {
+    @NotNull
+    public static void setUUIDProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name, @Nullable final UUID value) {
         if (value == null) {
             properties.remove(name);
         } else {
-            properties.put(name,
-                    JsonNodeFactory.instance.textNode(value.toString()));
+            properties.put(name, JsonNodeFactory.instance.textNode(value.toString()));
         }
     }
 
-    public static String toJsonString(final Object obj) {
+    @NotNull
+    public static String toJsonString(@NotNull final Object obj) {
         try {
             return mapper.writeValueAsString(obj);
         } catch (JsonGenerationException e) {
@@ -154,8 +136,8 @@ public class JsonUtils {
         }
     }
 
-    public static <T> T parse(final String json,
-                              final Class<T> c) {
+    @NotNull
+    public static <T> T parse(@NotNull final String json, @NotNull final Class<T> c) {
         try {
             return mapper.readValue(json, c);
         } catch (JsonGenerationException e) {
@@ -167,12 +149,13 @@ public class JsonUtils {
         }
     }
 
-    public static JsonNode toJsonNode(final Object obj) {
+    @NotNull
+    public static JsonNode toJsonNode(@NotNull final Object obj) {
         return mapper.convertValue(obj, JsonNode.class);
     }
 
-    public static <T> T fromJsonNode(final JsonNode json,
-                                     final Class<T> c) {
+    @NotNull
+    public static <T> T fromJsonNode(@NotNull final JsonNode json, @NotNull final Class<T> c) {
         try {
             JsonParser jp = json.traverse();
             return mapper.readValue(jp, c);
@@ -186,9 +169,7 @@ public class JsonUtils {
     }
 
     @Nullable
-    public static <T> T getObjectProperty(final Map<String, JsonNode> properties,
-                                          final String name,
-                                          final Class<T> c) {
+    public static <T> T getObjectProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name, @NotNull final Class<T> c) {
         JsonNode value = properties.get(name);
         if (value != null) {
             return fromJsonNode(value, c);
@@ -196,9 +177,7 @@ public class JsonUtils {
         return null;
     }
 
-    public static void setObjectProperty(final Map<String, JsonNode> properties,
-                                         final String name,
-                                         final ObjectNode value) {
+    public static void setObjectProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name, @Nullable final ObjectNode value) {
         if (value == null) {
             properties.remove(name);
         } else {
@@ -206,12 +185,13 @@ public class JsonUtils {
         }
     }
 
-
-    public static <T> T getProperty(final Map<String, JsonNode> properties,
-                                    final String name) {
+    @Nullable
+    @SuppressWarnings("unchecked")
+    public static <T> T getProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name) {
         JsonNode value = properties.get(name);
-
-        if (value instanceof TextNode) {
+        if( value == null ) {
+            return null;
+        } else if (value instanceof TextNode) {
             return (T) value.asText();
         } else if (value instanceof LongNode) {
             Long valueLong = value.asLong();
@@ -228,5 +208,4 @@ public class JsonUtils {
             return (T) value;
         }
     }
-
 }

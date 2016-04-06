@@ -421,8 +421,8 @@ public class EntityTestSuite {
         UsergridEntity eLookUp = client.GET(collectionName, "testEntity11").first();
         assertTrue("The entity returned is not null.", eLookUp != null);
 
-        e.removeEntityProperty("color");
-        e.removeEntityProperty("shape");
+        e.removeProperty("color");
+        e.removeProperty("shape");
         e.save();
 
         eLookUp = client.GET(collectionName, "testEntity11").first();
@@ -745,41 +745,41 @@ public class EntityTestSuite {
         e1.save();
         UsergridEntity eLookUp = client.GET(collectionName, "testEntity1").first();
         assertTrue("The entity returned is not null.", eLookUp != null);
-        assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "likes").get(0).getName().equals("testEntity2"));
+        assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "likes").getEntities().get(0).getName().equals("testEntity2"));
         UsergridEntity eLookUp2 = client.GET(collectionName, "testEntity2").first();
-        assertTrue("The entity returned is not null.", eLookUp2.getConnections(UsergridDirection.IN, "likes").get(0).getName().equals("testEntity1"));
+        assertTrue("The entity returned is not null.", eLookUp2.getConnections(UsergridDirection.IN, "likes").getEntities().get(0).getName().equals("testEntity1"));
 
 
         e1.disconnect("likes", e2);
         e1.save();
         eLookUp = client.GET(collectionName, "testEntity1").first();
         assertTrue("The entity returned is not null.", eLookUp != null);
-        assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "likes").size() == 0);
+        assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "likes").getEntities().size() == 0);
 
         //should connect entities by passing target uuid as a parameter
         e1.connect("visited", e2.getUuid().toString());
         e1.save();
         eLookUp = client.GET(collectionName, "testEntity1").first();
         assertTrue("The entity returned is not null.", eLookUp != null);
-        assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "visited").get(0).getName().equals("testEntity2"));
+        assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "visited").getEntities().get(0).getName().equals("testEntity2"));
 
         e1.disconnect("visited", e2.getUuid().toString());
         e1.save();
         eLookUp = client.GET(collectionName, "testEntity1").first();
         assertTrue("The entity returned is not null.", eLookUp != null);
-        assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "visited").size() == 0);
+        assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "visited").getEntities().size() == 0);
 
         //should connect entities by passing target type and name as parameters
         e1.connect("revisit", e2.getType(), e2.getName());
         e1.save();
         eLookUp = client.GET(collectionName, "testEntity1").first();
         assertTrue("The entity returned is not null.", eLookUp != null);
-        assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "revisit").get(0).getName().equals("testEntity2"));
+        assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "revisit").getEntities().get(0).getName().equals("testEntity2"));
 
         e1.disconnect("revisit", e2.getType(), e2.getName());
         e1.save();
         eLookUp = client.GET(collectionName, "testEntity1").first();
         assertTrue("The entity returned is not null.", eLookUp != null);
-        assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "revisit").size() == 0);
+        assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "revisit").getEntities().size() == 0);
     }
 }

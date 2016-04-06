@@ -19,7 +19,7 @@ package org.apache.usergrid.java.client.exception;
 import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("unused")
-public final class UsergridException extends RuntimeException {
+public class UsergridException extends RuntimeException {
 
     private int responseCode;
 

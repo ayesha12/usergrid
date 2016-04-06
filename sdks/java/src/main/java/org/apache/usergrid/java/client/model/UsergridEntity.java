@@ -19,10 +19,10 @@ package org.apache.usergrid.java.client.model;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
+import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.POJONode;
-import org.apache.usergrid.java.client.UsergridEnums.UsergridDirection;
+import org.apache.usergrid.java.client.UsergridEnums.*;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.exception.UsergridException;
@@ -39,13 +39,8 @@ import static org.apache.usergrid.java.client.utils.JsonUtils.*;
 import static org.apache.usergrid.java.client.utils.MapUtils.newMapWithoutKeys;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type", defaultImpl = UsergridEntity.class, visible = true)
-@JsonSubTypes({@JsonSubTypes.Type(value = UsergridUser.class, name = UsergridUser.ENTITY_TYPE)})
+@JsonSubTypes({@JsonSubTypes.Type(value = UsergridUser.class, name = UsergridUser.USER_ENTITY_TYPE)})
 public class UsergridEntity {
-
-    private static final String PROPERTY_UUID = "uuid";
-    private static final String PROPERTY_TYPE = "type";
-    private static final String PROPERTY_NAME = "name";
-    private static final String FILE_METADATA = "file-metadata";
 
     Map<String, JsonNode> properties = new HashMap<>();
 
@@ -55,17 +50,153 @@ public class UsergridEntity {
         setType(type);
     }
 
-    @JsonProperty("type")
-    @NotNull public String getType() { return getStringProperty(PROPERTY_TYPE); }
-    @JsonProperty("type")
-    public void setType(@NotNull final String type) { JsonUtils.setStringProperty(properties, PROPERTY_TYPE, type); }
+    @Override public String toString() {
+        return toJsonString(this);
+    }
+    public JsonNode toJsonObjectValue() {
+        return toJsonNode(this);
+    }
 
-    @Nullable public String getUuid() { return getStringProperty(PROPERTY_UUID); }
-    public void setUuid(@NotNull final String uuid) { JsonUtils.setStringProperty(properties, PROPERTY_UUID, uuid); }
+    public boolean isUser() { return (this instanceof UsergridUser || this.getType().equalsIgnoreCase(UsergridUser.USER_ENTITY_TYPE)); }
 
-    @Nullable public String getName() { return getStringProperty(PROPERTY_NAME); }
-    public void setName(@NotNull final String name) { JsonUtils.setStringProperty(properties, PROPERTY_NAME, name); }
+    //TODO: Do these SETTERS need to be setting with JSON Utils
+    @NotNull public String getType() { return getStringProperty(UsergridEntityProperties.TYPE.toString()); }
+    public void setType(@NotNull final String type) { JsonUtils.setStringProperty(properties, UsergridEntityProperties.TYPE.toString(), type); }
 
+    @Nullable public String getUuid() { return getStringProperty(UsergridEntityProperties.UUID.toString()); }
+    public void setUuid(@NotNull final String uuid) { JsonUtils.setStringProperty(properties, UsergridEntityProperties.UUID.toString(), uuid); }
+
+    @Nullable public String getName() { return getStringProperty(UsergridEntityProperties.NAME.toString()); }
+    public void setName(@NotNull final String name) { JsonUtils.setStringProperty(properties, UsergridEntityProperties.NAME.toString(), name); }
+
+    @Nullable
+    public String uuidOrName() {
+        String uuidOrName = this.getUuid();
+        if( uuidOrName == null ) {
+            uuidOrName = this.getName();
+        }
+        return uuidOrName;
+    }
+
+    @NotNull
+    public UsergridResponse reload() {
+        return this.reload(Usergrid.getInstance());
+    }
+
+    @NotNull
+    public UsergridResponse reload(@NotNull final UsergridClient client) {
+        return client.GET(this.getType(), this.uuidOrName());
+    }
+
+    @NotNull
+    public UsergridResponse save() {
+        return this.save(Usergrid.getInstance());
+    }
+
+    @NotNull
+    public UsergridResponse save(@NotNull final UsergridClient client) {
+        if( this.getUuid() != null ) {
+            return client.PUT(this);
+        } else {
+            return client.POST(this);
+        }
+    }
+
+    @NotNull
+    public UsergridResponse remove() {
+        return this.remove(Usergrid.getInstance());
+    }
+
+    @NotNull
+    public UsergridResponse remove(@NotNull final UsergridClient client) {
+        return client.DELETE(this);
+    }
+
+    @NotNull
+    public UsergridResponse connect(@NotNull final String relationship, @NotNull final String type, @NotNull final String name) {
+        return this.connect(Usergrid.getInstance(), relationship, type, name);
+    }
+
+    @NotNull
+    public UsergridResponse connect(@NotNull final UsergridClient client, @NotNull final String relationship, @NotNull final String type, @NotNull final String name) {
+        return client.connect(this.getType(), this.uuidOrName(), relationship, type, name);
+    }
+
+    @NotNull
+    public UsergridResponse connect(@NotNull final String relationship, @NotNull final String toUuid) {
+        return this.connect(Usergrid.getInstance(), relationship, toUuid);
+    }
+
+    @NotNull
+    public UsergridResponse connect(@NotNull final UsergridClient client, @NotNull final String relationship, @NotNull final String toUuid) {
+        return client.connect(this.getType(),this.uuidOrName(),relationship,toUuid);
+    }
+
+    @NotNull
+    public UsergridResponse connect(@NotNull final String relationship, @NotNull final UsergridEntity toEntity) {
+        return this.connect(Usergrid.getInstance(), relationship, toEntity);
+    }
+
+    @NotNull
+    public UsergridResponse connect(@NotNull final UsergridClient client, @NotNull final String relationship, @NotNull final UsergridEntity toEntity) {
+        return client.connect(this,relationship,toEntity);
+    }
+
+    @NotNull
+    public UsergridResponse disconnect(@NotNull final String relationship, @NotNull final String fromUuid) throws UsergridException {
+        return this.disconnect(Usergrid.getInstance(), relationship, fromUuid);
+    }
+
+    @NotNull
+    public UsergridResponse disconnect(@NotNull final UsergridClient client, @NotNull final String relationship, @NotNull final String fromUuid) {
+        return client.disconnect(this.getType(), this.uuidOrName(), relationship, fromUuid);
+    }
+
+    @NotNull
+    public UsergridResponse disconnect(@NotNull final String relationship, @NotNull final String type, @NotNull final String fromName) throws UsergridException {
+        return this.disconnect(Usergrid.getInstance(), relationship, type, fromName);
+    }
+
+    @NotNull
+    public UsergridResponse disconnect(@NotNull final UsergridClient client, @NotNull final String relationship, @NotNull final String type, @NotNull final String fromName) {
+        return client.disconnect(this.getType(), this.uuidOrName(), relationship, type, fromName);
+    }
+
+    @NotNull
+    public UsergridResponse disconnect(@NotNull final String relationship, @NotNull final UsergridEntity fromEntity) {
+        return this.disconnect(Usergrid.getInstance(), relationship, fromEntity);
+    }
+
+    @NotNull
+    public UsergridResponse disconnect(@NotNull final UsergridClient client, @NotNull final String relationship, @NotNull final UsergridEntity fromEntity) {
+        return client.disconnect(this,relationship,fromEntity);
+    }
+
+    @NotNull
+    public UsergridResponse getConnections(@NotNull final UsergridDirection direction, @NotNull final String relationship) {
+        return this.getConnections(Usergrid.getInstance(),direction,relationship);
+    }
+
+    @NotNull
+    public UsergridResponse getConnections(@NotNull final UsergridClient client, @NotNull final UsergridDirection direction, @NotNull final String relationship) {
+        return client.getConnections(direction,this,relationship);
+    }
+
+    public void putProperty(@NotNull final String name, @NotNull final String value) {
+        setStringProperty(properties, name, value);
+    }
+    public void putProperty(@NotNull final String name, final boolean value) {
+        setBooleanProperty(properties, name, value);
+    }
+    public void putProperty(@NotNull final String name, @NotNull final ArrayList value) {
+        setArrayProperty(properties, name, value);
+    }
+    public void putProperty(@NotNull final String name, final long value) {
+        setLongProperty(properties, name, value);
+    }
+    public void putProperty(@NotNull final String name, final float value) {
+        setFloatProperty(properties, name, value);
+    }
     @JsonAnySetter
     public void putProperty(@NotNull final String name, @Nullable final JsonNode value) {
         if (value == null) {
@@ -74,254 +205,71 @@ public class UsergridEntity {
             properties.put(name, value);
         }
     }
-
-    public void putProperty(@NotNull final String name, @NotNull final String value) {
-        setStringProperty(properties, name, value);
-    }
-
-    public void putProperty(@NotNull final String name, final boolean value) {
-        setBooleanProperty(properties, name, value);
-    }
-
-    public void putProperty(@NotNull final String name, @NotNull final ArrayList value) {
-        setArrayProperty(properties, name, value);
-    }
-
-    public void putProperty(@NotNull final String name, final long value) {
-        setLongProperty(properties, name, value);
-    }
-
-    public void putProperty(@NotNull final String name, final float value) {
-        setFloatProperty(properties, name, value);
-    }
-
     public void putProperties(@NotNull final String jsonString) throws JSONException {
         JSONObject jsonObj = new JSONObject(jsonString);
         Iterator keys = jsonObj.keys();
         while (keys.hasNext()) {
             String key = keys.next().toString();
             Object value = jsonObj.get(key);
-            if (value instanceof String)
+            if (value instanceof String) {
                 putProperty(key, value.toString());
-            else if (value instanceof Integer)
+            } else if (value instanceof Boolean) {
+                putProperty(key, (Boolean) value);
+            } else if (value instanceof Integer) {
                 putProperty(key, (Integer) value);
-            else if (value instanceof Long)
+            } else if (value instanceof Long) {
                 putProperty(key, (Long) value);
-            else if (value instanceof Float)
+            } else if (value instanceof Float) {
                 putProperty(key, (Float) value);
-            else if (value instanceof JsonNode)
+            } else if (value instanceof JsonNode) {
                 putProperty(key, (JsonNode) value);
+            }
         }
     }
-
-    /**
-     * Similar to putProperty(), but accepts a dictionary/hash-map of properties. Immutable properties will be ignored.
-     *
-     * @param : dictionary/hash-map
-     * @throws JSONException
-     */
-    @NotNull
-    public void putProperties(@NotNull Map<String, Object> jsonHash) throws JSONException {
-
-        for (String key : jsonHash.keySet()) {
-            Object value = jsonHash.get(key);
-            if (value instanceof String)
+    public void putProperties(@NotNull Map<String, Object> properties) throws JSONException {
+        for (String key : properties.keySet()) {
+            Object value = properties.get(key);
+            if (value instanceof String) {
                 putProperty(key, value.toString());
-            else if (value instanceof Integer)
+            } else if (value instanceof Boolean) {
+                putProperty(key, (Boolean) value);
+            } else if (value instanceof Integer) {
                 putProperty(key, (Integer) value);
-            else if (value instanceof Long)
+            } else if (value instanceof Long) {
                 putProperty(key, (Long) value);
-            else if (value instanceof Float)
+            } else if (value instanceof Float) {
                 putProperty(key, (Float) value);
-            else if (value instanceof JsonNode)
+            } else if (value instanceof JsonNode) {
                 putProperty(key, (JsonNode) value);
+            }
         }
     }
 
-    @Override
-    public String toString() {
-        return toJsonString(this);
-    }
-
-    public void save() {
-        save(Usergrid.getInstance());
-    }
-
-    public void save(@NotNull final UsergridClient client) {
-        if (this.getUuid() != null || this.getUuid().equalsIgnoreCase(""))
-            client.PUT(this);
-        else
-            client.POST(this);
-
-    }
-
-    public void remove() {
-        remove(Usergrid.getInstance());
-    }
-
-    public void remove(@NotNull final UsergridClient client) {
-        client.DELETE(this);
-    }
-
-    @NotNull
-    public UsergridResponse connect(@NotNull final String relationship,
-                                    @NotNull final String type,
-                                    @NotNull final String name) {
-        return connect(Usergrid.getInstance(), relationship, type, name);
-    }
-
-    @NotNull
-    public UsergridResponse connect(@NotNull final UsergridClient client,
-                                    @NotNull final String relationship,
-                                    @NotNull final String type,
-                                    @NotNull final String name) {
-        return client.connect(this.getType(), this.getName(), relationship, type, name);
-    }
-
-    @NotNull
-    public UsergridResponse connect(@NotNull final String relationship,
-                                    @NotNull final String targetUUId) throws UsergridException {
-        return connect(Usergrid.getInstance(), relationship, targetUUId);
-    }
-
-    @NotNull
-    public UsergridResponse connect(@NotNull final UsergridClient client,
-                                    @NotNull final String relationship,
-                                    @NotNull final String targetUuid) throws UsergridException {
-        return client.connect(this.getType(), this.getName(), relationship, targetUuid);
-    }
-
-    @NotNull
-    public UsergridResponse connect(@NotNull final String relationship,
-                                    @NotNull final UsergridEntity target) throws UsergridException {
-        return connect(Usergrid.getInstance(), relationship, target);
-    }
-
-    @NotNull
-    public UsergridResponse connect(@NotNull final UsergridClient client,
-                                    @NotNull final String relationship,
-                                    @NotNull final UsergridEntity target) throws UsergridException {
-
-        if (target.getUuid() != null) {
-            return client.connect(
-                    this.getType(),
-                    this.getUuid() != null ? this.getUuid().toString() : this.getName(),
-                    relationship,
-                    target.getUuid().toString());
-
-        } else if (target.getType() != null && target.getName() != null) {
-            return client.connect(
-                    this.getType(),
-                    this.getUuid() != null ? this.getUuid().toString() : this.getName(),
-                    relationship,
-                    target.getType(),
-                    target.getName());
-
-        } else {
-            throw new UsergridException("One of UUID or Type+Name is required for the target entity of the connection");
-        }
-    }
-
-    @NotNull
-    public UsergridResponse disconnect(@NotNull final String relationship,
-                                       @NotNull final String targetuuid) throws UsergridException {
-        return disconnect(Usergrid.getInstance(), relationship, targetuuid);
-    }
-
-    @NotNull
-    public UsergridResponse disconnect(@NotNull final UsergridClient client,
-                                       @NotNull final String relationship,
-                                       @NotNull final String targetuuid) throws UsergridException {
-        return client.disconnect(this.getType(), this.getName(), relationship, targetuuid);
-    }
-
-    @NotNull
-    public UsergridResponse disconnect(@NotNull final String relationship,
-                                       @NotNull final String type,
-                                       @NotNull final String name) throws UsergridException {
-        return disconnect(Usergrid.getInstance(), relationship, type, name);
-    }
-
-    @NotNull
-    public UsergridResponse disconnect(@NotNull final UsergridClient client,
-                                       @NotNull final String relationship,
-                                       @NotNull final String type,
-                                       @NotNull final String name) throws UsergridException {
-        return client.disconnect(this.getType(), this.getName(), relationship, type, name);
-    }
-
-    @NotNull
-    public UsergridResponse disconnect(@NotNull final String relationship,
-                                       @NotNull final UsergridEntity target) throws UsergridException {
-        return disconnect(Usergrid.getInstance(), relationship, target);
-    }
-
-    @NotNull
-    public UsergridResponse disconnect(@NotNull final UsergridClient client,
-                                       @NotNull final String relationship,
-                                       @NotNull final UsergridEntity target) throws UsergridException {
-
-        if (target.getUuid() != null) {
-            return client.disconnect(
-                    this,
-                    relationship,
-                    target);
-
-        } else if (target.getType() != null && target.getName() != null) {
-            return client.disconnect(
-                    this,
-                    relationship,
-                    target);
-
-        } else {
-            throw new UsergridException("One of UUID or Type+Name is required for the target entity of the connection");
-        }
-    }
-
-    @NotNull
-    public List<UsergridEntity> getConnections(@NotNull final UsergridDirection direction, @NotNull final String relationship) {
-        UsergridClient client = Usergrid.getInstance();
-        client.ValidateEntity(this);
-        UsergridResponse resp = client.getConnections(direction, this, relationship, null);
-        return resp.getEntities();
-    }
-
-    @NotNull
-    public UsergridEntity reLoad() {
-        return reLoad(Usergrid.getInstance());
-    }
-
-    @NotNull
-    public UsergridEntity reLoad(@NotNull UsergridClient client) {
-        return client.GET(this.getType(), this.getName()).first();
-    }
-
-    public void removeEntityProperty(String propertyName) {
-        putProperty(propertyName, "");
+    public void removeProperty(String propertyName) {
+        putProperty(propertyName, NullNode.getInstance());
     }
 
     public void removeProperties(String[] propertyList) {
-        for (int i = 0; i < propertyList.length; i++) {
-            removeEntityProperty(propertyList[i].toString());
+        for( String propertyName : propertyList ) {
+            this.removeProperty(propertyName);
         }
     }
-
-
     public void prepend(String propertyName, Object arrToInsert) {
         ArrayList<Object> initialArr = getArrayNode(getEntityProperty(propertyName));
         this.insert(propertyName, arrToInsert, 0);
-
     }
+
+
 
     public void append(String propertyName, ArrayList arrToInsert) {
         ArrayList<Object> initialArr = getArrayNode(getEntityProperty(propertyName));
-        this.insert(propertyName, arrToInsert, initialArr.size() + 10);
+        this.insert(propertyName, arrToInsert, Integer.MAX_VALUE);
     }
 
-
     public void insert(String propertyName, Object arrToInsert, int indx) {
-        if (indx < 0)
+        if (indx < 0) {
             indx = 0;
+        }
         ArrayList<Object> initialArr = getArrayNode(getEntityProperty(propertyName));
         ArrayList<Object> arrayToInsert = getArrayNode(arrToInsert);
         ArrayList<Object> aToAdd = insertIntoArray(initialArr, arrayToInsert, indx);
@@ -401,25 +349,6 @@ public class UsergridEntity {
         return null;
     }
 
-    public boolean isUser() {
-        if (JsonUtils.getStringProperty(properties, PROPERTY_TYPE).equalsIgnoreCase(UsergridUser.ENTITY_TYPE))
-            return true;
-        return false;
-    }
-
-    public boolean hasAsset() {
-        if (getEntityProperty(FILE_METADATA) != null) {
-            return ((this.getProperties().get(FILE_METADATA).findValue("content-length").intValue() > 0));
-        }
-        return false;
-    }
-
-    /**
-     * Set the location of an entity
-     *
-     * @param latitude
-     * @param longitude
-     */
     public void setLocation(final double latitude,final double longitude) {
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode rootNode = mapper.createObjectNode(); // will be of type ObjectNode
@@ -429,17 +358,9 @@ public class UsergridEntity {
         setObjectProperty(properties, "location", rootNode);
     }
 
-    @JsonIgnore
-    public List<String> getPropertyNames() {
-        List<String> properties = new ArrayList<>();
-        properties.add(PROPERTY_TYPE);
-        properties.add(PROPERTY_UUID);
-        return properties;
-    }
-
     @JsonAnyGetter
     public Map<String, JsonNode> getProperties() {
-        return newMapWithoutKeys(properties, this.getPropertyNames());
+        return this.properties;
     }
 
     public String getStringProperty(String name) {
@@ -448,40 +369,5 @@ public class UsergridEntity {
 
     public <T> T getEntityProperty(String name) {
         return JsonUtils.getProperty(this.properties, name);
-    }
-
-    @Nullable
-    public static <T extends UsergridEntity> T toType(@NotNull final UsergridEntity usergridEntity,
-                                                      @NotNull final Class<T> t) {
-
-        T newEntity = null;
-        if (usergridEntity.getClass().isAssignableFrom(t)) {
-            try {
-                newEntity = (t.newInstance());
-                if (newEntity.getType().equals(usergridEntity.getType())) {
-                    newEntity.properties = usergridEntity.properties;
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return newEntity;
-    }
-
-    @NotNull
-    public static <T extends UsergridEntity> List<T> toType(@NotNull final List<UsergridEntity> entities,
-                                                            @NotNull final Class<T> t) {
-        List<T> l = new ArrayList<>(entities.size());
-        for (UsergridEntity usergridEntity : entities) {
-            T newEntity = usergridEntity.toType(t);
-            if (newEntity != null) {
-                l.add(newEntity);
-            }
-        }
-        return l;
-    }
-
-    public <T extends UsergridEntity> T toType(Class<T> t) {
-        return toType(this, t);
     }
 }

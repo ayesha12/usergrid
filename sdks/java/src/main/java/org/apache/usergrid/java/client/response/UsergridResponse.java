@@ -18,11 +18,11 @@ package org.apache.usergrid.java.client.response;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize.Inclusion;
-import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.UsergridEnums;
 import org.apache.usergrid.java.client.UsergridRequest;
@@ -41,6 +41,7 @@ import java.util.*;
 
 import static org.apache.usergrid.java.client.utils.JsonUtils.toJsonString;
 
+@SuppressWarnings("unused")
 @JsonSerialize(include = Inclusion.NON_NULL)
 public class UsergridResponse {
 
@@ -48,6 +49,7 @@ public class UsergridResponse {
     public UsergridUser user;
     private String accessToken;
 
+    private UsergridClient client; // FIXME: CHECK IF THIS WORKS IN LOAD NEXT PAGE.
     private Map<String, JsonNode> properties = new HashMap<>();
     private int statusCode = 0;
     @Nullable private JsonNode responseJson = null;
@@ -57,6 +59,9 @@ public class UsergridResponse {
     @Nullable private UsergridQuery query;
     @Nullable private UsergridResponseError responseError = null;
 
+    @Override public String toString() {
+        return toJsonString(this);
+    }
     public boolean ok() { return (statusCode > 0 && statusCode < 400); }
     public int count()  { return (entities == null) ? 0 : entities.size(); }
     public boolean hasNextPage() { return (cursor != null); }
@@ -97,21 +102,23 @@ public class UsergridResponse {
 
     public int getStatusCode() { return this.statusCode; }
 
+    @Nullable @JsonIgnore
+    public UsergridClient getClient() {
+        return client;
+    }
+    @JsonIgnore public void setClient(@Nullable final UsergridClient client) { this.client = client; }
+
     @Nullable
     public JsonNode getResponseJson() {
         return responseJson;
     }
-    private void setResponseJson(@Nullable final JsonNode responseJson) {
-        this.responseJson = responseJson;
-    }
+    private void setResponseJson(@Nullable final JsonNode responseJson) {this.responseJson = responseJson; }
 
     @Nullable
     public UsergridQuery getQuery() {
         return query;
     }
-    private void setQuery(@Nullable final UsergridQuery query) {
-        this.query = query;
-    }
+    private void setQuery(@Nullable final UsergridQuery query) { this.query = query; }
 
     @Nullable
     public UsergridResponseError getResponseError() {
@@ -123,13 +130,11 @@ public class UsergridResponse {
     public Map<String, String> getHeaders() {
         return headers;
     }
-    public void setHeaders(@Nullable final Map<String, String> headers) { this.headers = headers; }
+    private void setHeaders(@Nullable final Map<String, String> headers) { this.headers = headers; }
 
     @Nullable
     public List<UsergridEntity> getEntities() { return entities; }
-    public void setEntities(@NotNull final List<UsergridEntity> entities) {
-        this.entities = entities;
-    }
+    private void setEntities(@NotNull final List<UsergridEntity> entities) { this.entities = entities; }
 
     @Nullable
     @JsonProperty("cursor")
@@ -137,8 +142,14 @@ public class UsergridResponse {
         return cursor;
     }
     @JsonProperty("cursor")
-    public void setCursor(@NotNull final String cursor) {
-        this.cursor = cursor;
+    private void setCursor(@NotNull final String cursor) { this.cursor = cursor; }
+
+    // FIXME: DELETE THESE AT SOME POINT.
+    public UsergridUser currentUser() {
+        return user;
+    }
+    public void setUser(@NotNull final UsergridUser user) {
+        this.user = user;
     }
 
     @NotNull
@@ -154,15 +165,8 @@ public class UsergridResponse {
         response.responseJson = responseJson;
         response.statusCode = requestResponse.getStatus();
         response.headers = MapUtils.putMultivaluedMap(requestResponse.getHeaders());
-        response.query = request.query;
+        response.query = request.getQuery();
         return response;
-    }
-
-    public UsergridUser currentUser() {
-        return user;
-    }
-    public void setUser(@NotNull final UsergridUser user) {
-        this.user = user;
     }
 
     @NotNull
@@ -202,23 +206,12 @@ public class UsergridResponse {
         this.accessToken = accessToken;
     }
 
-    @Override
-    public String toString() {
-        return toJsonString(this);
-    }
-
-    public List<UsergridEntity> loadNextpage() {
-        if (hasNextPage()) {
+    public List<UsergridEntity> loadNextPage() {
+        if (hasNextPage() && this.client != null) {
             Map<String, Object> paramsMap = new HashMap<String, Object>();
             paramsMap.put("cursor", getCursor());
-            UsergridClient client = Usergrid.getInstance();
-
-            String[] segments = {client.getOrgId(), client.getAppId(), this.first().getType()};
-
-            UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
-                    client.getBaseUrl(), paramsMap, null, segments);
-            request.query = this.query;
-            UsergridResponse resp = client.sendRequest(request); 
+            UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE, this.client.clientAppUrl(), paramsMap, null, null, this.getQuery(), this.first().getType());
+            UsergridResponse resp = this.client.sendRequest(request);
             return resp.entities;
         }
         return null;

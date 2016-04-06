@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
+import org.apache.usergrid.java.client.UsergridEnums.*;
 import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.apache.usergrid.java.client.utils.JsonUtils;
@@ -31,82 +32,117 @@ import java.util.HashMap;
 import java.util.List;
 
 import static com.fasterxml.jackson.databind.annotation.JsonSerialize.Inclusion.NON_NULL;
-import static org.apache.usergrid.java.client.utils.JsonUtils.*;
 
+@SuppressWarnings("unused")
+@JsonSerialize(include = NON_NULL)
 public class UsergridUser extends UsergridEntity {
 
-    public final static String ENTITY_TYPE = "user";
-
-    public final static String PROPERTY_USERNAME = "username";
-    public final static String PROPERTY_EMAIL = "email";
-    public final static String PROPERTY_NAME = "getName";
-    public final static String PROPERTY_FIRSTNAME = "firstname";
-    public final static String PROPERTY_MIDDLENAME = "middlename";
-    public final static String PROPERTY_LASTNAME = "lastname";
-    public final static String PROPERTY_ACTIVATED = "activated";
-    public final static String PROPERTY_PICTURE = "picture";
-    public final static String PROPERTY_DISABLED = "disabled";
-    private static final String PROPERTY_PASSWORD = "password";
+    public final static String USER_ENTITY_TYPE = "user";
 
     public UsergridUserAuth userAuth = null;
 
     public UsergridUser() {
         super();
-        setType(ENTITY_TYPE);
+        setType(USER_ENTITY_TYPE);
     }
 
     public UsergridUser(@NotNull final UsergridEntity usergridEntity) {
         super();
         properties = usergridEntity.properties;
-        setType(ENTITY_TYPE);
+        setType(USER_ENTITY_TYPE);
     }
 
     public UsergridUser(@NotNull final String name, HashMap<String, Object> propertyMap) throws JSONException {
         super();
-        setType(ENTITY_TYPE);
+        setType(USER_ENTITY_TYPE);
         setName(name);
         putProperties(propertyMap);
     }
 
-    public UsergridUser(@NotNull final String username, @NotNull final String userPassword) {
+    public UsergridUser(@NotNull final String username, @NotNull final String password) {
         super();
         setUsername(username);
-        setPassword(userPassword);
-    }
-
-    public UsergridUser(@NotNull final String name, @NotNull final String username, @NotNull final String emailid, @NotNull final String password) {
-        super();
-        setName(name);
-        setUsername(username);
-        setEmail(emailid);
         setPassword(password);
     }
 
-    @Override
-    @JsonIgnore
-    public List<String> getPropertyNames() {
-        List<String> properties = super.getPropertyNames();
-        properties.add(PROPERTY_USERNAME);
-        properties.add(PROPERTY_EMAIL);
-        properties.add(PROPERTY_NAME);
-        properties.add(PROPERTY_FIRSTNAME);
-        properties.add(PROPERTY_MIDDLENAME);
-        properties.add(PROPERTY_LASTNAME);
-        properties.add(PROPERTY_ACTIVATED);
-        properties.add(PROPERTY_PICTURE);
-        properties.add(PROPERTY_DISABLED);
-        return properties;
+    public UsergridUser(@NotNull final String name, @NotNull final String username, @NotNull final String email, @NotNull final String password) {
+        super();
+        setName(name);
+        setUsername(username);
+        setEmail(email);
+        setPassword(password);
+    }
+
+    @Nullable
+    public String getUsername() { return JsonUtils.getStringProperty(properties, UsergridUserProperties.USERNAME.toString()); }
+    public void setUsername(@NotNull final String username) { JsonUtils.setStringProperty(properties, UsergridUserProperties.USERNAME.toString(), username); }
+
+    @Nullable
+    public String getName() { return JsonUtils.getStringProperty(properties, UsergridUserProperties.NAME.toString()); }
+    public void setName(@NotNull final String name) { JsonUtils.setStringProperty(properties, UsergridUserProperties.NAME.toString(), name); }
+
+    @Nullable
+    public String getEmail() { return JsonUtils.getStringProperty(properties, UsergridUserProperties.EMAIL.toString()); }
+    public void setEmail(@NotNull final String email) { JsonUtils.setStringProperty(properties, UsergridUserProperties.EMAIL.toString(), email); }
+
+    @Nullable
+    public String getPassword() { return JsonUtils.getStringProperty(properties, UsergridUserProperties.PASSWORD.toString()); }
+    public void setPassword(@NotNull final String password) { JsonUtils.setStringProperty(properties, UsergridUserProperties.PASSWORD.toString(), password); }
+
+    public boolean isActivated() { return JsonUtils.getBooleanProperty(properties, UsergridUserProperties.ACTIVATED.toString()); }
+    public void setActivated(@NotNull final Boolean activated) { JsonUtils.setBooleanProperty(properties, UsergridUserProperties.ACTIVATED.toString(), activated); }
+
+    public boolean isDisabled() { return JsonUtils.getBooleanProperty(properties, UsergridUserProperties.DISABLED.toString()); }
+    public void setDisabled(@NotNull final Boolean disabled) { JsonUtils.setBooleanProperty(properties, UsergridUserProperties.DISABLED.toString(), disabled); }
+
+    @Nullable
+    public String uuidOrUsername() {
+        String uuidOrUsername = this.getUuid();
+        if( uuidOrUsername == null ) {
+            uuidOrUsername = this.getUsername();
+        }
+        return uuidOrUsername;
+    }
+
+    @Nullable
+    public String usernameOrEmail() {
+        String usernameOrEmail = this.getUsername();
+        if( usernameOrEmail == null ) {
+            usernameOrEmail = this.getEmail();
+        }
+        return usernameOrEmail;
+    }
+
+    public boolean checkAvailable(@Nullable final String email, @Nullable final String username) {
+        return checkAvailable(Usergrid.getInstance(), email, username);
+    }
+
+    public boolean checkAvailable(@NotNull final UsergridClient client, @Nullable final String email, @Nullable final String username) {
+        if (email == null && username == null) {
+            throw new IllegalArgumentException("email and username both are null ");
+        }
+
+        UsergridQuery query = new UsergridQuery(USER_ENTITY_TYPE);
+        if (username == null) {
+            query.eq(UsergridUserProperties.EMAIL.toString(), email);
+        } else if (email == null) {
+            query.eq(UsergridUserProperties.USERNAME.toString(), username);
+        } else {
+            query.eq(UsergridUserProperties.EMAIL.toString(), email).or().eq(UsergridUserProperties.USERNAME.toString(), username);
+        }
+        return client.GET(query).first() != null;
     }
 
     public void create() throws JSONException {
         create(Usergrid.getInstance());
     }
 
+    // FIXME: FIX THIS AND THE METHOD ABOVE TO RETURN SOMETHING
     public void create(@NotNull final UsergridClient client) throws JSONException {
         UsergridEntity entity = null;
         UsergridResponse entityResponse = null;
         try {
-            entityResponse = client.GET(ENTITY_TYPE, this.getUsername());
+            entityResponse = client.GET(USER_ENTITY_TYPE, this.getUsername());
             entity = entityResponse.entity();
         } catch (Exception e) {
         }
@@ -115,93 +151,9 @@ public class UsergridUser extends UsergridEntity {
         } else {
             if (getName() == null)
                 this.setName(getUsername());
-            this.setType(ENTITY_TYPE);
+            this.setType(USER_ENTITY_TYPE);
             entityResponse = client.POST(this);
             this.properties = entityResponse.entity().properties;
         }
     }
-
-    public void remove() {
-        remove(Usergrid.getInstance());
-    }
-
-    public void remove(@NotNull final UsergridClient client) {
-        client.DELETE(this);
-    }
-
-    public void setUsername(@NotNull final String username) {
-        setStringProperty(properties, PROPERTY_USERNAME, username);
-    }
-
-    public void setName(@NotNull final String name) {
-        setStringProperty(properties, PROPERTY_NAME, name);
-    }
-
-    public void setEmail(@NotNull final String email) {
-        setStringProperty(properties, PROPERTY_EMAIL, email);
-    }
-
-    public void setPassword(@NotNull final String password) {
-        setStringProperty(properties, PROPERTY_PASSWORD, password);
-    }
-
-    @JsonSerialize(include = NON_NULL)
-    public String getUsername() {
-        return JsonUtils.getStringProperty(properties, PROPERTY_USERNAME);
-    }
-
-    @Nullable
-    public String getUsernameOrEmail() {
-        String usernameOrEmail = this.getUsername();
-        if( usernameOrEmail == null ) {
-            usernameOrEmail = this.getEmail();
-        }
-        return usernameOrEmail;
-    }
-
-    @JsonSerialize(include = NON_NULL)
-    public String getName() {
-        return JsonUtils.getStringProperty(properties, PROPERTY_NAME);
-    }
-
-    @JsonSerialize(include = NON_NULL)
-    public String getEmail() {
-        return JsonUtils.getStringProperty(properties, PROPERTY_EMAIL);
-    }
-
-    public boolean checkAvailable(@NotNull final String email, @NotNull final String username) {
-        return checkAvailable(Usergrid.getInstance(), email, username);
-    }
-
-    public boolean checkAvailable(@NotNull final UsergridClient client, @NotNull final String email, @NotNull final String username) {
-        UsergridQuery qry = null;
-        if (email == null && username == null)
-            new IllegalArgumentException("email and username both are null ");
-        else if (username == null)
-            qry = new UsergridQuery(ENTITY_TYPE).eq("email", email);
-        else if (email == null)
-            qry = new UsergridQuery(ENTITY_TYPE).eq("username", username);
-        else
-            qry = new UsergridQuery(ENTITY_TYPE).eq("email", email).or().eq("username", username);
-
-        if (client.GET(qry).first() != null)
-            return true;
-        else
-            return false;
-    }
-
-    @JsonSerialize(include = NON_NULL)
-    public Boolean isActivated() {
-        return getBooleanProperty(properties, PROPERTY_ACTIVATED);
-    }
-
-    public void setActivated(@NotNull final Boolean activated) {
-        setBooleanProperty(properties, PROPERTY_ACTIVATED, activated);
-    }
-
-    @JsonSerialize(include = NON_NULL)
-    public Boolean isDisabled() {
-        return getBooleanProperty(properties, PROPERTY_DISABLED);
-    }
-
 }

@@ -16,11 +16,13 @@
  */
 package org.apache.usergrid.java.client.utils;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.Map;
 
 public class ObjectUtils {
 
-    public static boolean isEmpty(Object s) {
+    public static boolean isEmpty(@Nullable Object s) {
         if (s == null) {
             return true;
         }
