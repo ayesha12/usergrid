@@ -18,6 +18,7 @@ package org.apache.usergrid.java.client;
 
 import org.apache.usergrid.java.client.UsergridEnums.UsergridHttpMethod;
 import org.apache.usergrid.java.client.model.UsergridAppAuth;
+import org.apache.usergrid.java.client.model.UsergridAuth;
 import org.apache.usergrid.java.client.model.UsergridUser;
 import org.apache.usergrid.java.client.model.UsergridUserAuth;
 import org.apache.usergrid.java.client.response.UsergridResponse;
@@ -35,11 +36,8 @@ import static org.apache.usergrid.java.client.utils.ObjectUtils.isEmpty;
 
 public class UsergridRequestManager {
 
-    private static final String HEADER_AUTHORIZATION = "Authorization";
-    private static final String BEARER = "Bearer ";
-
-    public UsergridClient client;
-    private javax.ws.rs.client.Client restClient;
+    public final UsergridClient client;
+    private final javax.ws.rs.client.Client restClient;
 
     public UsergridRequestManager(@NotNull final UsergridClient client) {
         this.client = client;
@@ -55,7 +53,6 @@ public class UsergridRequestManager {
         MediaType contentType = request.getContentType();
         Entity entity = Entity.entity(request.getData() == null ? "" : request.getData(), contentType);
 
-        // create the target from the base API URL
         String url = request.getBaseUrl();
         if (request.getQuery() != null) {
             url += request.getQuery().build();
@@ -77,10 +74,10 @@ public class UsergridRequestManager {
         Invocation.Builder invocationBuilder = webTarget.request(contentType);
         UsergridAuth authForRequest = client.authForRequests();
         if (authForRequest != null && authForRequest.getAccessToken() != null) {
-            String auth = BEARER + authForRequest.getAccessToken();
-            invocationBuilder.header(HEADER_AUTHORIZATION, auth);
+            String auth = "Bearer " + authForRequest.getAccessToken();
+            invocationBuilder.header("Authorization", auth);
         }
-        UsergridResponse usergridResonse;
+        UsergridResponse usergridResponse;
         try {
             Response response;
             if (method == UsergridHttpMethod.POST || method == UsergridHttpMethod.PUT) {
@@ -88,12 +85,12 @@ public class UsergridRequestManager {
             } else {
                 response = invocationBuilder.method(method.toString());
             }
-            usergridResonse = UsergridResponse.fromResponse(request,response);
+            usergridResponse = UsergridResponse.fromResponse(request,response);
         } catch (Exception requestException) {
-            usergridResonse = UsergridResponse.fromException(requestException);
+            usergridResponse = UsergridResponse.fromException(requestException);
         }
-        usergridResonse.setClient(this.client);
-        return usergridResonse;
+        usergridResponse.setClient(this.client);
+        return usergridResponse;
     }
 
     @NotNull
@@ -110,9 +107,6 @@ public class UsergridRequestManager {
             appAuth.setAccessToken(response.getAccessToken());
             long expiresIn = response.getExpires();
             appAuth.setExpiry(System.currentTimeMillis() + expiresIn - 5000);
-        } else {
-            throw new IllegalArgumentException("bad request : " + response.getResponseError().getErrorDescription()
-                    + " status code : " + response.getStatusCode());
         }
         return response;
     }
@@ -132,9 +126,6 @@ public class UsergridRequestManager {
             long expiresIn = response.getExpires();
             userAuth.setExpiry(System.currentTimeMillis() + expiresIn - 5000);
             responseUser.userAuth = userAuth;
-        } else  {
-            throw new IllegalArgumentException("bad request " + response.getResponseError().getErrorDescription()
-                    + " status code : " + response.getStatusCode());
         }
         return response;
     }

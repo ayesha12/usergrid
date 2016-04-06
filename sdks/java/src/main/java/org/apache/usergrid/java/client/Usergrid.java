@@ -17,11 +17,7 @@
 package org.apache.usergrid.java.client;
 
 import org.apache.usergrid.java.client.UsergridEnums.UsergridAuthMode;
-import org.apache.usergrid.java.client.exception.UsergridException;
-import org.apache.usergrid.java.client.model.UsergridAppAuth;
-import org.apache.usergrid.java.client.model.UsergridEntity;
-import org.apache.usergrid.java.client.model.UsergridUser;
-import org.apache.usergrid.java.client.model.UsergridUserAuth;
+import org.apache.usergrid.java.client.model.*;
 import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.apache.usergrid.java.client.UsergridEnums.UsergridDirection;
@@ -138,7 +134,7 @@ public final class Usergrid {
     }
 
     @NotNull
-    public static UsergridResponse logoutCurrentUser() throws UsergridException {
+    public static UsergridResponse logoutCurrentUser() {
         return Usergrid.getInstance().logoutCurrentUser();
     }
 

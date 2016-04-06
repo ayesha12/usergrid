@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.UsergridEnums.*;
-import org.apache.usergrid.java.client.exception.UsergridException;
 import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.codehaus.jettison.json.JSONException;
@@ -176,9 +175,9 @@ public class UsergridUser extends UsergridEntity {
     }
 
     @NotNull
-    public UsergridResponse reauthenticate(@NotNull final UsergridClient client) throws UsergridException {
+    public UsergridResponse reauthenticate(@NotNull final UsergridClient client) {
         if( this.userAuth == null ) {
-            throw new UsergridException("No UsergridUserAuth found on the UsergridUser.");
+            return UsergridResponse.fromError(client,  "Invalid UsergridUserAuth.", "No UsergridUserAuth found on the UsergridUser.");
         }
         return client.authenticateUser(this.userAuth, false);
     }
@@ -189,11 +188,11 @@ public class UsergridUser extends UsergridEntity {
     }
 
     @NotNull
-    public UsergridResponse logout(@NotNull final UsergridClient client) throws UsergridException {
+    public UsergridResponse logout(@NotNull final UsergridClient client) {
         String uuidOrUsername = this.uuidOrUsername();
         String accessToken = (this.userAuth != null) ? this.userAuth.getAccessToken() : null;
         if (uuidOrUsername == null || accessToken == null ) {
-            throw new UsergridException("uuid, username or access token not found on UsergridUser object.");
+            return UsergridResponse.fromError(client,  "Logout Failed.", "UUID or Access Token not found on UsergridUser object.");
         }
 
         UsergridResponse response = client.logoutUser(uuidOrUsername, accessToken);

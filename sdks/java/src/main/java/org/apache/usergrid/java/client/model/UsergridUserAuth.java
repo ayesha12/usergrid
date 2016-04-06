@@ -16,7 +16,6 @@
  */
 package org.apache.usergrid.java.client.model;
 
-import org.apache.usergrid.java.client.UsergridAuth;
 import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("unused")

@@ -771,26 +771,26 @@ public class EntityTestSuite {
         assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "likes").getEntities().size() == 0);
 
         //should connect entities by passing target uuid as a parameter
-        e1.connect("visited", e2.getUuid().toString());
+        Usergrid.connect(e1.getType(),e1.uuidOrName(),"visited",e2.getUuid());
         e1.save();
         eLookUp = client.GET(collectionName, "testEntity1").first();
         assertTrue("The entity returned is not null.", eLookUp != null);
         assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "visited").getEntities().get(0).getName().equals("testEntity2"));
 
-        e1.disconnect("visited", e2.getUuid().toString());
+        Usergrid.disconnect(e1.getType(),e1.uuidOrName(),"visited",e2.getUuid());
         e1.save();
         eLookUp = client.GET(collectionName, "testEntity1").first();
         assertTrue("The entity returned is not null.", eLookUp != null);
         assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "visited").getEntities().size() == 0);
 
         //should connect entities by passing target type and name as parameters
-        e1.connect("revisit", e2.getType(), e2.getName());
+        Usergrid.connect(e1.getType(),e1.uuidOrName(),"revisit",e2.getType(),e2.getName());
         e1.save();
         eLookUp = client.GET(collectionName, "testEntity1").first();
         assertTrue("The entity returned is not null.", eLookUp != null);
         assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "revisit").getEntities().get(0).getName().equals("testEntity2"));
 
-        e1.disconnect("revisit", e2.getType(), e2.getName());
+        Usergrid.disconnect(e1.getType(),e1.uuidOrName(),"revisit",e2.getType(),e2.getName());
         e1.save();
         eLookUp = client.GET(collectionName, "testEntity1").first();
         assertTrue("The entity returned is not null.", eLookUp != null);

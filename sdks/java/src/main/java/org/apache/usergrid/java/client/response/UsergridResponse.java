@@ -161,6 +161,14 @@ public class UsergridResponse {
     }
 
     @NotNull
+    public static UsergridResponse fromError(@Nullable final UsergridClient client, @NotNull final String errorName, @NotNull final String errorDescription) {
+        UsergridResponse response = new UsergridResponse();
+        response.setClient(client);
+        response.setResponseError(new UsergridResponseError(errorName,errorDescription));
+        return response;
+    }
+
+    @NotNull
     public static UsergridResponse fromResponse(@NotNull final UsergridRequest request, @NotNull final Response requestResponse) {
         UsergridResponse response;
         JsonNode responseJson = requestResponse.readEntity(JsonNode.class);
@@ -202,12 +210,16 @@ public class UsergridResponse {
 
     @Nullable
     public UsergridResponse loadNextPage() {
-        if (hasNextPage() && this.client != null) {
-            Map<String, Object> paramsMap = new HashMap<>();
-            paramsMap.put("cursor", getCursor());
+        UsergridEntity entity = this.first();
+        if( entity != null ) {
+            String entityType = entity.getType();
+            if (hasNextPage() && this.client != null) {
+                Map<String, Object> paramsMap = new HashMap<>();
+                paramsMap.put("cursor", getCursor());
 
-            UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE, this.client.clientAppUrl(), paramsMap, null, null, this.getQuery(), this.first().getType());
-            return this.client.sendRequest(request);
+                UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE, this.client.clientAppUrl(), paramsMap, null, null, this.getQuery(), entityType);
+                return this.client.sendRequest(request);
+            }
         }
         return null;
     }

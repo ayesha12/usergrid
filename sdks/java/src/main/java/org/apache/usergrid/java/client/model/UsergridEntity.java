@@ -25,7 +25,6 @@ import com.fasterxml.jackson.databind.node.POJONode;
 import org.apache.usergrid.java.client.UsergridEnums.*;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
-import org.apache.usergrid.java.client.exception.UsergridException;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.apache.usergrid.java.client.utils.JsonUtils;
 import org.codehaus.jettison.json.JSONException;
@@ -50,7 +49,7 @@ public class UsergridEntity {
 
     protected Map<String, JsonNode> properties = new HashMap<>();
 
-    public UsergridEntity() { }
+    private UsergridEntity() { }
 
     public UsergridEntity(@NotNull final String type) {
         setType(type);
@@ -117,7 +116,11 @@ public class UsergridEntity {
 
     @NotNull
     public UsergridResponse reload(@NotNull final UsergridClient client) {
-        return client.GET(this.getType(), this.uuidOrName());
+        String uuidOrName = this.uuidOrName();
+        if( uuidOrName == null ) {
+            return UsergridResponse.fromError(client,  "No UUID or name found.", "The entity object must have a `uuid` or `name` assigned.");
+        }
+        return client.GET(this.getType(), uuidOrName);
     }
 
     @NotNull
@@ -145,26 +148,6 @@ public class UsergridEntity {
     }
 
     @NotNull
-    public UsergridResponse connect(@NotNull final String relationship, @NotNull final String type, @NotNull final String name) {
-        return this.connect(Usergrid.getInstance(), relationship, type, name);
-    }
-
-    @NotNull
-    public UsergridResponse connect(@NotNull final UsergridClient client, @NotNull final String relationship, @NotNull final String type, @NotNull final String name) {
-        return client.connect(this.getType(), this.uuidOrName(), relationship, type, name);
-    }
-
-    @NotNull
-    public UsergridResponse connect(@NotNull final String relationship, @NotNull final String toUuid) {
-        return this.connect(Usergrid.getInstance(), relationship, toUuid);
-    }
-
-    @NotNull
-    public UsergridResponse connect(@NotNull final UsergridClient client, @NotNull final String relationship, @NotNull final String toUuid) {
-        return client.connect(this.getType(),this.uuidOrName(),relationship,toUuid);
-    }
-
-    @NotNull
     public UsergridResponse connect(@NotNull final String relationship, @NotNull final UsergridEntity toEntity) {
         return this.connect(Usergrid.getInstance(), relationship, toEntity);
     }
@@ -172,26 +155,6 @@ public class UsergridEntity {
     @NotNull
     public UsergridResponse connect(@NotNull final UsergridClient client, @NotNull final String relationship, @NotNull final UsergridEntity toEntity) {
         return client.connect(this,relationship,toEntity);
-    }
-
-    @NotNull
-    public UsergridResponse disconnect(@NotNull final String relationship, @NotNull final String fromUuid) throws UsergridException {
-        return this.disconnect(Usergrid.getInstance(), relationship, fromUuid);
-    }
-
-    @NotNull
-    public UsergridResponse disconnect(@NotNull final UsergridClient client, @NotNull final String relationship, @NotNull final String fromUuid) {
-        return client.disconnect(this.getType(), this.uuidOrName(), relationship, fromUuid);
-    }
-
-    @NotNull
-    public UsergridResponse disconnect(@NotNull final String relationship, @NotNull final String type, @NotNull final String fromName) throws UsergridException {
-        return this.disconnect(Usergrid.getInstance(), relationship, type, fromName);
-    }
-
-    @NotNull
-    public UsergridResponse disconnect(@NotNull final UsergridClient client, @NotNull final String relationship, @NotNull final String type, @NotNull final String fromName) {
-        return client.disconnect(this.getType(), this.uuidOrName(), relationship, type, fromName);
     }
 
     @NotNull
