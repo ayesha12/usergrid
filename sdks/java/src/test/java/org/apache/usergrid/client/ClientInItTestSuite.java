@@ -18,8 +18,8 @@ package org.apache.usergrid.client;
 
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridEnums;
-import org.apache.usergrid.java.client.model.UsergridAppAuth;
-import org.apache.usergrid.java.client.model.UsergridUserAuth;
+import org.apache.usergrid.java.client.auth.UsergridAppAuth;
+import org.apache.usergrid.java.client.auth.UsergridUserAuth;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.codehaus.jettison.json.JSONException;
 import org.junit.After;

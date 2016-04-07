@@ -18,10 +18,7 @@ package org.apache.usergrid.java.client.model;
 
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.NullNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.POJONode;
+import com.fasterxml.jackson.databind.node.*;
 import org.apache.usergrid.java.client.UsergridEnums.*;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
@@ -77,7 +74,6 @@ public class UsergridEntity {
     @JsonIgnore
     public boolean isUser() { return (this instanceof UsergridUser || this.getType().equalsIgnoreCase(UsergridUser.USER_ENTITY_TYPE)); }
 
-    //TODO: Do these SETTERS need to be setting with JSON Utils
     @NotNull public String getType() { return this.type; }
     private void setType(@NotNull final String type) { this.type = type; }
 
@@ -93,7 +89,7 @@ public class UsergridEntity {
     @Nullable public Long getModified() { return this.modified; }
     private void setModified(@NotNull final Long modified) { this.modified = modified; }
 
-    public void setLocation(final double latitude,final double longitude) {
+    public void setLocation(final double latitude, final double longitude) {
         ObjectNode rootNode = JsonUtils.createObjectNode();
         rootNode.put("latitude", latitude);
         rootNode.put("longitude", longitude);
@@ -120,7 +116,14 @@ public class UsergridEntity {
         if( uuidOrName == null ) {
             return UsergridResponse.fromError(client,  "No UUID or name found.", "The entity object must have a `uuid` or `name` assigned.");
         }
-        return client.GET(this.getType(), uuidOrName);
+        UsergridResponse response = client.GET(this.getType(), uuidOrName);
+        if( response.ok() ) {
+            UsergridEntity responseEntity = response.first();
+            if( responseEntity != null ) {
+                this.properties = new HashMap<>(responseEntity.properties);
+            }
+        }
+        return response;
     }
 
     @NotNull
@@ -130,11 +133,19 @@ public class UsergridEntity {
 
     @NotNull
     public UsergridResponse save(@NotNull final UsergridClient client) {
+        UsergridResponse response;
         if( this.getUuid() != null ) {
-            return client.PUT(this);
+            response = client.PUT(this);
         } else {
-            return client.POST(this);
+            response = client.POST(this);
         }
+        if( response.ok() ) {
+            UsergridEntity responseEntity = response.first();
+            if( responseEntity != null ) {
+                this.properties = new HashMap<>(responseEntity.properties);
+            }
+        }
+        return response;
     }
 
     @NotNull
@@ -269,7 +280,7 @@ public class UsergridEntity {
         }
         Object propertyValue = this.getEntityProperty(name);
         if( propertyValue != null ) {
-            ArrayList<Object> propertyArrayValue = this.getArrayNode(propertyValue);
+            ArrayList<Object> propertyArrayValue = this.convertToList(propertyValue);
             propertyArrayValue = this.insertIntoArray(propertyArrayValue,value,indexToInsert);
             this.putProperty(name, propertyArrayValue);
         } else {
@@ -294,17 +305,72 @@ public class UsergridEntity {
     }
 
     @Nullable
-    public String getStringProperty(@NotNull final String name) {
-        return JsonUtils.getStringProperty(this.properties, name);
-    }
-
-    @Nullable
     public <T> T getEntityProperty(@NotNull final String name) {
         return JsonUtils.getProperty(this.properties, name);
     }
 
+    @Nullable
+    public JsonNode getJsonNodeProperty(@NotNull final String name) {
+        return this.getProperties().get(name);
+    }
+
+    @Nullable
+    public String getStringProperty(@NotNull final String name) {
+        return JsonUtils.getStringProperty(this.getProperties(), name);
+    }
+
+    @Nullable
+    public Boolean getBooleanProperty(@NotNull final String name) {
+        Boolean booleanValue = null;
+        Object object = JsonUtils.getProperty(this.getProperties(), name);
+        if( object instanceof Boolean ) {
+            booleanValue = (Boolean)object;
+        }
+        return booleanValue;
+    }
+
+    @Nullable
+    public Number getNumberProperty(@NotNull final String name) {
+        Number numberValue = null;
+        Object object = JsonUtils.getProperty(this.getProperties(), name);
+        if( object instanceof Number ) {
+            numberValue = (Number)object;
+        }
+        return numberValue;
+    }
+
+    @Nullable
+    public Integer getIntegerProperty(@NotNull final String name) {
+        Integer integerValue = null;
+        Object object = JsonUtils.getProperty(this.getProperties(), name);
+        if( object instanceof Number ) {
+            integerValue = ((Number)object).intValue();
+        }
+        return integerValue;
+    }
+
+    @Nullable
+    public Float getFloatProperty(@NotNull final String name) {
+        Float floatValue = null;
+        Object object = JsonUtils.getProperty(this.getProperties(), name);
+        if( object instanceof Number ) {
+            floatValue = ((Number)object).floatValue();
+        }
+        return floatValue;
+    }
+
+    @Nullable
+    public Long getLongProperty(@NotNull final String name) {
+        Long longValue = null;
+        Object object = JsonUtils.getProperty(this.getProperties(), name);
+        if( object instanceof Number ) {
+            longValue = ((Number)object).longValue();
+        }
+        return longValue;
+    }
+
     @JsonAnyGetter
-    public Map<String, JsonNode> getProperties() {
+    private Map<String, JsonNode> getProperties() {
         return this.properties;
     }
 
@@ -326,7 +392,12 @@ public class UsergridEntity {
             Object objectValue = ((POJONode) entityProperty).getPojo();
             if (objectValue instanceof List) {
                 arrayToPopOrShift = new ArrayList<>((List) objectValue);
+            } else {
+                arrayToPopOrShift = new ArrayList<>();
+                arrayToPopOrShift.add(objectValue);
             }
+        } else if( entityProperty instanceof ArrayNode ) {
+            arrayToPopOrShift = JsonUtils.convertToArrayList((ArrayNode)entityProperty);
         } else if( entityProperty instanceof List ) {
             arrayToPopOrShift = new ArrayList<>((List) entityProperty);
         }
@@ -334,9 +405,11 @@ public class UsergridEntity {
     }
 
     @NotNull
-    private ArrayList<Object> getArrayNode(@NotNull final Object value) {
+    private ArrayList<Object> convertToList(@NotNull final Object value) {
         ArrayList<Object> arrayList = new ArrayList<>();
-        if (value instanceof POJONode) {
+        if( value instanceof ArrayNode ) {
+            arrayList = JsonUtils.convertToArrayList((ArrayNode)value);
+        } else if (value instanceof POJONode) {
             Object objectValue = ((POJONode) value).getPojo();
             if( objectValue instanceof List ) {
                 arrayList.addAll((List)objectValue);
@@ -352,16 +425,16 @@ public class UsergridEntity {
     }
 
     @NotNull
-    private ArrayList<Object> insertIntoArray(@NotNull final List<Object> propertyArray, @NotNull final List<Object> arrayToInsert, final int index) {
+    private ArrayList<Object> insertIntoArray(@NotNull final List<Object> propertyArrayNode, @NotNull final List<Object> arrayToInsert, final int index) {
         ArrayList<Object> mergedArray = new ArrayList<>();
-        if (propertyArray.isEmpty() || arrayToInsert.isEmpty()) {
+        if (propertyArrayNode.size() <= 0 || arrayToInsert.isEmpty()) {
             mergedArray.addAll(arrayToInsert);
         }  else if ( index <= 0 ) {
             mergedArray.addAll(arrayToInsert);
-            mergedArray.addAll(propertyArray);
+            mergedArray.addAll(propertyArrayNode);
         } else if ( index > 0 ) {
-            mergedArray.addAll(propertyArray);
-            if ( index > propertyArray.size() ) {
+            mergedArray.addAll(propertyArrayNode);
+            if ( index > propertyArrayNode.size() ) {
                 mergedArray.addAll(arrayToInsert);
             } else {
                 mergedArray.addAll(index,arrayToInsert);

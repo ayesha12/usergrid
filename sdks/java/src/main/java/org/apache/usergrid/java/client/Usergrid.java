@@ -17,6 +17,9 @@
 package org.apache.usergrid.java.client;
 
 import org.apache.usergrid.java.client.UsergridEnums.UsergridAuthMode;
+import org.apache.usergrid.java.client.auth.UsergridAppAuth;
+import org.apache.usergrid.java.client.auth.UsergridAuth;
+import org.apache.usergrid.java.client.auth.UsergridUserAuth;
 import org.apache.usergrid.java.client.model.*;
 import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;

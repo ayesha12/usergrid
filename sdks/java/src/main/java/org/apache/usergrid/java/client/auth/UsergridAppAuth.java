@@ -14,25 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.usergrid.java.client.model;
+package org.apache.usergrid.java.client.auth;
 
 import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("unused")
-public class UsergridUserAuth extends UsergridAuth {
+public class UsergridAppAuth extends UsergridAuth {
 
-    @NotNull private String username;
-    @NotNull private String password;
+    @NotNull private String clientId;
+    @NotNull private String clientSecret;
 
-    @NotNull public String getUsername() { return username; }
-    public void setUsername(@NotNull final String username) { this.username = username; }
+    @NotNull public String getClientId() { return clientId; }
+    public void setClientId(@NotNull final String clientId) { this.clientId = clientId; }
 
-    @NotNull public String getPassword() { return password; }
-    public void setPassword(@NotNull final String password) { this.password = password; }
+    @NotNull public String getClientSecret() { return clientSecret; }
+    public void setClientSecret(@NotNull final String clientSecret) { this.clientSecret = clientSecret; }
 
-    public UsergridUserAuth(@NotNull final String username, @NotNull final String password) {
+    public UsergridAppAuth(@NotNull final String clientId, @NotNull final String clientSecret) {
         super();
-        this.username = username;
-        this.password = password;
+        this.clientId = clientId;
+        this.clientSecret = clientSecret;
     }
 }

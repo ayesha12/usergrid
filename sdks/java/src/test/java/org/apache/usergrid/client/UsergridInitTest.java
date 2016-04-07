@@ -18,8 +18,8 @@ package org.apache.usergrid.client;
 
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
-import org.apache.usergrid.java.client.model.UsergridAppAuth;
-import org.apache.usergrid.java.client.model.UsergridUserAuth;
+import org.apache.usergrid.java.client.auth.UsergridAppAuth;
+import org.apache.usergrid.java.client.auth.UsergridUserAuth;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;

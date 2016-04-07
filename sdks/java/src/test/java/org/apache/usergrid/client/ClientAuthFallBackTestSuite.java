@@ -17,7 +17,7 @@
 package org.apache.usergrid.client;
 
 import org.apache.usergrid.java.client.*;
-import org.apache.usergrid.java.client.model.UsergridAppAuth;
+import org.apache.usergrid.java.client.auth.UsergridAppAuth;
 import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.codehaus.jettison.json.JSONException;

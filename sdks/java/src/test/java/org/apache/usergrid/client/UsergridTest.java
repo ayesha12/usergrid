@@ -17,7 +17,7 @@
 package org.apache.usergrid.client;
 
 import org.apache.usergrid.java.client.Usergrid;
-import org.apache.usergrid.java.client.model.UsergridAppAuth;
+import org.apache.usergrid.java.client.auth.UsergridAppAuth;
 import org.junit.Before;
 import org.junit.Test;
 

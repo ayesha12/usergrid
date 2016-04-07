@@ -22,7 +22,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import org.apache.usergrid.java.client.UsergridEnums.UsergridDirection;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
-import org.apache.usergrid.java.client.model.UsergridAppAuth;
+import org.apache.usergrid.java.client.auth.UsergridAppAuth;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;
@@ -337,7 +337,7 @@ public class EntityTestSuite {
         //Check if the property was added correctly
         assertTrue("The entity returned is not null.", eLookUp != null);
         assertTrue("The entity putProperty() was successfull ", eLookUp.getStringProperty("orientation").equals("up"));
-        assertTrue("The entity putProperty() was successfull ", eLookUp.getProperties().get("sides").asInt() == 4);
+        assertTrue("The entity putProperty() was successfull ", eLookUp.getIntegerProperty("sides") == 4);
 
         //Overwrite the property if it exists.
         e.putProperty("orientation", "horizontal");
@@ -463,7 +463,7 @@ public class EntityTestSuite {
         lenArr.add(2);
         lenArr.add(3);
         lenArr.add(4);
-        e.putProperty("lenArray", lenArr);
+        e.insert("lenArray", lenArr);
         e.save();
 
         ArrayList<Object> lenArr2 = new ArrayList<>();
@@ -480,7 +480,7 @@ public class EntityTestSuite {
         assertTrue("The entity returned is not null.", eLookUp != null);
         ArrayNode toCompare = new ArrayNode(JsonNodeFactory.instance);
         toCompare.add(1).add(2).add(3).add(4).add(6).add(7);
-        assertTrue("The entity returned is not null.", eLookUp.getProperties().get("lenArray").equals(toCompare));
+        assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("lenArray").equals(toCompare));
 
     }
 
@@ -518,7 +518,7 @@ public class EntityTestSuite {
         assertTrue("The entity returned is not null.", eLookUp != null);
         ArrayNode toCompare = new ArrayNode(JsonNodeFactory.instance);
         toCompare.add(6).add(7).add(1).add(2).add(3).add(4);
-        assertTrue("The entity returned is not null.", eLookUp.getProperties().get("lenArray").equals(toCompare));
+        assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("lenArray").equals(toCompare));
 
     }
 
@@ -546,7 +546,7 @@ public class EntityTestSuite {
         assertTrue("The entity returned is not null.", eLookUp != null);
         ArrayNode toCompare = new ArrayNode(JsonNodeFactory.instance);
         toCompare.add(1).add(2);
-        assertTrue("The entity returned is not null.", eLookUp.getProperties().get("lenArray").equals(toCompare));
+        assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("lenArray").equals(toCompare));
 
 
         //value should remain unchanged if it is not an array
@@ -556,7 +556,7 @@ public class EntityTestSuite {
         eLookUp = client.GET(collectionName, "testEntity1").first();
         assertTrue("The entity returned is not null.", eLookUp != null);
         TextNode toCompare1 = new TextNode("test1");
-        assertTrue("The entity returned is not null.", eLookUp.getProperties().get("foo").equals(toCompare1));
+        assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("foo").equals(toCompare1));
 
 
         //should gracefully handle empty arrays
@@ -567,7 +567,7 @@ public class EntityTestSuite {
         eLookUp = client.GET(collectionName, "testEntity1").first();
         assertTrue("The entity returned is not null.", eLookUp != null);
         toCompare = new ArrayNode(JsonNodeFactory.instance);
-        assertTrue("The entity returned is not null.", eLookUp.getProperties().get("foo").equals(toCompare));
+        assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("foo").equals(toCompare));
 
     }
 
@@ -596,7 +596,7 @@ public class EntityTestSuite {
         assertTrue("The entity returned is not null.", eLookUp != null);
         ArrayNode toCompare = new ArrayNode(JsonNodeFactory.instance);
         toCompare.add(2).add(3);
-        assertTrue("The entity returned is not null.", eLookUp.getProperties().get("lenArray").equals(toCompare));
+        assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("lenArray").equals(toCompare));
 
 
         //value should remain unchanged if it is not an array
@@ -606,7 +606,7 @@ public class EntityTestSuite {
         eLookUp = client.GET(collectionName, "testEntity1").first();
         assertTrue("The entity returned is not null.", eLookUp != null);
         TextNode toCompare1 = new TextNode("test1");
-        assertTrue("The entity returned is not null.", eLookUp.getProperties().get("foo").equals(toCompare1));
+        assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("foo").equals(toCompare1));
 
 
         //should gracefully handle empty arrays
@@ -617,7 +617,7 @@ public class EntityTestSuite {
         eLookUp = client.GET(collectionName, "testEntity1").first();
         assertTrue("The entity returned is not null.", eLookUp != null);
         toCompare = new ArrayNode(JsonNodeFactory.instance);
-        assertTrue("The entity returned is not null.", eLookUp.getProperties().get("foo").equals(toCompare));
+        assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("foo").equals(toCompare));
 
     }
 
@@ -656,7 +656,7 @@ public class EntityTestSuite {
         assertTrue("The entity returned is not null.", eLookUp != null);
         ArrayNode toCompare = new ArrayNode(JsonNodeFactory.instance);
         toCompare.add(1).add(2).add(3).add(4).add(6).add(7);
-        assertTrue("The entity returned is not null.", eLookUp.getProperties().get("lenArray").equals(toCompare));
+        assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("lenArray").equals(toCompare));
 
 
         //should merge an array of values into an existing array at the specified index
@@ -683,7 +683,7 @@ public class EntityTestSuite {
         assertTrue("The entity returned is not null.", eLookUp != null);
         toCompare = new ArrayNode(JsonNodeFactory.instance);
         toCompare.add(1).add(2).add(5).add(6).add(7).add(8).add(3).add(4);
-        assertTrue("The entity returned is not null.", eLookUp.getProperties().get("lenArray").equals(toCompare));
+        assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("lenArray").equals(toCompare));
 
         //should convert an existing value into an array when inserting a second value
         e.putProperty("foo", "test");
@@ -695,7 +695,7 @@ public class EntityTestSuite {
         toCompare = new ArrayNode(JsonNodeFactory.instance);
         toCompare.add("test").add("test1");
 
-        assertTrue("The entity returned is not null.", eLookUp.getProperties().get("foo").equals(toCompare));
+        assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("foo").equals(toCompare));
 
         //should create a new array when a property does not exist
         e.insert("foo1", "test2", 1);
@@ -705,7 +705,7 @@ public class EntityTestSuite {
         toCompare = new ArrayNode(JsonNodeFactory.instance);
         toCompare.add("test2");
 
-        assertTrue("The entity returned is not null.", eLookUp.getProperties().get("foo1").equals(toCompare));
+        assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("foo1").equals(toCompare));
 
         //should gracefully handle indexes out of range
 
@@ -717,7 +717,7 @@ public class EntityTestSuite {
         assertTrue("The entity returned is not null.", eLookUp != null);
         toCompare = new ArrayNode(JsonNodeFactory.instance);
         toCompare.add("test1").add("test2");
-        assertTrue("The entity returned is not null.", eLookUp.getProperties().get("Arrindex").equals(toCompare));
+        assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("Arrindex").equals(toCompare));
 
         e.insert("Arrindex", "test3", -1000);
         e.save();
@@ -725,7 +725,7 @@ public class EntityTestSuite {
         assertTrue("The entity returned is not null.", eLookUp != null);
         toCompare = new ArrayNode(JsonNodeFactory.instance);
         toCompare.add("test3").add("test1").add("test2");
-        assertTrue("The entity returned is not null.", eLookUp.getProperties().get("Arrindex").equals(toCompare));
+        assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("Arrindex").equals(toCompare));
 
 
     }

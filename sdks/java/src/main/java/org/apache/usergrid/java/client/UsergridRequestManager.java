@@ -17,10 +17,10 @@
 package org.apache.usergrid.java.client;
 
 import org.apache.usergrid.java.client.UsergridEnums.UsergridHttpMethod;
-import org.apache.usergrid.java.client.model.UsergridAppAuth;
-import org.apache.usergrid.java.client.model.UsergridAuth;
+import org.apache.usergrid.java.client.auth.UsergridAppAuth;
+import org.apache.usergrid.java.client.auth.UsergridAuth;
 import org.apache.usergrid.java.client.model.UsergridUser;
-import org.apache.usergrid.java.client.model.UsergridUserAuth;
+import org.apache.usergrid.java.client.auth.UsergridUserAuth;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.jetbrains.annotations.NotNull;

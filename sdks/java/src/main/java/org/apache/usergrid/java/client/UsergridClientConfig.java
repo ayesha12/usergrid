@@ -17,7 +17,7 @@
 package org.apache.usergrid.java.client;
 
 import org.apache.usergrid.java.client.UsergridEnums.UsergridAuthMode;
-import org.apache.usergrid.java.client.model.UsergridAppAuth;
+import org.apache.usergrid.java.client.auth.UsergridAppAuth;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
@@ -64,6 +65,16 @@ public class JsonUtils {
         } else {
             properties.put(name, JsonNodeFactory.instance.POJONode(value));
         }
+    }
+
+    @NotNull
+    public static ArrayList<Object> convertToArrayList(@NotNull final ArrayNode arrayNode) {
+        ArrayList<Object> arrayList = new ArrayList<>();
+        Iterator<JsonNode> iterator = arrayNode.elements();
+        while( iterator.hasNext() ) {
+            arrayList.add(iterator.next());
+        }
+        return arrayList;
     }
 
     @Nullable
