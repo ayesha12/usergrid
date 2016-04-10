@@ -35,7 +35,7 @@ public class UsergridRequest {
     @Nullable private Map<String, Object> headers;
     @Nullable private Map<String, Object> parameters;
     @Nullable private Object data;
-    @Nullable private String[] segments;
+    @Nullable private String[] pathSegments;
 
     @NotNull
     public UsergridHttpMethod getMethod() { return method; }
@@ -66,29 +66,29 @@ public class UsergridRequest {
     public void setData(@Nullable final Object data) { this.data = data; }
 
     @Nullable
-    public String[] getSegments() { return segments; }
-    public void setSegments(@Nullable final String[] segments) { this.segments = segments; }
+    public String[] getPathSegments() { return pathSegments; }
+    public void setPathSegments(@Nullable final String[] pathSegments) { this.pathSegments = pathSegments; }
 
     public UsergridRequest(@NotNull final UsergridHttpMethod method,
                            @NotNull final MediaType contentType,
                            @NotNull final String url,
                            @Nullable final UsergridQuery query,
-                           @Nullable final String... segments) {
+                           @Nullable final String... pathSegments) {
         this.method = method;
         this.contentType = contentType;
         this.baseUrl = url;
         this.query = query;
-        this.segments = segments;
+        this.pathSegments = pathSegments;
     }
 
     public UsergridRequest(@NotNull final UsergridHttpMethod method,
                            @NotNull final MediaType contentType,
                            @NotNull final String url,
-                           @Nullable final String... segments) {
+                           @Nullable final String... pathSegments) {
         this.method = method;
         this.contentType = contentType;
         this.baseUrl = url;
-        this.segments = segments;
+        this.pathSegments = pathSegments;
     }
 
     public UsergridRequest(@NotNull final UsergridHttpMethod method,
@@ -96,7 +96,7 @@ public class UsergridRequest {
                            @NotNull final String url,
                            @Nullable final Map<String, Object> params,
                            @Nullable final Object data,
-                           @Nullable final String... segments) {
+                           @Nullable final String... pathSegments) {
         this.method = method;
         this.contentType = contentType;
         this.baseUrl = url;
@@ -104,7 +104,7 @@ public class UsergridRequest {
         this.data = data;
         this.headers = null;
         this.query = null;
-        this.segments = segments;
+        this.pathSegments = pathSegments;
     }
 
     public UsergridRequest(@NotNull final UsergridHttpMethod method,
@@ -114,7 +114,7 @@ public class UsergridRequest {
                            @Nullable final Object data,
                            @Nullable final Map<String, Object> headers,
                            @Nullable final UsergridQuery query,
-                           @Nullable final String... segments) {
+                           @Nullable final String... pathSegments) {
         this.method = method;
         this.contentType = contentType;
         this.baseUrl = url;
@@ -122,6 +122,6 @@ public class UsergridRequest {
         this.data = data;
         this.headers = headers;
         this.query = query;
-        this.segments = segments;
+        this.pathSegments = pathSegments;
     }
 }

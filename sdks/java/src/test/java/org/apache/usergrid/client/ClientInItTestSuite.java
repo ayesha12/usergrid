@@ -21,7 +21,6 @@ import org.apache.usergrid.java.client.UsergridEnums;
 import org.apache.usergrid.java.client.auth.UsergridAppAuth;
 import org.apache.usergrid.java.client.auth.UsergridUserAuth;
 import org.apache.usergrid.java.client.response.UsergridResponse;
-import org.codehaus.jettison.json.JSONException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,7 +40,7 @@ public class ClientInItTestSuite {
     }
 
     @Test
-    public void clientAppInit() throws JSONException {
+    public void clientAppInit() {
         Usergrid.setAuthMode(SDKTestConfiguration.authFallBack);
         try {
             UsergridResponse response = Usergrid.authenticateApp(new UsergridAppAuth(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET));

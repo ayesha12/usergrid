@@ -29,7 +29,6 @@ import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.HashMap;
 import java.util.Map;
 
 import static org.apache.usergrid.java.client.utils.ObjectUtils.isEmpty;
@@ -59,8 +58,8 @@ public class UsergridRequestManager {
         }
 
         WebTarget webTarget = this.restClient.target(url);
-        if( request.getSegments() != null ) {
-            for (String segment : request.getSegments()) {
+        if( request.getPathSegments() != null ) {
+            for (String segment : request.getPathSegments()) {
                 webTarget = webTarget.path(segment);
             }
         }
@@ -85,46 +84,35 @@ public class UsergridRequestManager {
             } else {
                 response = invocationBuilder.method(method.toString());
             }
-            usergridResponse = UsergridResponse.fromResponse(request,response);
+            usergridResponse = UsergridResponse.fromResponse(client,request,response);
         } catch (Exception requestException) {
-            usergridResponse = UsergridResponse.fromException(requestException);
+            usergridResponse = UsergridResponse.fromException(client,requestException);
         }
-        usergridResponse.setClient(this.client);
         return usergridResponse;
     }
 
     @NotNull
-    public UsergridResponse authenticateApp(@NotNull final UsergridAppAuth appAuth) {
-        Map<String, Object> data = new HashMap<>();
-        data.put("grant_type", "client_credentials");
-        data.put("client_id", appAuth.getClientId());
-        data.put("client_secret", appAuth.getClientSecret());
-
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE, client.clientAppUrl(), null, data, "token");
+    private UsergridResponse authenticate(@NotNull final UsergridAuth auth) {
+        Map<String, String> credentials = auth.credentialsMap();
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE, client.clientAppUrl(), null, credentials, "token");
         UsergridResponse response = performRequest(request);
-
         if (!isEmpty(response.getAccessToken()) && !isEmpty(response.getExpires())) {
-            appAuth.setAccessToken(response.getAccessToken());
-            long expiresIn = response.getExpires();
-            appAuth.setExpiry(System.currentTimeMillis() + expiresIn - 5000);
+            auth.setAccessToken(response.getAccessToken());
+            auth.setExpiry(System.currentTimeMillis() + response.getExpires() - 5000);
         }
         return response;
     }
 
     @NotNull
-    public UsergridResponse authenticateUser(@NotNull final UsergridUserAuth userAuth) {
-        Map<String, Object> formData = new HashMap<>();
-        formData.put("grant_type", "password");
-        formData.put("username", userAuth.getUsername());
-        formData.put("password", userAuth.getPassword());
+    public UsergridResponse authenticateApp(@NotNull final UsergridAppAuth appAuth) {
+        return this.authenticate(appAuth);
+    }
 
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE, client.clientAppUrl(), null, formData, "token");
-        UsergridResponse response = performRequest(request);
+    @NotNull
+    public UsergridResponse authenticateUser(@NotNull final UsergridUserAuth userAuth) {
+        UsergridResponse response = this.authenticate(userAuth);
         UsergridUser responseUser = response.user();
-        if (!isEmpty(response.getAccessToken()) && !isEmpty(response.getExpires()) && responseUser != null) {
-            userAuth.setAccessToken(response.getAccessToken());
-            long expiresIn = response.getExpires();
-            userAuth.setExpiry(System.currentTimeMillis() + expiresIn - 5000);
+        if ( response.ok() && responseUser != null) {
             responseUser.userAuth = userAuth;
         }
         return response;

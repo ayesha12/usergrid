@@ -40,7 +40,7 @@ public class MapUtils {
     public static Map<String,String> putMultivaluedMap(@NotNull final MultivaluedMap<String, Object> headers) {
         Map<String,String> multiValueMap = new HashMap<>();
         for (String objKey: headers.keySet()) {
-            multiValueMap.put(objKey, JsonNodeFactory.instance.POJONode(headers.get(objKey)).toString());
+            multiValueMap.put(objKey, JsonNodeFactory.instance.pojoNode(headers.get(objKey)).toString());
         }
         return multiValueMap;
     }

@@ -16,13 +16,8 @@
  */
 package org.apache.usergrid.java.client.response;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize.Inclusion;
 import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.UsergridEnums;
 import org.apache.usergrid.java.client.UsergridRequest;
@@ -42,11 +37,12 @@ import java.util.*;
 import static org.apache.usergrid.java.client.utils.JsonUtils.toJsonString;
 
 @SuppressWarnings("unused")
-@JsonSerialize(include = Inclusion.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class UsergridResponse {
 
-    private UsergridClient client;
-    private Map<String, JsonNode> properties = new HashMap<>();
+    @Nullable private UsergridClient client;
+    @NotNull private Map<String, JsonNode> properties = new HashMap<>();
+
     private int statusCode = 0;
     @Nullable private JsonNode responseJson = null;
     @Nullable private String cursor;
@@ -169,7 +165,7 @@ public class UsergridResponse {
         properties.put(key, value);
     }
 
-    @Nullable
+    @NotNull
     public UsergridResponse loadNextPage() {
         UsergridClient client = this.client;
         UsergridEntity entity = this.first();
@@ -178,21 +174,28 @@ public class UsergridResponse {
             paramsMap.put("cursor", getCursor());
             UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE, this.client.clientAppUrl(), paramsMap, null, null, this.getQuery(), entity.getType());
             return client.sendRequest(request);
+        } else {
+            return UsergridResponse.fromError(client,"Error Loading Next Page.","Unable to load next page.");
         }
-        return null;
     }
 
     @NotNull
-    public static UsergridResponse fromResponse(@NotNull final UsergridRequest request, @NotNull final Response requestResponse) {
+    public static UsergridResponse fromResponse(@Nullable final UsergridClient client, @NotNull final UsergridRequest request, @NotNull final Response requestResponse) {
         UsergridResponse response;
-        JsonNode responseJson = requestResponse.readEntity(JsonNode.class);
-        if ( responseJson.has("error") )  {
-            response = new UsergridResponse();
-            response.responseError = JsonUtils.fromJsonNode(responseJson,UsergridResponseError.class);
-        } else {
-            response = JsonUtils.fromJsonNode(responseJson,UsergridResponse.class);
+        try {
+            String responseJsonString = requestResponse.readEntity(String.class);
+            JsonNode responseJson = JsonUtils.mapper.readTree(responseJsonString);
+            if ( responseJson.has("error") )  {
+                response = new UsergridResponse();
+                response.responseError = JsonUtils.fromJsonNode(responseJson,UsergridResponseError.class);
+            } else {
+                response = JsonUtils.fromJsonNode(responseJson,UsergridResponse.class);
+            }
+            response.responseJson = responseJson;
+        } catch ( Exception e ) {
+            response = UsergridResponse.fromException(client,e);
         }
-        response.responseJson = responseJson;
+        response.client = client;
         response.statusCode = requestResponse.getStatus();
         response.headers = MapUtils.putMultivaluedMap(requestResponse.getHeaders());
         response.query = request.getQuery();
@@ -202,14 +205,15 @@ public class UsergridResponse {
     @NotNull
     public static UsergridResponse fromError(@Nullable final UsergridClient client, @NotNull final String errorName, @NotNull final String errorDescription) {
         UsergridResponse response = new UsergridResponse();
-        response.setClient(client);
-        response.setResponseError(new UsergridResponseError(errorName,errorDescription));
+        response.client = client;
+        response.responseError = new UsergridResponseError(errorName,errorDescription);
         return response;
     }
 
     @NotNull
-    public static UsergridResponse fromException(@NotNull final Exception ex) {
+    public static UsergridResponse fromException(@Nullable final UsergridClient client, @NotNull final Exception ex) {
         UsergridResponse response = new UsergridResponse();
+        response.client = client;
         if (ex instanceof ClientErrorException)  {
             ClientErrorException clientError = (ClientErrorException) ex;
             response.statusCode = clientError.getResponse().getStatus();

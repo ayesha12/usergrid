@@ -112,13 +112,13 @@ public class UsergridClient {
     }
 
     @NotNull
-    public UsergridClient usingAuth(UsergridAuth auth) {
+    public UsergridClient usingAuth(@Nullable final UsergridAuth auth) {
         this.tempAuth = auth;
         return this;
     }
 
     @NotNull
-    public UsergridClient usingToken(String accessToken) {
+    public UsergridClient usingToken(@NotNull final String accessToken) {
         this.tempAuth = new UsergridAuth(accessToken);
         return this;
     }
@@ -132,7 +132,7 @@ public class UsergridClient {
     }
 
     @NotNull
-    public UsergridResponse authenticateApp(UsergridAppAuth auth) {
+    public UsergridResponse authenticateApp(@NotNull final UsergridAppAuth auth) {
         this.config.appAuth = auth;
         return this.requestManager.authenticateApp(auth);
     }
@@ -143,7 +143,7 @@ public class UsergridClient {
     }
 
     @NotNull
-    public UsergridResponse authenticateUser(@NotNull final UsergridUserAuth userAuth, boolean setAsCurrentUser) {
+    public UsergridResponse authenticateUser(@NotNull final UsergridUserAuth userAuth, final boolean setAsCurrentUser) {
         UsergridResponse response = this.requestManager.authenticateUser(userAuth);
         if( response.ok() && setAsCurrentUser ) {
             this.setCurrentUser(response.user());

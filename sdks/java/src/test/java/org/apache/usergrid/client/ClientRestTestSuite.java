@@ -22,7 +22,6 @@ import org.apache.usergrid.java.client.auth.UsergridAppAuth;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;
-import org.codehaus.jettison.json.JSONException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,7 +37,7 @@ public class ClientRestTestSuite {
     String collectionName;
 
     @Before
-    public void before() throws JSONException {
+    public void before()  {
         Usergrid.initSharedInstance(SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.authFallBack);
         UsergridAppAuth appAuth = new UsergridAppAuth(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
         Usergrid.authenticateApp(appAuth);
@@ -50,7 +49,7 @@ public class ClientRestTestSuite {
         Usergrid.reset();
     }
 
-    public void CreateCollectionAndEntity() throws JSONException {
+    public void CreateCollectionAndEntity()  {
         UsergridClient client = Usergrid.getInstance();
         collectionName = "testClientConnection" + System.currentTimeMillis();
         Map<String, Object> fields = new HashMap<>(3);
@@ -72,7 +71,7 @@ public class ClientRestTestSuite {
     }
 
     @Test
-    public void clientGET() throws JSONException {
+    public void clientGET()  {
         UsergridClient client = Usergrid.getInstance();
 
         //Retrieve the entity.

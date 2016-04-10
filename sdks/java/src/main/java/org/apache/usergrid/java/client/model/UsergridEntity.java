@@ -24,8 +24,6 @@ import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.apache.usergrid.java.client.utils.JsonUtils;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -46,16 +44,14 @@ public class UsergridEntity {
 
     protected Map<String, JsonNode> properties = new HashMap<>();
 
-    private UsergridEntity() { }
-
-    public UsergridEntity(@NotNull final String type) {
-        setType(type);
+    public UsergridEntity(@JsonProperty("type") @NotNull final String type) {
+        this.type = type;
     }
 
     public UsergridEntity(@NotNull final String type, @Nullable final String name) {
         this(type);
         if( name != null ) {
-            this.setName(name);
+            this.name = name;
         }
     }
 
@@ -205,7 +201,7 @@ public class UsergridEntity {
         this.putProperty(name, JsonNodeFactory.instance.booleanNode(value));
     }
     public void putProperty(@NotNull final String name, @NotNull final List value) {
-        this.putProperty(name, JsonNodeFactory.instance.POJONode(value));
+        this.putProperty(name, JsonNodeFactory.instance.pojoNode(value));
     }
     public void putProperty(@NotNull final String name, final int value) {
         this.putProperty(name, JsonNodeFactory.instance.numberNode(value));
@@ -223,30 +219,23 @@ public class UsergridEntity {
         }
         this.internalPutProperty(name,value);
     }
-    public void putProperties(@NotNull final String jsonString) throws JSONException {
-        this.putProperties(new JSONObject(jsonString));
+    public void putProperties(@NotNull final String jsonString) {
+        try {
+            JsonNode jsonNode = JsonUtils.mapper.readTree(jsonString);
+            this.putProperties(jsonNode);
+        } catch( Exception ignore ) {}
     }
-    public void putProperties(@NotNull final Map<String, Object> properties) throws JSONException {
-        this.putProperties(new JSONObject(properties));
+    public void putProperties(@NotNull final Map<String, Object> properties) {
+        try {
+            JsonNode jsonNode = JsonUtils.mapper.valueToTree(properties);
+            this.putProperties(jsonNode);
+        } catch( Exception ignore ) {}
     }
-    public void putProperties(@NotNull final JSONObject jsonObject) throws JSONException {
-        Iterator keys = jsonObject.keys();
+    public void putProperties(@NotNull final JsonNode jsonNode) {
+        Iterator<Map.Entry<String,JsonNode>> keys = jsonNode.fields();
         while (keys.hasNext()) {
-            String key = keys.next().toString();
-            Object value = jsonObject.get(key);
-            if (value instanceof String) {
-                this.putProperty(key, value.toString());
-            } else if (value instanceof Boolean) {
-                this.putProperty(key, (Boolean) value);
-            } else if (value instanceof Integer) {
-                this.putProperty(key, (Integer) value);
-            } else if (value instanceof Long) {
-                this.putProperty(key, (Long) value);
-            } else if (value instanceof Float) {
-                this.putProperty(key, (Float) value);
-            } else if (value instanceof JsonNode) {
-                this.putProperty(key, (JsonNode) value);
-            }
+            Map.Entry<String,JsonNode> entry = keys.next();
+            this.putProperty(entry.getKey(),entry.getValue());
         }
     }
 

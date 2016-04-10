@@ -20,25 +20,28 @@ import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.auth.UsergridAppAuth;
 import org.apache.usergrid.java.client.auth.UsergridUserAuth;
+import org.junit.After;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
 
 public class UsergridInitTest {
 
+    @After
+    public void after() {
+        Usergrid.reset();
+    }
 
     @Test
     public void testInitAppUsergrid() {
-
-        Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME);
+        Usergrid.initSharedInstance(SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.USERGRID_URL);
         Usergrid.authenticateApp(new UsergridAppAuth(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET));
         assertTrue("usergrid should be an instance of usergrid client", Usergrid.getInstance().getClass() == UsergridClient.class);
     }
 
     @Test
     public void testInitUserUsergrid() {
-
-        Usergrid.initSharedInstance(SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME);
+        Usergrid.initSharedInstance(SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.USERGRID_URL);
         Usergrid.authenticateUser(new UsergridUserAuth(SDKTestConfiguration.APP_UserName, SDKTestConfiguration.APP_Password));
         assertTrue("usergrid should be an instance of usergrid client", Usergrid.getInstance().getClass() == UsergridClient.class);
     }

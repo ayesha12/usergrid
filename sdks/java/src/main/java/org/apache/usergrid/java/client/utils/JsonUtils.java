@@ -35,7 +35,7 @@ import java.util.UUID;
 @SuppressWarnings("unused")
 public class JsonUtils {
 
-    @NotNull private static ObjectMapper mapper = new ObjectMapper();
+    @NotNull public static ObjectMapper mapper = new ObjectMapper();
 
     @NotNull
     public static ObjectNode createObjectNode() {
@@ -63,7 +63,7 @@ public class JsonUtils {
         if (value == null) {
             properties.remove(name);
         } else {
-            properties.put(name, JsonNodeFactory.instance.POJONode(value));
+            properties.put(name, JsonNodeFactory.instance.pojoNode(value));
         }
     }
 

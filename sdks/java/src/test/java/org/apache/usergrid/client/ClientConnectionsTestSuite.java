@@ -22,7 +22,6 @@ import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.auth.UsergridAppAuth;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.response.UsergridResponse;
-import org.codehaus.jettison.json.JSONException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,9 +46,7 @@ public class ClientConnectionsTestSuite {
     }
 
     @Test
-    public void clientConnect() throws JSONException {
-        UsergridClient client = Usergrid.getInstance();
-
+    public void clientConnect() {
         String collectionName = "testClientConnection" + System.currentTimeMillis();
 
         Map<String, Object> fields = new HashMap<>(3);
@@ -58,8 +55,8 @@ public class ClientConnectionsTestSuite {
         //should set properties for a given object, overwriting properties that exist and creating those that don\'t
         UsergridEntity entityone = new UsergridEntity(collectionName,"john");
         entityone.putProperties(fields);
-        client.POST(entityone);
-        entityone =  client.GET(collectionName, "john").first();
+        Usergrid.POST(entityone);
+        entityone =  Usergrid.GET(collectionName, "john").first();
 
         fields = new HashMap<>(3);
         fields.put("place", "San Jose");
@@ -67,55 +64,53 @@ public class ClientConnectionsTestSuite {
         //should set properties for a given object, overwriting properties that exist and creating those that don\'t
         UsergridEntity entitytwo = new UsergridEntity(collectionName,"amici");
         entitytwo.putProperties(fields);
-        client.POST(entitytwo);
-        UsergridResponse response1 = client.GET(collectionName, "amici");
+        Usergrid.POST(entitytwo);
+        UsergridResponse response1 = Usergrid.GET(collectionName, "amici");
         entitytwo =  response1.first();
 
         //should connect entities by passing UsergridEntity objects as parameters
-        client.connect(entityone, "likes", entitytwo);
+        Usergrid.connect(entityone, "likes", entitytwo);
 
-        UsergridEntity response = client.getConnections(UsergridDirection.OUT, entityone, "likes").first();
+        UsergridEntity response = Usergrid.getConnections(UsergridDirection.OUT, entityone, "likes").first();
 
         assertTrue("both entities name should be same", entitytwo.getName().equals(response.getName()));
         assertTrue("both entities uuid should be same", entitytwo.getUuid().equals(response.getUuid()));
 
         //should connect entities by passing a source UsergridEntity object and a target uuid.
-        client.connect(entityone.getType(), entityone.getUuid(), "visited", entitytwo.getUuid().toString());
+        Usergrid.connect(entityone.getType(), entityone.getUuid(), "visited", entitytwo.getUuid().toString());
 
-        response = client.getConnections(UsergridDirection.OUT, entityone, "visited").first();
+        response = Usergrid.getConnections(UsergridDirection.OUT, entityone, "visited").first();
 
         assertTrue("both entities name should be same", entitytwo.getName().equals(response.getName()));
         assertTrue("both entities uuid should be same", entitytwo.getUuid().equals(response.getUuid()));
 
 
         //should connect entities by passing source type, source uuid, and target uuid as parameters
-        client.connect(entitytwo.getType(), entitytwo.getUuid(), "visiter", entityone.getUuid().toString());
+        Usergrid.connect(entitytwo.getType(), entitytwo.getUuid(), "visiter", entityone.getUuid().toString());
 
-        response = client.getConnections(UsergridDirection.OUT, entitytwo, "visiter").first();
+        response = Usergrid.getConnections(UsergridDirection.OUT, entitytwo, "visiter").first();
 
         assertTrue("both entities name should be same", entityone.getName().equals(response.getName()));
         assertTrue("both entities uuid should be same", entityone.getUuid().equals(response.getUuid()));
 
 
         //should connect entities by passing source type, source name, target type, and target name as parameters
-        client.connect(entitytwo.getType(), entitytwo.getName(), "welcomed", entityone.getType(), entityone.getName());
+        Usergrid.connect(entitytwo.getType(), entitytwo.getName(), "welcomed", entityone.getType(), entityone.getName());
 
-        response = client.getConnections(UsergridDirection.OUT, entitytwo, "welcomed").first();
+        response = Usergrid.getConnections(UsergridDirection.OUT, entitytwo, "welcomed").first();
 
         assertTrue("both entities name should be same", entityone.getName().equals(response.getName()));
         assertTrue("both entities uuid should be same", entityone.getUuid().equals(response.getUuid()));
 
         //should connect entities by passing source type, source name, target type, and target name as parameters
-        client.connect(entitytwo.getType(), entitytwo.getName(), "invalidLink", "invalidName");
-        response = client.getConnections(UsergridDirection.OUT, entitytwo, "invalidLink").first();
+        Usergrid.connect(entitytwo.getType(), entitytwo.getName(), "invalidLink", "invalidName");
+        response = Usergrid.getConnections(UsergridDirection.OUT, entitytwo, "invalidLink").first();
         assertTrue("both entities name should be same", response == null);
 
     }
 
     @Test
-    public void clientGetConnect() throws JSONException {
-        UsergridClient client = Usergrid.getInstance();
-
+    public void clientGetConnect() {
         String collectionName = "testClientGetConnection" + System.currentTimeMillis();
 
         Map<String, Object> fields = new HashMap<>(3);
@@ -124,8 +119,8 @@ public class ClientConnectionsTestSuite {
         //should set properties for a given object, overwriting properties that exist and creating those that don\'t
         UsergridEntity entityone = new UsergridEntity(collectionName, "john");
         entityone.putProperties(fields);
-        client.POST(entityone);
-        entityone = client.GET(collectionName, "john").first();
+        Usergrid.POST(entityone);
+        entityone = Usergrid.GET(collectionName, "john").first();
 
         fields = new HashMap<>(3);
         fields.put("place", "San Jose");
@@ -133,21 +128,20 @@ public class ClientConnectionsTestSuite {
         //should set properties for a given object, overwriting properties that exist and creating those that don\'t
         UsergridEntity entitytwo = new UsergridEntity(collectionName, "amici");
         entitytwo.putProperties(fields);
-        client.POST(entitytwo);
+        Usergrid.POST(entitytwo);
 
-        UsergridResponse response1 = client.GET(collectionName, "amici");
+        UsergridResponse response1 = Usergrid.GET(collectionName, "amici");
         entitytwo =  response1.first();
         //should connect entities by passing UsergridEntity objects as parameters
-        client.connect(entityone, "likes", entitytwo);
-        client.connect(entityone, "visited", entitytwo);
+        Usergrid.connect(entityone, "likes", entitytwo);
+        Usergrid.connect(entityone, "visited", entitytwo);
 
-        UsergridEntity response = client.getConnections(UsergridDirection.OUT, entityone, "likes").first();
+        UsergridEntity response = Usergrid.getConnections(UsergridDirection.OUT, entityone, "likes").first();
 
         assertTrue("both entities name should be same", entitytwo.getName().equals(response.getName()));
         assertTrue("both entities uuid should be same", entitytwo.getUuid().equals(response.getUuid()));
 
-
-        response = client.getConnections(UsergridDirection.IN, entitytwo, "visited").first();
+        response = Usergrid.getConnections(UsergridDirection.IN, entitytwo, "visited").first();
 
         assertTrue("both entities name should be same", entityone.getName().equals(response.getName()));
         assertTrue("both entities uuid should be same", entityone.getUuid().equals(response.getUuid()));
@@ -155,9 +149,7 @@ public class ClientConnectionsTestSuite {
     }
 
     @Test
-    public void clientDisConnect() throws JSONException {
-        UsergridClient client = Usergrid.getInstance();
-
+    public void clientDisConnect() {
         String collectionName = "testClientGetConnection" + System.currentTimeMillis();
 
         Map<String, Object> fields = new HashMap<>(3);
@@ -166,8 +158,8 @@ public class ClientConnectionsTestSuite {
         //should set properties for a given object, overwriting properties that exist and creating those that don\'t
         UsergridEntity entityone = new UsergridEntity(collectionName,"john");
         entityone.putProperties(fields);
-        client.POST(entityone);
-        entityone = client.GET(collectionName, "john").first();
+        Usergrid.POST(entityone);
+        entityone = Usergrid.GET(collectionName, "john").first();
 
         fields = new HashMap<>(3);
         fields.put("place", "San Jose");
@@ -175,33 +167,33 @@ public class ClientConnectionsTestSuite {
         //should set properties for a given object, overwriting properties that exist and creating those that don\'t
         UsergridEntity entitytwo = new UsergridEntity(collectionName, "amici");
         entitytwo.putProperties(fields);
-        client.POST(entitytwo);
-        entitytwo =  client.GET(collectionName, "amici").first();
+        Usergrid.POST(entitytwo);
+        entitytwo =  Usergrid.GET(collectionName, "amici").first();
 
         //should connect entities by passing UsergridEntity objects as parameters
-        client.connect(entityone, "likes", entitytwo);
-        client.connect(entityone, "visited", entitytwo);
-        client.connect(entityone, "twice", entitytwo);
-        client.connect(entityone, "thrice", entitytwo);
+        Usergrid.connect(entityone, "likes", entitytwo);
+        Usergrid.connect(entityone, "visited", entitytwo);
+        Usergrid.connect(entityone, "twice", entitytwo);
+        Usergrid.connect(entityone, "thrice", entitytwo);
 
         //should disConnect entities by passing UsergridEntity objects as parameters
-        client.disconnect(entityone, "likes", entitytwo);
-        UsergridEntity response = client.getConnections(UsergridDirection.IN, entitytwo, "likes").first();
+        Usergrid.disconnect(entityone, "likes", entitytwo);
+        UsergridEntity response = Usergrid.getConnections(UsergridDirection.IN, entitytwo, "likes").first();
         assertTrue("response should be null", response == null);
 
         //should disConnect entities by passing source type, source uuid, and target uuid as parameters
-        client.disconnect(entityone.getType(), entityone.getUuid(), "visited", entitytwo.getUuid());
-        response = client.getConnections(UsergridDirection.OUT, entityone, "visited").first();
+        Usergrid.disconnect(entityone.getType(), entityone.getUuid(), "visited", entitytwo.getUuid());
+        response = Usergrid.getConnections(UsergridDirection.OUT, entityone, "visited").first();
         assertTrue("response should be null", response == null);
 
         //should disConnect entities by passing source type, source name, target type, and target name as parameters
-        client.disconnect(entityone.getType(), entityone.getName(), "twice", entitytwo.getType(), entitytwo.getName());
-        response = client.getConnections(UsergridDirection.OUT, entityone, "twice").first();
+        Usergrid.disconnect(entityone.getType(), entityone.getName(), "twice", entitytwo.getType(), entitytwo.getName());
+        response = Usergrid.getConnections(UsergridDirection.OUT, entityone, "twice").first();
         assertTrue("response should be null", response == null);
 
         //should fail to disConnect entities when specifying target name without type
-        client.disconnect(entitytwo.getType(), entitytwo.getName(), "thrice", entityone.getName());
-        response = client.getConnections(UsergridDirection.OUT, entitytwo, "thrice").first();
+        Usergrid.disconnect(entitytwo.getType(), entitytwo.getName(), "thrice", entityone.getName());
+        response = Usergrid.getConnections(UsergridDirection.OUT, entitytwo, "thrice").first();
         assertTrue("both entities name should be same", response == null);
 
     }

@@ -132,7 +132,7 @@ public final class Usergrid {
     }
 
     @NotNull
-    public static UsergridResponse authenticateUser(@NotNull final UsergridUserAuth userAuth, boolean setAsCurrentUser) {
+    public static UsergridResponse authenticateUser(@NotNull final UsergridUserAuth userAuth, final boolean setAsCurrentUser) {
         return Usergrid.getInstance().authenticateUser(userAuth,setAsCurrentUser);
     }
 

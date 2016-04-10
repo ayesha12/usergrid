@@ -16,7 +16,10 @@
  */
 package org.apache.usergrid.java.client.auth;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.HashMap;
 
 @SuppressWarnings("unused")
 public class UsergridAuth {
@@ -62,5 +65,10 @@ public class UsergridAuth {
         } else {
             return !this.usingToken;
         }
+    }
+
+    @NotNull
+    public HashMap<String,String> credentialsMap() {
+        return new HashMap<>();
     }
 }

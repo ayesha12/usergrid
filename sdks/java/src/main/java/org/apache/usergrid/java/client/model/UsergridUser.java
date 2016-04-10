@@ -16,23 +16,20 @@
  */
 package org.apache.usergrid.java.client.model;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.UsergridEnums.*;
 import org.apache.usergrid.java.client.auth.UsergridUserAuth;
 import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;
-import org.codehaus.jettison.json.JSONException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 
-import static com.fasterxml.jackson.databind.annotation.JsonSerialize.Inclusion.NON_NULL;
-
 @SuppressWarnings("unused")
-@JsonSerialize(include = NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class UsergridUser extends UsergridEntity {
     @NotNull public final static String USER_ENTITY_TYPE = "user";
 
@@ -54,7 +51,7 @@ public class UsergridUser extends UsergridEntity {
         super(USER_ENTITY_TYPE, null, usergridEntity.properties);
     }
 
-    public UsergridUser(@NotNull final String name, @NotNull final HashMap<String, Object> propertyMap) throws JSONException {
+    public UsergridUser(@NotNull final String name, @NotNull final HashMap<String, Object> propertyMap) {
         super(USER_ENTITY_TYPE);
         putProperties(propertyMap);
         setName(name);

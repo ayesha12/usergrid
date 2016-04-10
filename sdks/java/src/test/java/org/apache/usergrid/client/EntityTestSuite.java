@@ -26,7 +26,6 @@ import org.apache.usergrid.java.client.auth.UsergridAppAuth;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;
-import org.codehaus.jettison.json.JSONException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -357,7 +356,7 @@ public class EntityTestSuite {
     }
 
     @Test
-    public void testEntityPutProperties() throws JSONException {
+    public void testEntityPutProperties() {
         String collectionName = "testEntityProperties" + System.currentTimeMillis();
 
         Map<String, String> fields = new HashMap<>(3);
@@ -382,7 +381,7 @@ public class EntityTestSuite {
     }
 
     @Test
-    public void testEntityRemovePropertiesAndSave() throws JSONException {
+    public void testEntityRemovePropertiesAndSave() {
         String collectionName = "testEntityProperties" + System.currentTimeMillis();
 
         Map<String, String> fields = new HashMap<>(3);
@@ -415,7 +414,7 @@ public class EntityTestSuite {
 
 
     @Test
-    public void testEntityRemoveProperty() throws JSONException {
+    public void testEntityRemoveProperty() {
         String collectionName = "testEntityProperties" + System.currentTimeMillis();
 
         Map<String, String> fields = new HashMap<>(3);
@@ -447,7 +446,7 @@ public class EntityTestSuite {
     }
 
     @Test
-    public void testEntityAppendInArray() throws JSONException {
+    public void testEntityAppendInArray() {
         String collectionName = "testEntityProperties" + System.currentTimeMillis();
 
         Map<String, String> fields = new HashMap<>(3);
@@ -485,7 +484,7 @@ public class EntityTestSuite {
     }
 
     @Test
-    public void testEntityPrependInArray() throws JSONException {
+    public void testEntityPrependInArray() {
         String collectionName = "testEntityProperties" + System.currentTimeMillis();
 
         Map<String, String> fields = new HashMap<>(3);
@@ -523,7 +522,7 @@ public class EntityTestSuite {
     }
 
     @Test
-    public void testEntityPopInArray() throws JSONException {
+    public void testEntityPopInArray() {
         String collectionName = "testEntityProperties" + System.currentTimeMillis();
         Map<String, String> fields = new HashMap<>(3);
         fields.put("color", "red");
@@ -573,7 +572,7 @@ public class EntityTestSuite {
 
 
     @Test
-    public void testEntityShiftInArray() throws JSONException {
+    public void testEntityShiftInArray() {
         String collectionName = "testEntityProperties" + System.currentTimeMillis();
         Map<String, String> fields = new HashMap<>(3);
         fields.put("color", "red");
@@ -623,7 +622,7 @@ public class EntityTestSuite {
 
 
     @Test
-    public void testEntityInsertInArray() throws JSONException {
+    public void testEntityInsertInArray() {
         String collectionName = "testEntityProperties" + System.currentTimeMillis();
 
         Map<String, String> fields = new HashMap<>(3);
@@ -731,7 +730,7 @@ public class EntityTestSuite {
     }
 
     @Test
-    public void testEntityConnectDisConnectGetConnections() throws JSONException {
+    public void testEntityConnectDisConnectGetConnections() {
         String collectionName = "testEntityProperties" + System.currentTimeMillis();
 
         Map<String, String> fields = new HashMap<>(1);

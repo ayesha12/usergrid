@@ -28,6 +28,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -73,12 +74,9 @@ public class QueryTestSuite {
     public void testBasicQuery() {
 
         UsergridQuery qDelete = new UsergridQuery(COLLECTION);
-
-        UsergridResponse r = Usergrid.DELETE(qDelete);
-
+        Usergrid.DELETE(qDelete);
 
         Map<String, UsergridEntity> entityMapByUUID = SDKTestUtils.createColorShapes(COLLECTION);
-
         Map<String, UsergridEntity> entityMapByName = new HashMap<>(entityMapByUUID.size());
 
         for (Map.Entry<String, UsergridEntity> uuidEntity : entityMapByUUID.entrySet()) {
@@ -96,18 +94,13 @@ public class QueryTestSuite {
         for (Map.Entry<String, String> entry : fields.entrySet()) {
             UsergridEntity targetEntity = entityMapByName.get(entry.getKey() + entry.getValue());
 
-            UsergridQuery q = new UsergridQuery(COLLECTION)
-                    .eq("color", entry.getKey());
-
-
-            r = Usergrid.GET(q);
+            UsergridQuery q = new UsergridQuery(COLLECTION).eq("color", entry.getKey());
+            UsergridResponse r = Usergrid.GET(q);
 
             assertTrue("query for " + entry.getKey() + " shape should return 1, not: " + r.getEntities().size(), r.getEntities().size() == 1);
             assertTrue("query for " + entry.getKey() + " shape should the right UUID", r.first().getUuid().equals(targetEntity.getUuid()));
         }
-
-        r = Usergrid.DELETE(qDelete);
-
+        Usergrid.DELETE(qDelete);
     }
 
     @Test
@@ -150,48 +143,41 @@ public class QueryTestSuite {
         String collectionName = "sdktestlocation";
 
         UsergridQuery deleteQuery = new UsergridQuery(collectionName);
-
         Usergrid.DELETE(deleteQuery);
 
+        ArrayList<UsergridEntity> entities = new ArrayList<>();
+        UsergridEntity apigeeOffice = new UsergridEntity(collectionName,"Apigee Office");
+        apigeeOffice.setLocation(37.334115, -121.894340);
+        entities.add(apigeeOffice);
 
-        UsergridEntity e = new UsergridEntity(collectionName);
-        e.setLocation(37.334115, -121.894340);
-        e.putProperty("name", "Apigee Office");
-        client.POST(e);
-
-        UsergridEntity amicis = new UsergridEntity(collectionName);
+        UsergridEntity amicis = new UsergridEntity(collectionName,"Amicis");
         amicis.setLocation(37.335616, -121.894168);
-        amicis.putProperty("name", "Amicis");
-        client.POST(amicis);
+        entities.add(amicis);
 
-        UsergridEntity sanPedroMarket = new UsergridEntity(collectionName);
+        UsergridEntity sanPedroMarket = new UsergridEntity(collectionName,"SanPedroMarket");
         sanPedroMarket.setLocation(37.336499, -121.894356);
-        sanPedroMarket.putProperty("name", "SanPedroMarket");
-        client.POST(sanPedroMarket);
+        entities.add(sanPedroMarket);
 
-        UsergridEntity saintJamesPark = new UsergridEntity(collectionName);
+        UsergridEntity saintJamesPark = new UsergridEntity(collectionName,"saintJamesPark");
         saintJamesPark.setLocation(37.339079, -121.891422);
-        saintJamesPark.putProperty("name", "saintJamesPark");
-        client.POST(saintJamesPark);
+        entities.add(saintJamesPark);
 
-        UsergridEntity sanJoseNews = new UsergridEntity(collectionName);
+        UsergridEntity sanJoseNews = new UsergridEntity(collectionName,"sanJoseNews");
         sanJoseNews.setLocation(37.337812, -121.890784);
-        sanJoseNews.putProperty("name", "sanJoseNews");
-        client.POST(sanJoseNews);
+        entities.add(sanJoseNews);
 
-        UsergridEntity deAnza = new UsergridEntity(collectionName);
+        UsergridEntity deAnza = new UsergridEntity(collectionName,"deAnza");
         deAnza.setLocation(37.334370, -121.895081);
-        deAnza.putProperty("name", "deAnza");
-        client.POST(deAnza);
+        entities.add(deAnza);
+
+        Usergrid.POST(entities);
 
         SDKTestUtils.indexSleep();
 
         float centerLat = 37.334110f;
         float centerLon = -121.894340f;
 
-        UsergridQuery q1 = new UsergridQuery()
-                .collectionName(collectionName)
-                .locationWithin(611.00000, centerLat, centerLon);
+        UsergridQuery q1 = new UsergridQuery(collectionName).locationWithin(611.00000, centerLat, centerLon);
 
         UsergridResponse qr = Usergrid.GET(q1);
         System.out.println(qr.getEntities().size());

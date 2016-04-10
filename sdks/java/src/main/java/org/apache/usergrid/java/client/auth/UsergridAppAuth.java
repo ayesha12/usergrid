@@ -18,6 +18,8 @@ package org.apache.usergrid.java.client.auth;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashMap;
+
 @SuppressWarnings("unused")
 public class UsergridAppAuth extends UsergridAuth {
 
@@ -27,8 +29,19 @@ public class UsergridAppAuth extends UsergridAuth {
     @NotNull public String getClientId() { return clientId; }
     public void setClientId(@NotNull final String clientId) { this.clientId = clientId; }
 
-    @NotNull public String getClientSecret() { return clientSecret; }
+    @NotNull private String getClientSecret() { return clientSecret; }
     public void setClientSecret(@NotNull final String clientSecret) { this.clientSecret = clientSecret; }
+
+    @NotNull
+    @Override
+    public HashMap<String, String> credentialsMap() {
+        HashMap<String,String> credentials = super.credentialsMap();
+        credentials.put("grant_type", "client_credentials");
+        credentials.put("client_id", this.clientId);
+        credentials.put("client_secret", this.clientSecret);
+        return credentials;
+    }
+
 
     public UsergridAppAuth(@NotNull final String clientId, @NotNull final String clientSecret) {
         super();

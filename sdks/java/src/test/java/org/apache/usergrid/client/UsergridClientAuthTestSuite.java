@@ -25,6 +25,7 @@ import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.model.UsergridUser;
 import org.apache.usergrid.java.client.auth.UsergridUserAuth;
 import org.apache.usergrid.java.client.response.UsergridResponse;
+import org.junit.After;
 import org.junit.Test;
 
 import javax.ws.rs.core.MediaType;
@@ -32,6 +33,10 @@ import java.util.List;
 
 public class UsergridClientAuthTestSuite {
 
+    @After
+    public void after() {
+        Usergrid.reset();
+    }
 
     @Test
     public void clientAppInit() {

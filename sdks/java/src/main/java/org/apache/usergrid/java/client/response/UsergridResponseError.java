@@ -18,10 +18,9 @@ package org.apache.usergrid.java.client.response;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize.Inclusion;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,7 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @SuppressWarnings("unused")
-@JsonSerialize(include = Inclusion.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class UsergridResponseError {
 
     @Nullable private String errorName;

@@ -26,7 +26,7 @@ public class UsergridException extends RuntimeException {
     public int getResponseCode() {
         return responseCode;
     }
-    public void setResponseCode(int responseCode) { this.responseCode = responseCode; }
+    public void setResponseCode(final int responseCode) { this.responseCode = responseCode; }
 
     public UsergridException(@NotNull final String message) {
         super(message);
@@ -36,12 +36,12 @@ public class UsergridException extends RuntimeException {
         super(message, cause);
     }
 
-    public UsergridException(@NotNull final String message, int responseCode) {
+    public UsergridException(@NotNull final String message, final int responseCode) {
         super(message);
         this.responseCode = responseCode;
     }
 
-    public UsergridException(@NotNull final String message, @NotNull final Throwable cause, int responseCode) {
+    public UsergridException(@NotNull final String message, @NotNull final Throwable cause, final int responseCode) {
         super(message, cause);
         this.responseCode = responseCode;
     }
