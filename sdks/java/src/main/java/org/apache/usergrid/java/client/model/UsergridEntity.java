@@ -42,7 +42,7 @@ public class UsergridEntity {
     @Nullable private Long created;
     @Nullable private Long modified;
 
-    protected Map<String, JsonNode> properties = new HashMap<>();
+    @NotNull protected Map<String, JsonNode> properties = new HashMap<>();
 
     public UsergridEntity(@JsonProperty("type") @NotNull final String type) {
         this.type = type;
@@ -60,10 +60,10 @@ public class UsergridEntity {
         this.properties = new HashMap<>(properties);
     }
 
-    @Override public String toString() {
+    @NotNull @Override public String toString() {
         return toJsonString(this);
     }
-    public JsonNode toJsonObjectValue() {
+    @NotNull public JsonNode toJsonObjectValue() {
         return toJsonNode(this);
     }
 
@@ -358,7 +358,7 @@ public class UsergridEntity {
         return longValue;
     }
 
-    @JsonAnyGetter
+    @JsonAnyGetter @NotNull
     private Map<String, JsonNode> getProperties() {
         return this.properties;
     }

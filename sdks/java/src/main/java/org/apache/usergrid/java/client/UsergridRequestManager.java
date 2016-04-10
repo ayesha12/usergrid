@@ -24,6 +24,7 @@ import org.apache.usergrid.java.client.auth.UsergridUserAuth;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.*;
@@ -35,8 +36,8 @@ import static org.apache.usergrid.java.client.utils.ObjectUtils.isEmpty;
 
 public class UsergridRequestManager {
 
-    public final UsergridClient client;
-    private final javax.ws.rs.client.Client restClient;
+    @Nullable public final UsergridClient client;
+    @NotNull private final javax.ws.rs.client.Client restClient;
 
     public UsergridRequestManager(@NotNull final UsergridClient client) {
         this.client = client;

@@ -41,6 +41,7 @@ public final class Usergrid {
     }
     public static void reset() { Usergrid.sharedClient = null; }
 
+    @NotNull
     public static UsergridClient getInstance() throws NullPointerException {
         if (!Usergrid.isInitialized()) {
             throw new NullPointerException("Shared client has not been initialized!");

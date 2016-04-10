@@ -410,25 +410,25 @@ public final class UsergridQuery {
     }
 
     private static final int LIMIT_DEFAULT = 10;
-    private static final String AMPERSAND = "&";
-    private static final String AND = "and";
-    private static final String APOSTROPHE = "'";
-    private static final String COMMA = ",";
-    private static final String CONTAINS = "contains";
-    private static final String CURSOR = "cursor";
-    private static final String EMPTY_STRING = "";
-    private static final String EQUALS = "=";
-    private static final String LIMIT = "limit";
-    private static final String LOCATION = "location";
-    private static final String NOT = "not";
-    private static final String OF = "of";
-    private static final String OR = "or";
-    private static final String ORDER_BY = "order by";
-    private static final String QL = "ql";
-    private static final String QUESTION_MARK = "?";
-    private static final String SELECT_ALL = "select *";
-    private static final String SPACE = " ";
-    private static final String UTF8 = "UTF-8";
-    private static final String WHERE = "where";
-    private static final String WITHIN = "within";
+    @NotNull private static final String AMPERSAND = "&";
+    @NotNull private static final String AND = "and";
+    @NotNull private static final String APOSTROPHE = "'";
+    @NotNull private static final String COMMA = ",";
+    @NotNull private static final String CONTAINS = "contains";
+    @NotNull private static final String CURSOR = "cursor";
+    @NotNull  private static final String EMPTY_STRING = "";
+    @NotNull private static final String EQUALS = "=";
+    @NotNull private static final String LIMIT = "limit";
+    @NotNull private static final String LOCATION = "location";
+    @NotNull private static final String NOT = "not";
+    @NotNull private static final String OF = "of";
+    @NotNull private static final String OR = "or";
+    @NotNull private static final String ORDER_BY = "order by";
+    @NotNull private static final String QL = "ql";
+    @NotNull private static final String QUESTION_MARK = "?";
+    @NotNull private static final String SELECT_ALL = "select *";
+    @NotNull private static final String SPACE = " ";
+    @NotNull private static final String UTF8 = "UTF-8";
+    @NotNull private static final String WHERE = "where";
+    @NotNull private static final String WITHIN = "within";
 }

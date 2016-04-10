@@ -57,7 +57,7 @@ public class UsergridResponse {
     public boolean ok() { return (statusCode > 0 && statusCode < 400); }
     public int count()  { return (entities == null) ? 0 : entities.size(); }
     public boolean hasNextPage() { return (cursor != null); }
-    @Override public String toString() {
+    @NotNull @Override public String toString() {
         return toJsonString(this);
     }
 
@@ -172,7 +172,7 @@ public class UsergridResponse {
         if( this.hasNextPage() && client != null && entity != null ) {
             Map<String, Object> paramsMap = new HashMap<>();
             paramsMap.put("cursor", getCursor());
-            UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE, this.client.clientAppUrl(), paramsMap, null, null, this.getQuery(), entity.getType());
+            UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE, client.clientAppUrl(), paramsMap, null, null, this.getQuery(), entity.getType());
             return client.sendRequest(request);
         } else {
             return UsergridResponse.fromError(client,"Error Loading Next Page.","Unable to load next page.");
