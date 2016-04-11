@@ -26,7 +26,6 @@ import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.ws.rs.core.MediaType;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,7 +78,7 @@ public class UsergridClient {
     @Nullable public UsergridUser getCurrentUser() { return this.currentUser; }
     public void setCurrentUser(@Nullable final UsergridUser currentUser) { this.currentUser = currentUser; }
 
-    @Nullable public UsergridUserAuth getUserAuth() { return (this.currentUser != null) ? this.currentUser.userAuth : null; }
+    @Nullable public UsergridUserAuth getUserAuth() { return (this.currentUser != null) ? this.currentUser.getUserAuth() : null; }
 
     @Nullable public UsergridAppAuth getAppAuth() { return this.config.appAuth; }
     public void setAppAuth(@Nullable final UsergridAppAuth appAuth) { this.config.appAuth = appAuth; }
@@ -95,8 +94,8 @@ public class UsergridClient {
         } else {
             switch (config.authMode) {
                 case USER: {
-                    if (this.currentUser != null && this.currentUser.userAuth != null && this.currentUser.userAuth.isValidToken()) {
-                        authForRequests = this.currentUser.userAuth;
+                    if (this.currentUser != null && this.currentUser.getUserAuth() != null && this.currentUser.getUserAuth().isValidToken()) {
+                        authForRequests = this.currentUser.getUserAuth();
                     }
                     break;
                 }
@@ -161,7 +160,7 @@ public class UsergridClient {
         data.put("newpassword", newPassword);
         data.put("oldpassword", oldPassword);
         String[] pathSegments = { "users", usernameOrEmail, "password"};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE, this.clientAppUrl(), null, data, pathSegments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, this.clientAppUrl(), null, data, this.authForRequests() ,pathSegments);
         return this.sendRequest(request);
     }
 
@@ -170,7 +169,7 @@ public class UsergridClient {
         UsergridUser currentUser = this.currentUser;
         if( currentUser != null ) {
             String uuidOrUsername = currentUser.uuidOrUsername();
-            UsergridUserAuth userAuth = currentUser.userAuth;
+            UsergridUserAuth userAuth = currentUser.getUserAuth();
             if( uuidOrUsername != null && userAuth != null ) {
                 String accessToken = userAuth.getAccessToken();
                 if( accessToken != null ) {
@@ -198,7 +197,7 @@ public class UsergridClient {
         else{
             pathSegments[len-1] = "revoketokens";
         }
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.PUT, MediaType.APPLICATION_JSON_TYPE, this.clientAppUrl(), param, null, pathSegments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.PUT, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, this.clientAppUrl(), param, null, this.authForRequests() , pathSegments);
         return this.sendRequest(request);
     }
 
@@ -210,14 +209,14 @@ public class UsergridClient {
     @NotNull
     public UsergridResponse GET(@NotNull final String collection, @NotNull final String uuidOrName) {
         String[] pathSegments = {collection, uuidOrName};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE, this.clientAppUrl(), pathSegments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, this.clientAppUrl(), this.authForRequests() , pathSegments);
         return this.sendRequest(request);
     }
 
     @NotNull
     public UsergridResponse GET(@NotNull final String type) {
         String[] pathSegments = {type};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE, this.clientAppUrl(), pathSegments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, this.clientAppUrl(), this.authForRequests() , pathSegments);
         return this.sendRequest(request);
     }
 
@@ -227,18 +226,18 @@ public class UsergridClient {
         if( collectionName == null ) {
             return UsergridResponse.fromError(this,  "Query collection name missing.", "Query collection name is missing.");
         }
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE, this.clientAppUrl(), query, collectionName);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, this.clientAppUrl(), query, this.authForRequests() , collectionName);
         return this.sendRequest(request);
     }
 
-    @NotNull //TODO: REALLY TEST THIS
+    @NotNull
     public UsergridResponse PUT(@NotNull final String type, @NotNull final String uuidOrName, @NotNull final Map<String, Object> jsonBody) {
         String[] pathSegments = { type, uuidOrName };
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.PUT, MediaType.APPLICATION_JSON_TYPE, this.clientAppUrl(), null, jsonBody, pathSegments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.PUT, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, this.clientAppUrl(), null, jsonBody, this.authForRequests() , pathSegments);
         return this.sendRequest(request);
     }
 
-    @NotNull //TODO: REALLY TEST THIS
+    @NotNull
     public UsergridResponse PUT(@NotNull final String type, @NotNull final Map<String, Object> jsonBody) {
         String uuidOrName = null;
         Object uuid = jsonBody.get(UsergridEntityProperties.UUID.toString());
@@ -254,7 +253,7 @@ public class UsergridClient {
             return UsergridResponse.fromError(this,  "jsonBody not valid..", "The `jsonBody` must contain a valid value for either `uuid` or `name`.");
         }
         String[] pathSegments = { type, uuidOrName };
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.PUT, MediaType.APPLICATION_JSON_TYPE, this.clientAppUrl(), null, jsonBody, pathSegments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.PUT, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, this.clientAppUrl(), null, jsonBody, this.authForRequests() , pathSegments);
         return this.sendRequest(request);
     }
 
@@ -265,53 +264,53 @@ public class UsergridClient {
             return UsergridResponse.fromError(this,  "No UUID or name found.", "The entity object must have a `uuid` or `name` assigned.");
         }
         String[] pathSegments = { entity.getType(), entityUuidOrName };
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.PUT, MediaType.APPLICATION_JSON_TYPE, this.clientAppUrl(), null, entity, pathSegments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.PUT, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, this.clientAppUrl(), null, entity, this.authForRequests() , pathSegments);
         return this.sendRequest(request);
     }
 
     @NotNull
-    public UsergridResponse PUT(@NotNull final UsergridQuery query, @NotNull final Map<String, Object> jsonBody) { //TODO: Fix this method
+    public UsergridResponse PUT(@NotNull final UsergridQuery query, @NotNull final Map<String, Object> jsonBody) {
         String collectionName = query.getCollection();
         if( collectionName == null ) {
             return UsergridResponse.fromError(this,  "Query collection name missing.", "Query collection name is missing.");
         }
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.PUT, MediaType.APPLICATION_JSON_TYPE, this.clientAppUrl(), query, collectionName);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.PUT, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, this.clientAppUrl(), null, jsonBody, null, query, this.authForRequests(),collectionName);
         return this.sendRequest(request);
     }
 
     @NotNull
     public UsergridResponse POST(final @NotNull UsergridEntity entity) {
         String[] pathSegments = {entity.getType()};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE, this.clientAppUrl(), null, entity, pathSegments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, this.clientAppUrl(), null, entity, this.authForRequests() , pathSegments);
         return this.sendRequest(request);
     }
 
-    @NotNull //TODO: REALLY TEST THIS
+    @NotNull
     public UsergridResponse POST(@NotNull final List<UsergridEntity> entities) {
         if( entities.isEmpty() ) {
             return UsergridResponse.fromError(this,  "Unable to POST entities.", "entities array is empty.");
         }
         String[] pathSegments = {entities.get(0).getType()};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE, this.clientAppUrl(), null, entities, pathSegments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, this.clientAppUrl(), null, entities, this.authForRequests() , pathSegments);
         return this.sendRequest(request);
     }
 
-    @NotNull //TODO: REALLY TEST THIS
+    @NotNull
     public UsergridResponse POST(@NotNull final String type, @NotNull final String uuidOrName, @NotNull final Map<String, Object> jsonBody) {
         String[] pathSegments = {type, uuidOrName};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE, this.clientAppUrl(), null, jsonBody, pathSegments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, this.clientAppUrl(), null, jsonBody, this.authForRequests() , pathSegments);
         return this.sendRequest(request);
     }
 
-    @NotNull //TODO: REALLY TEST THIS
+    @NotNull
     public UsergridResponse POST(@NotNull final String type, @NotNull final Map<String, Object> jsonBody) {
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE, this.clientAppUrl(), null, jsonBody, type);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, this.clientAppUrl(), null, jsonBody, this.authForRequests() , type);
         return this.sendRequest(request);
     }
 
-    @NotNull //TODO: REALLY TEST THIS
+    @NotNull
     public UsergridResponse POST(@NotNull final String type, @NotNull final List<Map<String, Object>> jsonBodies) {
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE, this.clientAppUrl(), null, jsonBodies, type);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, this.clientAppUrl(), null, jsonBodies, this.authForRequests() , type);
         return this.sendRequest(request);
     }
 
@@ -322,14 +321,14 @@ public class UsergridClient {
             return UsergridResponse.fromError(this,  "No UUID or name found.", "The entity object must have a `uuid` or `name` assigned.");
         }
         String[] pathSegments = {entity.getType(), entityUuidOrName};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.DELETE, MediaType.APPLICATION_JSON_TYPE, this.clientAppUrl(), pathSegments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.DELETE, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, this.clientAppUrl(), this.authForRequests() , pathSegments);
         return this.sendRequest(request);
     }
 
     @NotNull
     public UsergridResponse DELETE(@NotNull final String type, @NotNull final String uuidOrName) {
         String[] pathSegments = {type, uuidOrName};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.DELETE, MediaType.APPLICATION_JSON_TYPE, this.clientAppUrl(), pathSegments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.DELETE, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, this.clientAppUrl(), this.authForRequests() , pathSegments);
         return this.sendRequest(request);
     }
 
@@ -339,7 +338,7 @@ public class UsergridClient {
         if( collectionName == null ) {
             return UsergridResponse.fromError(this,  "Query collection name missing.", "Query collection name is missing.");
         }
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.DELETE, MediaType.APPLICATION_JSON_TYPE, this.clientAppUrl(), query, collectionName);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.DELETE, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, this.clientAppUrl(), query, this.authForRequests() , collectionName);
         return this.sendRequest(request);
     }
 
@@ -356,28 +355,28 @@ public class UsergridClient {
     @NotNull
     public UsergridResponse connect(@NotNull final String entityType, @NotNull final String entityId, @NotNull final String relationship, @NotNull final String toType, @NotNull final String toName) {
         String[] pathSegments = {entityType, entityId, relationship, toType, toName};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE, this.clientAppUrl(), pathSegments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, this.clientAppUrl(), this.authForRequests() , pathSegments);
         return this.sendRequest(request);
     }
 
     @NotNull
     public UsergridResponse connect(@NotNull final String entityType, @NotNull final String entityId, @NotNull final String relationship, @NotNull final String toId) {
         String[] pathSegments = { entityType, entityId, relationship, toId};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE, this.clientAppUrl(), pathSegments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, this.clientAppUrl(), this.authForRequests() , pathSegments);
         return this.sendRequest(request);
     }
 
     @NotNull
     public UsergridResponse disconnect(@NotNull final String entityType, @NotNull final String entityId, @NotNull final String relationship, @NotNull final String fromUuid) {
         String[] pathSegments = {entityType, entityId, relationship, fromUuid};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.DELETE, MediaType.APPLICATION_JSON_TYPE, this.clientAppUrl(), pathSegments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.DELETE, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, this.clientAppUrl(), this.authForRequests() , pathSegments);
         return this.sendRequest(request);
     }
 
     @NotNull
     public UsergridResponse disconnect(@NotNull final String entityType, @NotNull final String entityId, @NotNull final String relationship, @NotNull final String fromType, @NotNull final String fromName) {
         String[] pathSegments = {entityType, entityId, relationship, fromType, fromName};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.DELETE, MediaType.APPLICATION_JSON_TYPE, this.clientAppUrl(), pathSegments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.DELETE, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, this.clientAppUrl(), this.authForRequests() , pathSegments);
         return this.sendRequest(request);
     }
 
@@ -408,14 +407,14 @@ public class UsergridClient {
     @NotNull
     public UsergridResponse getConnections(@NotNull final UsergridDirection direction, @NotNull final String type, @NotNull final String uuidOrName, @NotNull final String relationship, @Nullable final UsergridQuery query) {
         String[] pathSegments = {type, uuidOrName, direction.connectionValue(), relationship};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE, this.clientAppUrl(), query, pathSegments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, this.clientAppUrl(), query, this.authForRequests() , pathSegments);
         return this.sendRequest(request);
     }
 
     @NotNull
     public UsergridResponse getConnections(@NotNull final UsergridDirection direction, @NotNull final String uuid, @NotNull final String relationship, @Nullable final UsergridQuery query) {
         String[] pathSegments = {uuid, direction.connectionValue(), relationship};
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE, this.clientAppUrl(), query, pathSegments);
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, this.clientAppUrl(), query, this.authForRequests() , pathSegments);
         return this.sendRequest(request);
     }
 }

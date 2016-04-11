@@ -16,10 +16,8 @@
  */
 package org.apache.usergrid.java.client.utils;
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import org.jetbrains.annotations.NotNull;
 
-import javax.ws.rs.core.MultivaluedMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,14 +32,5 @@ public class MapUtils {
             newMap.remove(key);
         }
         return newMap;
-    }
-
-    @NotNull
-    public static Map<String,String> putMultivaluedMap(@NotNull final MultivaluedMap<String, Object> headers) {
-        Map<String,String> multiValueMap = new HashMap<>();
-        for (String objKey: headers.keySet()) {
-            multiValueMap.put(objKey, JsonNodeFactory.instance.pojoNode(headers.get(objKey)).toString());
-        }
-        return multiValueMap;
     }
 }

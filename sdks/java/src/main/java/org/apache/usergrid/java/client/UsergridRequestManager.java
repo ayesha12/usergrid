@@ -16,77 +16,43 @@
  */
 package org.apache.usergrid.java.client;
 
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.apache.usergrid.java.client.UsergridEnums.UsergridHttpMethod;
 import org.apache.usergrid.java.client.auth.UsergridAppAuth;
 import org.apache.usergrid.java.client.auth.UsergridAuth;
 import org.apache.usergrid.java.client.model.UsergridUser;
 import org.apache.usergrid.java.client.auth.UsergridUserAuth;
 import org.apache.usergrid.java.client.response.UsergridResponse;
-import org.glassfish.jersey.jackson.JacksonFeature;
 import org.jetbrains.annotations.NotNull;
 
-import javax.ws.rs.ProcessingException;
-import javax.ws.rs.client.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.util.Map;
 
 import static org.apache.usergrid.java.client.utils.ObjectUtils.isEmpty;
 
 public class UsergridRequestManager {
 
-    @NotNull public final UsergridClient client;
-    @NotNull private final javax.ws.rs.client.Client restClient;
+    @NotNull public static final String USERGRID_USER_AGENT = "usergrid-java/v" + Usergrid.UsergridSDKVersion;
 
-    public UsergridRequestManager(@NotNull final UsergridClient client) {
-        this.client = client;
-        this.restClient = ClientBuilder.newBuilder()
-                .register(JacksonFeature.class)
-                .register(ProcessingException.class)
-                .build();
+    @NotNull private final UsergridClient usergridClient;
+    @NotNull private final OkHttpClient httpClient;
+
+    public UsergridRequestManager(@NotNull final UsergridClient usergridClient) {
+        this.usergridClient = usergridClient;
+        this.httpClient = new OkHttpClient();
     }
 
     @NotNull
-    public UsergridResponse performRequest(@NotNull final UsergridRequest request) {
-        UsergridHttpMethod method = request.getMethod();
-        MediaType contentType = request.getContentType();
-        Entity entity = Entity.entity(request.getData() == null ? "" : request.getData(), contentType);
-
-        String url = request.getBaseUrl();
-        if (request.getQuery() != null) {
-            url += request.getQuery().build();
-        }
-
-        WebTarget webTarget = this.restClient.target(url);
-        if( request.getPathSegments() != null ) {
-            for (String segment : request.getPathSegments()) {
-                webTarget = webTarget.path(segment);
-            }
-        }
-
-        if (!isEmpty(request.getParameters())) {
-            for (Map.Entry<String, Object> param : request.getParameters().entrySet()) {
-                webTarget = webTarget.queryParam(param.getKey(), param.getValue());
-            }
-        }
-
-        Invocation.Builder invocationBuilder = webTarget.request(contentType);
-        UsergridAuth authForRequest = client.authForRequests();
-        if (authForRequest != null && authForRequest.getAccessToken() != null) {
-            String auth = "Bearer " + authForRequest.getAccessToken();
-            invocationBuilder.header("Authorization", auth);
-        }
+    public UsergridResponse performRequest(@NotNull final UsergridRequest usergridRequest) {
+        Request request = usergridRequest.buildRequest();
         UsergridResponse usergridResponse;
         try {
-            Response response;
-            if (method == UsergridHttpMethod.POST || method == UsergridHttpMethod.PUT) {
-                response = invocationBuilder.method(method.toString(),entity);
-            } else {
-                response = invocationBuilder.method(method.toString());
-            }
-            usergridResponse = UsergridResponse.fromResponse(client,request,response);
-        } catch (Exception requestException) {
-            usergridResponse = UsergridResponse.fromException(client,requestException);
+            Response response = this.httpClient.newCall(request).execute();
+            usergridResponse = UsergridResponse.fromResponse(this.usergridClient,usergridRequest,response);
+        } catch( IOException exception ) {
+            usergridResponse = UsergridResponse.fromException(this.usergridClient,exception);
         }
         return usergridResponse;
     }
@@ -94,7 +60,7 @@ public class UsergridRequestManager {
     @NotNull
     private UsergridResponse authenticate(@NotNull final UsergridAuth auth) {
         Map<String, String> credentials = auth.credentialsMap();
-        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE, client.clientAppUrl(), null, credentials, "token");
+        UsergridRequest request = new UsergridRequest(UsergridHttpMethod.POST, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, this.usergridClient.clientAppUrl(), null, credentials, this.usergridClient.authForRequests(), "token");
         UsergridResponse response = performRequest(request);
         if (!isEmpty(response.getAccessToken()) && !isEmpty(response.getExpires())) {
             auth.setAccessToken(response.getAccessToken());
@@ -113,7 +79,7 @@ public class UsergridRequestManager {
         UsergridResponse response = this.authenticate(userAuth);
         UsergridUser responseUser = response.user();
         if ( response.ok() && responseUser != null) {
-            responseUser.userAuth = userAuth;
+            responseUser.setUserAuth(userAuth);
         }
         return response;
     }

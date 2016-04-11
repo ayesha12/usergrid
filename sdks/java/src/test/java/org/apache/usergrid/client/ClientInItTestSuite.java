@@ -86,10 +86,10 @@ public class ClientInItTestSuite {
             assertTrue("response status is OK", response.ok() == true);
             assertTrue("should have a valid token",response.getAccessToken().length() > 10);
             assertTrue("client.appAuth.token should be set to the token returned from Usergrid",
-                    Usergrid.getCurrentUser().userAuth.getAccessToken().equals(response.getAccessToken()));
-            assertTrue("client.appAuth.isValid should be true",Usergrid.getCurrentUser().userAuth.isValidToken() == true);
+                    Usergrid.getCurrentUser().getUserAuth().getAccessToken().equals(response.getAccessToken()));
+            assertTrue("client.appAuth.isValid should be true",Usergrid.getCurrentUser().getUserAuth().isValidToken() == true);
             assertTrue("client.appAuth.expiry should be set to a future date",
-                    Usergrid.getCurrentUser().userAuth.getExpiry() > System.currentTimeMillis());
+                    Usergrid.getCurrentUser().getUserAuth().getExpiry() > System.currentTimeMillis());
         } catch (IllegalArgumentException e) {
             assertTrue(" error thrown", e != null);
         }
@@ -102,10 +102,10 @@ public class ClientInItTestSuite {
             assertTrue("response status is OK", response.ok() == true);
             assertTrue("should have a valid token",response.getAccessToken().length() > 10);
             assertTrue("client.appAuth.token should be set to the token returned from Usergrid",
-                    Usergrid.getCurrentUser().userAuth.getAccessToken().equals(response.getAccessToken()));
-            assertTrue("client.appAuth.isValid should be true",Usergrid.getCurrentUser().userAuth.isValidToken() == true);
+                    Usergrid.getCurrentUser().getUserAuth().getAccessToken().equals(response.getAccessToken()));
+            assertTrue("client.appAuth.isValid should be true",Usergrid.getCurrentUser().getUserAuth().isValidToken() == true);
             assertTrue("client.appAuth.expiry should be set to a future date",
-                    Usergrid.getCurrentUser().userAuth.getExpiry() > System.currentTimeMillis());
+                    Usergrid.getCurrentUser().getUserAuth().getExpiry() > System.currentTimeMillis());
         } catch (IllegalArgumentException e) {
             assertTrue(" error thrown", e != null);
         }

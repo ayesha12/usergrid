@@ -24,7 +24,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.ws.rs.core.MediaType;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,7 +41,7 @@ public class ClientAuthFallBackTestSuite {
         String[] segments = {"roles","guest","permissions"};
         Map<String, Object> params = new HashMap<>();
         params.put("permission","get,post,put,delete:/**");
-        UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.DELETE, MediaType.APPLICATION_JSON_TYPE, Usergrid.clientAppUrl(), params, null, segments);
+        UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.DELETE, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, Usergrid.clientAppUrl(), params, null, Usergrid.authForRequests(), segments);
         Usergrid.sendRequest(request);
     }
 
@@ -52,7 +51,7 @@ public class ClientAuthFallBackTestSuite {
         String[] segments = {"roles","guest","permissions"};
         Map<String, Object> params = new HashMap<>();
         params.put("permission","get,post,put,delete:/**");
-        UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.POST, MediaType.APPLICATION_JSON_TYPE, Usergrid.clientAppUrl(), params, null, segments);
+        UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.POST, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, Usergrid.clientAppUrl(), params, null, Usergrid.authForRequests(), segments);
         Usergrid.sendRequest(request);
         Usergrid.reset();
     }

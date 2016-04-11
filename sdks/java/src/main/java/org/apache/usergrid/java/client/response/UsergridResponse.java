@@ -18,6 +18,7 @@ package org.apache.usergrid.java.client.response;
 
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.JsonNode;
+import okhttp3.Headers;
 import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.UsergridEnums;
 import org.apache.usergrid.java.client.UsergridRequest;
@@ -25,13 +26,9 @@ import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.model.UsergridUser;
 import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.utils.JsonUtils;
-import org.apache.usergrid.java.client.utils.MapUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import java.util.*;
 
 import static org.apache.usergrid.java.client.utils.JsonUtils.toJsonString;
@@ -61,14 +58,11 @@ public class UsergridResponse {
         return toJsonString(this);
     }
 
-    @Nullable
-    public UsergridEntity first() { return (entities == null || entities.isEmpty()) ? null : entities.get(0); }
-    @Nullable
-    public UsergridEntity entity() {
+    @Nullable public UsergridEntity first() { return (entities == null || entities.isEmpty()) ? null : entities.get(0); }
+    @Nullable public UsergridEntity entity() {
         return first();
     }
-    @Nullable
-    public UsergridEntity last() { return (entities == null || entities.isEmpty()) ? null : entities.get(entities.size() - 1); }
+    @Nullable public UsergridEntity last() { return (entities == null || entities.isEmpty()) ? null : entities.get(entities.size() - 1); }
 
     @Nullable
     public UsergridUser user() {
@@ -103,13 +97,13 @@ public class UsergridResponse {
     }
     @JsonIgnore public void setClient(@Nullable final UsergridClient client) { this.client = client; }
 
-    @Nullable
+    @Nullable @JsonIgnore
     public JsonNode getResponseJson() {
         return responseJson;
     }
     private void setResponseJson(@Nullable final JsonNode responseJson) {this.responseJson = responseJson; }
 
-    @Nullable
+    @Nullable @JsonIgnore
     public UsergridQuery getQuery() {
         return query;
     }
@@ -172,34 +166,11 @@ public class UsergridResponse {
         if( this.hasNextPage() && client != null && entity != null ) {
             Map<String, Object> paramsMap = new HashMap<>();
             paramsMap.put("cursor", getCursor());
-            UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE, client.clientAppUrl(), paramsMap, null, null, this.getQuery(), entity.getType());
+            UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.GET, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, client.clientAppUrl(), paramsMap, null, null, this.getQuery(), client.authForRequests() , entity.getType());
             return client.sendRequest(request);
         } else {
             return UsergridResponse.fromError(client,"Error Loading Next Page.","Unable to load next page.");
         }
-    }
-
-    @NotNull
-    public static UsergridResponse fromResponse(@Nullable final UsergridClient client, @NotNull final UsergridRequest request, @NotNull final Response requestResponse) {
-        UsergridResponse response;
-        try {
-            String responseJsonString = requestResponse.readEntity(String.class);
-            JsonNode responseJson = JsonUtils.mapper.readTree(responseJsonString);
-            if ( responseJson.has("error") )  {
-                response = new UsergridResponse();
-                response.responseError = JsonUtils.fromJsonNode(responseJson,UsergridResponseError.class);
-            } else {
-                response = JsonUtils.fromJsonNode(responseJson,UsergridResponse.class);
-            }
-            response.responseJson = responseJson;
-        } catch ( Exception e ) {
-            response = UsergridResponse.fromException(client,e);
-        }
-        response.client = client;
-        response.statusCode = requestResponse.getStatus();
-        response.headers = MapUtils.putMultivaluedMap(requestResponse.getHeaders());
-        response.query = request.getQuery();
-        return response;
     }
 
     @NotNull
@@ -214,14 +185,38 @@ public class UsergridResponse {
     public static UsergridResponse fromException(@Nullable final UsergridClient client, @NotNull final Exception ex) {
         UsergridResponse response = new UsergridResponse();
         response.client = client;
-        if (ex instanceof ClientErrorException)  {
-            ClientErrorException clientError = (ClientErrorException) ex;
-            response.statusCode = clientError.getResponse().getStatus();
-            response.responseError = new UsergridResponseError(clientError.getResponse().getStatusInfo().toString(),
-                    clientError.getResponse().toString(), clientError.getClass().toString());
-        }  else  {
-            response.responseError = new UsergridResponseError(ex.getClass().toString(), ex.getMessage(), ex.getCause().toString());
+        response.responseError = new UsergridResponseError(ex.getClass().toString(), ex.getMessage(), ex.getCause().toString());
+        return response;
+    }
+
+    @NotNull
+    public static UsergridResponse fromResponse(@NotNull final UsergridClient client, @NotNull final UsergridRequest request, @NotNull final okhttp3.Response requestResponse) {
+        UsergridResponse response;
+        JsonNode responseJson;
+        try {
+            String responseJsonString = requestResponse.body().string();
+            responseJson = JsonUtils.mapper.readTree(responseJsonString);
+        } catch ( Exception e ) {
+            return UsergridResponse.fromException(client,e);
         }
+        if ( responseJson.has("error") )  {
+            response = new UsergridResponse();
+            response.responseError = JsonUtils.fromJsonNode(responseJson,UsergridResponseError.class);
+        } else {
+            response = JsonUtils.fromJsonNode(responseJson,UsergridResponse.class);
+        }
+        response.client = client;
+        response.responseJson = responseJson;
+        response.statusCode = requestResponse.code();
+
+        Headers responseHeaders = requestResponse.headers();
+        HashMap<String,String> headers = new HashMap<>();
+        for (int i = 0; i < responseHeaders.size(); i++) {
+            headers.put(responseHeaders.name(i),responseHeaders.value(i));
+        }
+
+        response.headers = headers;
+        response.query = request.getQuery();
         return response;
     }
 }

@@ -28,7 +28,6 @@ import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.junit.After;
 import org.junit.Test;
 
-import javax.ws.rs.core.MediaType;
 import java.util.List;
 
 public class UsergridClientAuthTestSuite {
@@ -48,8 +47,8 @@ public class UsergridClientAuthTestSuite {
 //        client.config.authMode = UsergridEnums.UsergridAuthMode.NONE;
 
         String[] segments = {client.getOrgId(), client.getAppId(), "users"};
-        UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.GET, MediaType.APPLICATION_JSON_TYPE,
-                client.getBaseUrl(), null, null, null, null, segments);
+        UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.GET, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE,
+                client.getBaseUrl(), null, null, null, null, client.authForRequests(), segments);
         UsergridResponse response = client.sendRequest(request);
     }
 
