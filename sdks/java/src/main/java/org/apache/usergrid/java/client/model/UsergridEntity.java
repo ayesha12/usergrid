@@ -18,14 +18,12 @@ package org.apache.usergrid.java.client.model;
 
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.node.*;
 import org.apache.usergrid.java.client.UsergridEnums.*;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.apache.usergrid.java.client.utils.JsonUtils;
-import org.apache.usergrid.java.client.utils.UsergridEntityDeserializer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -65,7 +63,8 @@ public class UsergridEntity {
         this.properties = new HashMap<>(properties);
     }
 
-    @Nullable public static Class<? extends UsergridEntity> customSubclassForType(@NotNull final String type) {
+    @Nullable
+    public static Class<? extends UsergridEntity> customSubclassForType(@NotNull final String type) {
         return UsergridEntity.subclassMappings.get(type);
     }
 

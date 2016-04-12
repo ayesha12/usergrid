@@ -20,9 +20,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
-public class ObjectUtils {
+public final class ObjectUtils {
 
-    public static boolean isEmpty(@Nullable Object s) {
+    public static boolean isEmpty(@Nullable final Object s) {
         if (s == null) {
             return true;
         }

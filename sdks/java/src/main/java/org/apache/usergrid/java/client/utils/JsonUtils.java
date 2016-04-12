@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @SuppressWarnings("unused")
-public class JsonUtils {
+public final class JsonUtils {
 
     @NotNull public static final ObjectMapper mapper = new ObjectMapper();
 

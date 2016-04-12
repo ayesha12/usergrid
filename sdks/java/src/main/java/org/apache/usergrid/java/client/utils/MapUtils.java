@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings("unused")
-public class MapUtils {
+public final class MapUtils {
 
     @NotNull
     public static <T> Map<String, T> newMapWithoutKeys(@NotNull  final Map<String, T> map, @NotNull final List<String> keys) {
