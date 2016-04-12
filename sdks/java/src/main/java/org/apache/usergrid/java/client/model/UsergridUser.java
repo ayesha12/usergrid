@@ -112,11 +112,11 @@ public class UsergridUser extends UsergridEntity {
         return usernameOrEmail;
     }
 
-    public boolean checkAvailable(@Nullable final String email, @Nullable final String username) {
-        return checkAvailable(Usergrid.getInstance(), email, username);
+    public static boolean checkAvailable(@Nullable final String email, @Nullable final String username) {
+        return UsergridUser.checkAvailable(Usergrid.getInstance(), email, username);
     }
 
-    public boolean checkAvailable(@NotNull final UsergridClient client, @Nullable final String email, @Nullable final String username) {
+    public static boolean checkAvailable(@NotNull final UsergridClient client, @Nullable final String email, @Nullable final String username) {
         if (email == null && username == null) {
             throw new IllegalArgumentException("email and username both are null ");
         }
@@ -177,10 +177,7 @@ public class UsergridUser extends UsergridEntity {
 
     @NotNull
     public UsergridResponse reauthenticate(@NotNull final UsergridClient client) {
-        if( this.userAuth == null ) {
-            return UsergridResponse.fromError(client,  "Invalid UsergridUserAuth.", "No UsergridUserAuth found on the UsergridUser.");
-        }
-        return client.authenticateUser(this.userAuth, false);
+        return this.userAuth == null ? UsergridResponse.fromError(client, "Invalid UsergridUserAuth.", "No UsergridUserAuth found on the UsergridUser.") : client.authenticateUser(this.userAuth, false);
     }
 
     @NotNull
@@ -190,15 +187,16 @@ public class UsergridUser extends UsergridEntity {
 
     @NotNull
     public UsergridResponse logout(@NotNull final UsergridClient client) {
+        UsergridResponse response;
         String uuidOrUsername = this.uuidOrUsername();
         String accessToken = (this.userAuth != null) ? this.userAuth.getAccessToken() : null;
         if (uuidOrUsername == null || accessToken == null ) {
-            return UsergridResponse.fromError(client,  "Logout Failed.", "UUID or Access Token not found on UsergridUser object.");
-        }
-
-        UsergridResponse response = client.logoutUser(uuidOrUsername, accessToken);
-        if( response.ok() ) {
-            this.userAuth = null;
+            response = UsergridResponse.fromError(client,  "Logout Failed.", "UUID or Access Token not found on UsergridUser object.");
+        } else {
+            response = client.logoutUser(uuidOrUsername, accessToken);
+            if( response.ok() ) {
+                this.userAuth = null;
+            }
         }
         return response;
     }

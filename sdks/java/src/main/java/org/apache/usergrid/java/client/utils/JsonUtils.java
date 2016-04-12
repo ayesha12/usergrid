@@ -21,8 +21,10 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.*;
 import org.apache.usergrid.java.client.exception.UsergridException;
+import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,7 +37,13 @@ import java.util.UUID;
 @SuppressWarnings("unused")
 public class JsonUtils {
 
-    @NotNull public static ObjectMapper mapper = new ObjectMapper();
+    @NotNull public static final ObjectMapper mapper = new ObjectMapper();
+
+    static {
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(UsergridEntity.class, new UsergridEntityDeserializer());
+        mapper.registerModule(module);
+    }
 
     @NotNull
     public static ObjectNode createObjectNode() {

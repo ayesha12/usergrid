@@ -18,12 +18,14 @@ package org.apache.usergrid.java.client.model;
 
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.node.*;
 import org.apache.usergrid.java.client.UsergridEnums.*;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.apache.usergrid.java.client.utils.JsonUtils;
+import org.apache.usergrid.java.client.utils.UsergridEntityDeserializer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -32,9 +34,12 @@ import java.util.*;
 import static org.apache.usergrid.java.client.utils.JsonUtils.*;
 
 @SuppressWarnings("unused")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type", defaultImpl = UsergridEntity.class, visible = true)
-@JsonSubTypes({@JsonSubTypes.Type(value = UsergridUser.class, name = UsergridUser.USER_ENTITY_TYPE)})
 public class UsergridEntity {
+
+    @NotNull private static HashMap<String,Class<? extends UsergridEntity>> subclassMappings = new HashMap<>();
+    static {
+        subclassMappings.put("user",UsergridUser.class);
+    }
 
     @NotNull private String type;
     @Nullable private String uuid;
@@ -58,6 +63,14 @@ public class UsergridEntity {
     public UsergridEntity(@NotNull final String type, @Nullable final String name, @NotNull final Map<String, JsonNode> properties) {
         this(type,name);
         this.properties = new HashMap<>(properties);
+    }
+
+    @Nullable public static Class<? extends UsergridEntity> customSubclassForType(@NotNull final String type) {
+        return UsergridEntity.subclassMappings.get(type);
+    }
+
+    public static void mapCustomSubclassToType(@NotNull final String type, @NotNull final Class<? extends UsergridEntity> subclass) {
+        UsergridEntity.subclassMappings.put(type,subclass);
     }
 
     @NotNull @Override public String toString() {

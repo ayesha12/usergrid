@@ -42,7 +42,6 @@ public class UsergridAppAuth extends UsergridAuth {
         return credentials;
     }
 
-
     public UsergridAppAuth(@NotNull final String clientId, @NotNull final String clientSecret) {
         super();
         this.clientId = clientId;
