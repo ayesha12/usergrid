@@ -19,8 +19,16 @@ public class UsergridDevice extends UsergridEntity {
         super(DEVICE_ENTITY_TYPE);
     }
 
+    public UsergridDevice(@Nullable final String name) {
+        super(DEVICE_ENTITY_TYPE,name);
+    }
+
     public UsergridDevice(@NotNull final Map<String, JsonNode> properties) {
         super(DEVICE_ENTITY_TYPE,null,properties);
+    }
+
+    public UsergridDevice(@Nullable final String name, @NotNull final Map<String, JsonNode> properties) {
+        super(DEVICE_ENTITY_TYPE,name,properties);
     }
 
     @Nullable @JsonProperty("deviceModel")

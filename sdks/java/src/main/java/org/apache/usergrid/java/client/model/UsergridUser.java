@@ -17,6 +17,7 @@
 package org.apache.usergrid.java.client.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.UsergridEnums.*;
@@ -47,25 +48,19 @@ public class UsergridUser extends UsergridEntity {
         super(USER_ENTITY_TYPE);
     }
 
-    public UsergridUser(@NotNull final UsergridEntity usergridEntity) {
-        super(USER_ENTITY_TYPE, null, usergridEntity.properties);
-    }
-
-    public UsergridUser(@NotNull final String name, @NotNull final HashMap<String, Object> propertyMap) {
-        super(USER_ENTITY_TYPE);
-        putProperties(propertyMap);
-        setName(name);
-    }
-
     public UsergridUser(@NotNull final String username, @Nullable final String password) {
         super(USER_ENTITY_TYPE);
         setUsername(username);
         setPassword(password);
     }
 
+    public UsergridUser(@NotNull final String name, @NotNull final HashMap<String, Object> propertyMap) {
+        super(USER_ENTITY_TYPE,name);
+        putProperties(propertyMap);
+    }
+
     public UsergridUser(@Nullable final String name, @Nullable final String username, @Nullable final String email, @Nullable final String password) {
-        super(USER_ENTITY_TYPE);
-        setName(name);
+        super(USER_ENTITY_TYPE,name);
         setUsername(username);
         setEmail(email);
         setPassword(password);
@@ -140,7 +135,7 @@ public class UsergridUser extends UsergridEntity {
         UsergridResponse response = client.POST(this);
         UsergridUser createdUser = response.user();
         if( createdUser != null ) {
-            this.properties = new HashMap<>(createdUser.properties);
+            this.copyInternalProperties(createdUser);
         }
         return response;
     }

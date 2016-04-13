@@ -16,8 +16,10 @@
  */
 package org.apache.usergrid.client;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.TextNode;
 import org.apache.usergrid.java.client.UsergridEnums.UsergridDirection;
 import org.apache.usergrid.java.client.Usergrid;
 import org.apache.usergrid.java.client.auth.UsergridAppAuth;
@@ -53,10 +55,14 @@ public class EntityTestCase {
         String collectionName = "ect" + System.currentTimeMillis();
         String entityName = "testEntity1";
 
-        UsergridEntity entity = new UsergridEntity(collectionName,entityName);
-        entity.putProperty("color","red");
-        entity.putProperty("shape","square");
-        entity.save();
+        HashMap<String,JsonNode> map = new HashMap<>();
+        map.put("name",new TextNode(entityName));
+        map.put("color",new TextNode("red"));
+        map.put("shape",new TextNode("square"));
+
+        UsergridEntity entity = new UsergridEntity(collectionName,null,map);
+        UsergridResponse response = entity.save();
+        assertNull(response.getResponseError());
 
         UsergridEntity eLookUp = Usergrid.GET(collectionName, entityName).first();
         assertNotNull("The returned entity is null!", eLookUp);

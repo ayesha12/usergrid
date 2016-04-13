@@ -18,6 +18,7 @@ package org.apache.usergrid.java.client.model;
 
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.*;
 import org.apache.usergrid.java.client.UsergridEnums.*;
 import org.apache.usergrid.java.client.Usergrid;
@@ -27,6 +28,7 @@ import org.apache.usergrid.java.client.utils.JsonUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.*;
 
 import static org.apache.usergrid.java.client.utils.JsonUtils.*;
@@ -34,7 +36,9 @@ import static org.apache.usergrid.java.client.utils.JsonUtils.*;
 @SuppressWarnings("unused")
 public class UsergridEntity {
 
-    @NotNull private static HashMap<String,Class<? extends UsergridEntity>> subclassMappings = new HashMap<>();
+    @NotNull private static final HashMap<String,Class<? extends UsergridEntity>> subclassMappings = new HashMap<>();
+    @NotNull private static final ObjectMapper entityUpdateMapper = new ObjectMapper();
+
     static {
         subclassMappings.put("user",UsergridUser.class);
         subclassMappings.put("device",UsergridDevice.class);
@@ -46,7 +50,7 @@ public class UsergridEntity {
     @Nullable private Long created;
     @Nullable private Long modified;
 
-    @NotNull protected Map<String, JsonNode> properties = new HashMap<>();
+    @NotNull private Map<String, JsonNode> properties = new HashMap<>();
 
     public UsergridEntity(@JsonProperty("type") @NotNull final String type) {
         this.type = type;
@@ -61,7 +65,7 @@ public class UsergridEntity {
 
     public UsergridEntity(@NotNull final String type, @Nullable final String name, @NotNull final Map<String, JsonNode> properties) {
         this(type,name);
-        this.properties = new HashMap<>(properties);
+        this.updatePropertiesWith(properties);
     }
 
     @Nullable
@@ -69,13 +73,20 @@ public class UsergridEntity {
         return UsergridEntity.subclassMappings.get(type);
     }
 
-    protected void copyInternalProperties(@NotNull final UsergridEntity fromEntity) {
-        this.type = fromEntity.type;
-        this.uuid = fromEntity.uuid;
-        this.name = fromEntity.name;
-        this.created = fromEntity.created;
-        this.modified = fromEntity.modified;
-        this.properties = new HashMap<>(fromEntity.properties);
+    public void copyInternalProperties(@NotNull final UsergridEntity fromEntity) {
+        try {
+            entityUpdateMapper.readerForUpdating(this).readValue(entityUpdateMapper.valueToTree(fromEntity));
+        } catch( IOException ignored ) {
+            System.out.print(ignored.toString());
+        }
+    }
+
+    public void updatePropertiesWith(@NotNull final Map<String,JsonNode> properties) {
+        try {
+            entityUpdateMapper.readerForUpdating(this).readValue(entityUpdateMapper.valueToTree(properties));
+        } catch( IOException ignored ) {
+            System.out.print(ignored.toString());
+        }
     }
 
     public static void mapCustomSubclassToType(@NotNull final String type, @NotNull final Class<? extends UsergridEntity> subclass) {
@@ -138,7 +149,7 @@ public class UsergridEntity {
         if( response.ok() ) {
             UsergridEntity responseEntity = response.first();
             if( responseEntity != null ) {
-                this.properties = new HashMap<>(responseEntity.properties);
+                this.copyInternalProperties(responseEntity);
             }
         }
         return response;
@@ -236,10 +247,15 @@ public class UsergridEntity {
     }
     public void putProperty(@NotNull final String name, @Nullable final JsonNode value) {
         UsergridEntityProperties entityProperty = UsergridEntityProperties.fromString(name);
-        if( entityProperty != null && !entityProperty.isMutableForEntity(this) ) {
+        if( entityProperty == null || !entityProperty.isMutableForEntity(this)) {
             return;
         }
-        this.internalPutProperty(name,value);
+
+        JsonNode valueNode = value;
+        if( valueNode == null ) {
+            valueNode = NullNode.getInstance();
+        }
+        this.updatePropertiesWith(Collections.singletonMap(name,valueNode));
     }
     public void putProperties(@NotNull final String jsonString) {
         try {
@@ -254,10 +270,18 @@ public class UsergridEntity {
         } catch( Exception ignore ) {}
     }
     public void putProperties(@NotNull final JsonNode jsonNode) {
+        HashMap<String,JsonNode> propertiesToUpdate = new HashMap<>();
         Iterator<Map.Entry<String,JsonNode>> keys = jsonNode.fields();
         while (keys.hasNext()) {
             Map.Entry<String,JsonNode> entry = keys.next();
-            this.putProperty(entry.getKey(),entry.getValue());
+            String key = entry.getKey();
+            UsergridEntityProperties entityProperty = UsergridEntityProperties.fromString(key);
+            if( entityProperty == null || entityProperty.isMutableForEntity(this) ) {
+                propertiesToUpdate.put(key,entry.getValue());
+            }
+        }
+        if( !propertiesToUpdate.isEmpty() ) {
+            this.updatePropertiesWith(propertiesToUpdate);
         }
     }
 
