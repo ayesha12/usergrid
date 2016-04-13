@@ -207,8 +207,8 @@ public class UsergridClient {
     }
 
     @NotNull
-    public UsergridResponse GET(@NotNull final String collection, @NotNull final String uuidOrName) {
-        String[] pathSegments = {collection, uuidOrName};
+    public UsergridResponse GET(@NotNull final String type, @NotNull final String uuidOrName) {
+        String[] pathSegments = {type, uuidOrName};
         UsergridRequest request = new UsergridRequest(UsergridHttpMethod.GET, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE, this.clientAppUrl(), this.authForRequests() , pathSegments);
         return this.sendRequest(request);
     }
