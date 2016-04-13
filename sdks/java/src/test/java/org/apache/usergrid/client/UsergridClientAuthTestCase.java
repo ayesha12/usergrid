@@ -49,13 +49,13 @@ public class UsergridClientAuthTestCase {
         String[] segments = {client.getOrgId(), client.getAppId(), "users"};
         UsergridRequest request = new UsergridRequest(UsergridEnums.UsergridHttpMethod.GET, UsergridRequest.APPLICATION_JSON_MEDIA_TYPE,
                 client.getBaseUrl(), null, null, null, null, client.authForRequests(), segments);
-        UsergridResponse response = client.sendRequest(request);
+        client.sendRequest(request);
     }
 
     @Test
     public void clientUserInit() {
         Usergrid.initSharedInstance(SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.USERGRID_URL);
-        UsergridResponse response = Usergrid.authenticateUser(new UsergridUserAuth(SDKTestConfiguration.APP_UserName, SDKTestConfiguration.APP_Password));
+        Usergrid.authenticateUser(new UsergridUserAuth(SDKTestConfiguration.APP_UserName, SDKTestConfiguration.APP_Password));
         UsergridResponse getResponse = Usergrid.GET("user","eb8145ea-e171-11e5-a5e5-2bc0953f9fe6");
         if( getResponse.getEntities() != null ) {
             UsergridEntity entity = getResponse.first();

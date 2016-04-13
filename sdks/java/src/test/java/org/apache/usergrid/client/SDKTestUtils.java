@@ -23,6 +23,7 @@ import org.apache.usergrid.java.client.response.UsergridResponse;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class SDKTestUtils {
@@ -83,9 +84,10 @@ public class SDKTestUtils {
 
         if (r.getResponseError() != null) {
             assertTrue("UUID should not be null", e.getUuid() != null);
-
-            for (Map.Entry<String, String> field : fields.entrySet()) {
-                assertTrue("attempted to set a property which did not persist on the entity", e.getStringProperty(field.getKey()).equals(field.getValue()));
+            if( fields != null ) {
+                for (Map.Entry<String, String> field : fields.entrySet()) {
+                    assertEquals("attempted to set a property which did not persist on the entity", e.getStringProperty(field.getKey()),field.getValue());
+                }
             }
         }
 

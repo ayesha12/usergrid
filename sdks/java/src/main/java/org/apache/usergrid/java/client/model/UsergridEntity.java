@@ -37,6 +37,7 @@ public class UsergridEntity {
     @NotNull private static HashMap<String,Class<? extends UsergridEntity>> subclassMappings = new HashMap<>();
     static {
         subclassMappings.put("user",UsergridUser.class);
+        subclassMappings.put("device",UsergridDevice.class);
     }
 
     @NotNull private String type;

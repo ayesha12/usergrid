@@ -69,7 +69,7 @@ public class ClientRestTestCase {
         assertNull("no error thrown", response.getResponseError());
 
         assertNotNull(response.getEntities());
-        assertTrue("reponse entities is an Array", response.getEntities().getClass() == ArrayList.class);
+        assertTrue("response entities is an Array", response.getEntities().getClass() == ArrayList.class);
 
         // response.first should exist and have a valid uuid
         UsergridEntity firstEntity = response.first();

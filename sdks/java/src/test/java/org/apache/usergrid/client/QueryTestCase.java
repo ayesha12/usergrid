@@ -19,7 +19,6 @@ package org.apache.usergrid.client;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.DoubleNode;
 import org.apache.usergrid.java.client.Usergrid;
-import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.auth.UsergridAppAuth;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.query.UsergridQuery;
@@ -38,27 +37,19 @@ public class QueryTestCase {
 
     public static final String COLLECTION = "shapes";
 
-    public static UsergridClient client = null;
-
     public static float distFrom(float lat1, float lng1, float lat2, float lng2) {
         double earthRadius = 6371000; //meters
         double dLat = Math.toRadians(lat2 - lat1);
         double dLng = Math.toRadians(lng2 - lng1);
-        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
-                        Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        float dist = (float) (earthRadius * c);
-
-        return dist;
+        return (float) (earthRadius * c);
     }
 
     @Before
     public void before() {
         Usergrid.initSharedInstance(SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.authFallBack);
         Usergrid.authenticateApp(new UsergridAppAuth(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET));
-        client = Usergrid.getInstance();
-
     }
 
     @After
@@ -90,15 +81,16 @@ public class QueryTestCase {
         fields.put("blue", "circle");
         fields.put("yellow", "triangle");
 
-
         for (Map.Entry<String, String> entry : fields.entrySet()) {
             UsergridEntity targetEntity = entityMapByName.get(entry.getKey() + entry.getValue());
 
-            UsergridQuery q = new UsergridQuery(COLLECTION).eq("color", entry.getKey());
-            UsergridResponse r = Usergrid.GET(q);
+            UsergridResponse response = Usergrid.GET(new UsergridQuery(COLLECTION).eq("color", entry.getKey()));
+            assertNotNull("entities returned should not be null.", response.getEntities());
+            assertTrue("query for " + entry.getKey() + " shape should return 1, not: " + response.getEntities().size(), response.getEntities().size() == 1);
 
-            assertTrue("query for " + entry.getKey() + " shape should return 1, not: " + r.getEntities().size(), r.getEntities().size() == 1);
-            assertTrue("query for " + entry.getKey() + " shape should the right UUID", r.first().getUuid().equals(targetEntity.getUuid()));
+            UsergridEntity responseEntity = response.first();
+            assertNotNull("first entity should not be null.", responseEntity);
+            assertEquals("query for " + entry.getKey() + " shape should the right UUID", responseEntity.getUuid(),targetEntity.getUuid());
         }
         Usergrid.DELETE(qDelete);
     }
@@ -110,7 +102,7 @@ public class QueryTestCase {
     @Test
     public void testGeoQuery() {
 
-        String collectionName = "sdktestlocation";
+        String collectionName = "sdkTestLocation";
 
         UsergridQuery deleteQuery = new UsergridQuery(collectionName);
         Usergrid.DELETE(deleteQuery);
@@ -147,61 +139,56 @@ public class QueryTestCase {
         float centerLat = 37.334110f;
         float centerLon = -121.894340f;
 
-        UsergridQuery q1 = new UsergridQuery(collectionName).locationWithin(611.00000, centerLat, centerLon);
+        // Test a large distance
+        UsergridResponse queryResponse = Usergrid.GET(new UsergridQuery(collectionName).locationWithin(611.00000, centerLat, centerLon));
+        assertNotNull(queryResponse.getEntities());
 
-        UsergridResponse qr = Usergrid.GET(q1);
-        assertNotNull(qr.getEntities());
-
-        UsergridEntity lastEntity = null;
-        for (UsergridEntity entity : qr.getEntities()) {
+        float lastDistanceFrom = 0;
+        for (UsergridEntity entity : queryResponse.getEntities()) {
 
             JsonNode locationNode = entity.getEntityProperty("location");
+            assertNotNull("location node should not be null", locationNode);
+
             DoubleNode lat = (DoubleNode) locationNode.get("latitude");
             DoubleNode lon = (DoubleNode) locationNode.get("longitude");
 
-            float d1 = distFrom(centerLat, centerLon, lat.floatValue(), lon.floatValue());
-            System.out.println("Entity " + entity.getName() + " is " + d1 + " away");
+            float distanceFrom = distFrom(centerLat, centerLon, lat.floatValue(), lon.floatValue());
+            System.out.println("Entity " + entity.getName() + " is " + distanceFrom + " away");
 
-            assertTrue("Entity " + entity.getName() + " was included but is not within specified distance (" + d1 + ")", d1 <= 611.0);
+            assertTrue("Entity " + entity.getName() + " was included but is not within specified distance (" + distanceFrom + ")", distanceFrom <= 611.0);
 
-            if (lastEntity != null) {
-                JsonNode lastLocationNode = lastEntity.getEntityProperty("location");
-                DoubleNode lastLat = (DoubleNode) lastLocationNode.get("latitude");
-                DoubleNode lastLon = (DoubleNode) lastLocationNode.get("longitude");
-
-                float d2 = distFrom(centerLat, centerLon, lastLat.floatValue(), lastLon.floatValue());
-
-//        assertTrue("GEO results are not sorted by distance descending: expected " + d1 + " <= " + d2, d1 <= d2);
+            if (lastDistanceFrom != 0) {
+                assertTrue("GEO results are not sorted by distance ascending: expected " + lastDistanceFrom + " <= " + distanceFrom, lastDistanceFrom <= distanceFrom);
             }
 
-            lastEntity = entity;
+            lastDistanceFrom = distanceFrom;
         }
-        UsergridQuery q2 = new UsergridQuery(collectionName).locationWithin(150, centerLat, centerLon);
 
-        UsergridResponse qr2 = Usergrid.GET(q2);
+        // Test a small distance
+        queryResponse = Usergrid.GET(new UsergridQuery(collectionName).locationWithin(150, centerLat, centerLon));
+        assertNotNull(queryResponse.getEntities());
 
-        for (UsergridEntity entity : qr2.getEntities()) {
+        lastDistanceFrom = 0;
+        for (UsergridEntity entity : queryResponse.getEntities()) {
 
             JsonNode locationNode = entity.getEntityProperty("location");
+            assertNotNull("location node should not be null", locationNode);
+
             DoubleNode lat = (DoubleNode) locationNode.get("latitude");
             DoubleNode lon = (DoubleNode) locationNode.get("longitude");
 
-            float d1 = distFrom(centerLat, centerLon, lat.floatValue(), lon.floatValue());
-            System.out.println("Entity " + entity.getName() + " is " + d1 + " away");
+            float distanceFrom = distFrom(centerLat, centerLon, lat.floatValue(), lon.floatValue());
+            System.out.println("Entity " + entity.getName() + " is " + distanceFrom + " away");
 
-            assertTrue("Entity " + entity.getName() + " was included but is not within specified distance (" + d1 + ")", d1 <= 150);
+            assertTrue("Entity " + entity.getName() + " was included but is not within specified distance (" + distanceFrom + ")", distanceFrom <= 150);
 
-            if (lastEntity != null) {
-                JsonNode lastLocationNode = lastEntity.getEntityProperty("location");
-                DoubleNode lastLat = (DoubleNode) lastLocationNode.get("latitude");
-                DoubleNode lastLon = (DoubleNode) lastLocationNode.get("longitude");
-
-                float d2 = distFrom(centerLat, centerLon, lastLat.floatValue(), lastLon.floatValue());
-
-//        assertTrue("GEO results are not sorted by distance descending: expected " + d1 + " <= " + d2, d1 <= d2);
+            if (lastDistanceFrom != 0) {
+                assertTrue("GEO results are not sorted by distance ascending: expected " + lastDistanceFrom + " <= " + distanceFrom, lastDistanceFrom <= distanceFrom);
             }
 
-            lastEntity = entity;
+            lastDistanceFrom = distanceFrom;
         }
+
+        Usergrid.DELETE(deleteQuery);
     }
 }

@@ -416,7 +416,7 @@ public final class UsergridQuery {
     @NotNull private static final String COMMA = ",";
     @NotNull private static final String CONTAINS = "contains";
     @NotNull private static final String CURSOR = "cursor";
-    @NotNull  private static final String EMPTY_STRING = "";
+    @NotNull private static final String EMPTY_STRING = "";
     @NotNull private static final String EQUALS = "=";
     @NotNull private static final String LIMIT = "limit";
     @NotNull private static final String LOCATION = "location";

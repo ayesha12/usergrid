@@ -17,9 +17,7 @@
 package org.apache.usergrid.client;
 
 import org.apache.usergrid.java.client.Usergrid;
-import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.auth.UsergridAppAuth;
-import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.junit.After;
 import org.junit.Before;
@@ -28,18 +26,15 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class UsergridResponseErrorTestCase {
-    public static UsergridClient client = null;
 
     @Before
     public void before() {
         Usergrid.initSharedInstance(SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.authFallBack);
         UsergridAppAuth appAuth = new UsergridAppAuth(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
         Usergrid.authenticateApp(appAuth);
-        client = Usergrid.getInstance();
-
     }
 
     @After
@@ -51,21 +46,17 @@ public class UsergridResponseErrorTestCase {
     public void testEntityCreationSuccess() {
         String collectionName = "ect" + System.currentTimeMillis();
 
-        Map<String, Map<String, String>> entityMap = new HashMap<>(7);
-
         Map<String, String> fields = new HashMap<>(3);
         fields.put("color", "red");
         fields.put("shape", "square");
 
-        entityMap.put("testEntity1", fields);
-        UsergridEntity e = SDKTestUtils.createEntity(collectionName, "testEntity1", fields);
-        UsergridResponse eLookUp = client.GET(collectionName, "testEntity1");
-        assertTrue("The returned entity is null!", eLookUp.getResponseError() == null); //    entity has been created
+        SDKTestUtils.createEntity(collectionName, "testEntity1", fields);
+        UsergridResponse eLookUp = Usergrid.GET(collectionName, "testEntity1");
+        assertNull("The returned entity is null!", eLookUp.getResponseError());
 
-        UsergridResponse response = client.GET(collectionName, "testEntity15");
-        assertTrue("The returned entity is null!", response.getResponseError() != null); //    entity has been created
-        assertTrue("StatusCode returned is not OK",response.ok() == false);
+        UsergridResponse response = Usergrid.GET(collectionName, "testEntityThatShouldNotExist");
+        assertFalse("Response returned should not be ok.",response.ok());
         assertTrue("StatusCode equals than 404", response.getStatusCode() == 404);
-
+        assertNotNull("The returned entity is null!", response.getResponseError());
     }
 }
