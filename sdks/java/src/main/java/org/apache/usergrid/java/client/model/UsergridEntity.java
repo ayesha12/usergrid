@@ -68,6 +68,15 @@ public class UsergridEntity {
         return UsergridEntity.subclassMappings.get(type);
     }
 
+    protected void copyInternalProperties(@NotNull final UsergridEntity fromEntity) {
+        this.type = fromEntity.type;
+        this.uuid = fromEntity.uuid;
+        this.name = fromEntity.name;
+        this.created = fromEntity.created;
+        this.modified = fromEntity.modified;
+        this.properties = new HashMap<>(fromEntity.properties);
+    }
+
     public static void mapCustomSubclassToType(@NotNull final String type, @NotNull final Class<? extends UsergridEntity> subclass) {
         UsergridEntity.subclassMappings.put(type,subclass);
     }
@@ -150,7 +159,7 @@ public class UsergridEntity {
         if( response.ok() ) {
             UsergridEntity responseEntity = response.first();
             if( responseEntity != null ) {
-                this.properties = new HashMap<>(responseEntity.properties);
+                this.copyInternalProperties(responseEntity);
             }
         }
         return response;

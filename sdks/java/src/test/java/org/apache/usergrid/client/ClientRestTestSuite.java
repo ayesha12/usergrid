@@ -17,31 +17,27 @@
 package org.apache.usergrid.client;
 
 import org.apache.usergrid.java.client.Usergrid;
-import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.auth.UsergridAppAuth;
 import org.apache.usergrid.java.client.model.UsergridEntity;
-import org.apache.usergrid.java.client.query.UsergridQuery;
 import org.apache.usergrid.java.client.response.UsergridResponse;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class ClientRestTestSuite {
 
-    String collectionName;
+    final String collectionName = "testClientConnection" + System.currentTimeMillis();
 
     @Before
     public void before()  {
         Usergrid.initSharedInstance(SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.authFallBack);
         UsergridAppAuth appAuth = new UsergridAppAuth(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
         Usergrid.authenticateApp(appAuth);
-        CreateCollectionAndEntity();
+        createCollectionAndEntity();
     }
 
     @After
@@ -49,58 +45,46 @@ public class ClientRestTestSuite {
         Usergrid.reset();
     }
 
-    public void CreateCollectionAndEntity()  {
-        UsergridClient client = Usergrid.getInstance();
-        collectionName = "testClientConnection" + System.currentTimeMillis();
-        Map<String, Object> fields = new HashMap<>(3);
-        fields.put("place", "San Jose");
-        UsergridEntity entityone = new UsergridEntity(collectionName,"john");
-        entityone.putProperties(fields);
-        client.POST(entityone);
-        fields = new HashMap<>(3);
-        fields.put("place", "San Jose");
-        UsergridEntity entitytwo = new UsergridEntity(collectionName,"amici");
-        entitytwo.putProperties(fields);
-        client.POST(entitytwo);
-        entityone = Usergrid.GET(collectionName,"john").first();
-        entitytwo = Usergrid.GET(collectionName,"amici").first();
-        client.connect(entityone, "likes", entitytwo);
-        client.connect(entityone.getType(), entityone.getUuid(), "visited", entitytwo.getUuid());
+    public void createCollectionAndEntity()  {
+        UsergridEntity entityOne = new UsergridEntity(collectionName,"john");
+        entityOne.putProperty("place", "San Jose");
+        entityOne.save();
 
+        UsergridEntity entityTwo = new UsergridEntity(collectionName,"amici");
+        entityTwo.putProperty("place", "San Jose");
+        entityTwo.save();
 
+        assertNotNull(entityOne.getUuid());
+        assertNotNull(entityTwo.getUuid());
+
+        Usergrid.connect(entityOne, "likes", entityTwo);
+        Usergrid.connect(entityOne.getType(), entityOne.getUuid(), "visited", entityTwo.getUuid());
     }
 
     @Test
-    public void clientGET()  {
-        UsergridClient client = Usergrid.getInstance();
+    public void clientGET() {
+        // Retrieve the response.
+        UsergridResponse response = Usergrid.GET(collectionName, "john");
+        assertTrue("response should be ok", response.ok());
+        assertNull("no error thrown", response.getResponseError());
 
-        //Retrieve the entity.
-        UsergridResponse response = client.GET(collectionName, "john");
-
-        //response.ok should be true
-        assertTrue("no error thrown", response.getResponseError() == null);
-
-        //response.entities should be an array
+        assertNotNull(response.getEntities());
         assertTrue("reponse entities is an Array", response.getEntities().getClass() == ArrayList.class);
 
-        //response.first should exist and have a valid uuid
-        assertTrue("first entity is not null", response.first() != null);
-        assertTrue("first entity is not null and has uuid", response.first().getUuid() != null);
+        // response.first should exist and have a valid uuid
+        UsergridEntity firstEntity = response.first();
+        assertNotNull(firstEntity);
+        assertNotNull("first entity is not null and has uuid", firstEntity.getUuid());
 
-        //response.entity should exist and have a valid uuid
-        assertTrue("first entity is not null", response.entity() != null);
-        assertTrue("first entity is not null and has uuid", response.entity().getUuid() != null);
+        // response.entity should exist, equals the first entity, and have a valid uuid
+        UsergridEntity responseEntity = response.entity();
+        assertNotNull(responseEntity);
+        assertEquals(firstEntity, responseEntity);
+        assertNotNull("entity is not null and has uuid", responseEntity.getUuid());
 
-        //response.last should exist and have a valid uuid
-        assertTrue("last entity is not null", response.last() != null);
-        assertTrue("last entity is not null and has uuid", response.last().getUuid() != null);
-
-
-        UsergridQuery query = new UsergridQuery(collectionName)
-                .eq("place", "San Jose");
-
-
+        // response.last should exist and have a valid uuid
+        UsergridEntity lastEntity = response.last();
+        assertNotNull(lastEntity);
+        assertNotNull("last entity is not null and has uuid", lastEntity.getUuid());
     }
-
-
 }
