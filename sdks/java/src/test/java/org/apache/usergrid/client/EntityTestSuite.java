@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.TextNode;
 import org.apache.usergrid.java.client.UsergridEnums.UsergridDirection;
 import org.apache.usergrid.java.client.Usergrid;
-import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.auth.UsergridAppAuth;
 import org.apache.usergrid.java.client.model.UsergridEntity;
 import org.apache.usergrid.java.client.query.UsergridQuery;
@@ -35,18 +34,14 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class EntityTestSuite {
-    public static UsergridClient client = null;
 
     @Before
     public void before() {
         Usergrid.initSharedInstance(SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.USERGRID_URL, SDKTestConfiguration.authFallBack);
-        UsergridAppAuth appAuth = new UsergridAppAuth(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET);
-        Usergrid.authenticateApp(appAuth);
-        client = Usergrid.getInstance();
-
+        Usergrid.authenticateApp(new UsergridAppAuth(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET));
     }
 
     @After
@@ -58,326 +53,224 @@ public class EntityTestSuite {
     public void testEntityCreationSuccess() {
         String collectionName = "ect" + System.currentTimeMillis();
 
-        Map<String, Map<String, String>> entityMap = new HashMap<>(7);
-
         Map<String, String> fields = new HashMap<>(3);
         fields.put("color", "red");
         fields.put("shape", "square");
 
-        entityMap.put("testEntity1", fields);
-
-        UsergridEntity e = SDKTestUtils.createEntity(collectionName, "testEntity1", fields);
-        UsergridEntity eLookUp = client.GET(collectionName, "testEntity1").first();
-        assertTrue("The returned entity is null!", eLookUp != null); //    entity has been created
-        assertTrue("The returned entity is redsquare!", eLookUp.getName().equals("testEntity1")); //    entity has been created
-
+        SDKTestUtils.createEntity(collectionName, "testEntity1", fields);
+        UsergridEntity eLookUp = Usergrid.GET(collectionName, "testEntity1").first();
+        assertNotNull("The returned entity is null!", eLookUp);
+        assertEquals("entities has the correct type", eLookUp.getType(),collectionName);
+        assertEquals("entities has the correct name", eLookUp.getName(),"testEntity1");
+        assertEquals("entities has the correct color", eLookUp.getStringProperty("color"),"red");
+        assertEquals("entities has the correct shape", eLookUp.getStringProperty("shape"),"square");
     }
-
-    @Test
-    public void testCollectionNameLength() {
-        String collectionName = "testCollectionNameLength" + System.currentTimeMillis();
-        collectionName += collectionName;
-        collectionName += collectionName;
-        collectionName += collectionName;
-        collectionName += collectionName;
-        collectionName += collectionName;
-        collectionName += collectionName;
-        collectionName += collectionName;
-
-        Map<String, Map<String, String>> entityMap = new HashMap<>(7);
-
-        Map<String, String> fields = new HashMap<>(3);
-        fields.put("color", "red");
-        fields.put("shape", "square");
-
-        entityMap.put("testEntity2", fields);
-
-        UsergridEntity e = SDKTestUtils.createEntity(collectionName, "testEntity2", fields);
-
-        UsergridEntity eLookup = client.GET(collectionName, "testEntity2").first();
-
-        assertTrue("The returned entity is null!", eLookup != null);
-        assertTrue("The returned entity does not have the same UUID", e.getUuid().equals(eLookup.getUuid()));
-    }
-
 
     @Test
     public void testDuplicateEntityNameFailure() {
         String collectionName = "testDuplicateEntityNameFailure" + System.currentTimeMillis();
 
-        Map<String, Map<String, String>> entityMap = new HashMap<>(7);
+        UsergridEntity entity = new UsergridEntity(collectionName,"test3");
+        UsergridResponse response = Usergrid.POST(entity);
+        assertNull("First entity create should have succeeded.", response.getResponseError());
 
-        Map<String, String> fields = new HashMap<>(3);
-        fields.put("color", "red");
-        fields.put("shape", "square");
-
-        entityMap.put("testEntity3", fields);
-
-        UsergridEntity e = SDKTestUtils.createEntity(collectionName, "testEntity3", fields);
-
-        client.POST(e); //should work
-
-        UsergridResponse r = client.POST(e); //should fail
-
-        assertTrue("Second entity create should not succeed!", r.getResponseError() != null);
+        response = Usergrid.POST(entity);
+        assertNotNull("Second entity create should not succeed!", response.getResponseError());
     }
 
     @Test
     public void testEntityLookupByName() {
         String collectionName = "testEntityLookupByName" + System.currentTimeMillis();
-
-        Map<String, String> fields = new HashMap<>(3);
-        fields.put("color", "red");
-        fields.put("shape", "square");
-
         String entityName = "testEntity4";
 
-        UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
+        UsergridEntity entity = new UsergridEntity(collectionName,entityName);
+        entity.save();
 
-        UsergridEntity eLookup = client.GET(collectionName, entityName).first();
-
-        assertTrue("The returned entity is null!", eLookup != null);
-        assertTrue("The returned entity does not have the same UUID", e.getUuid().equals(eLookup.getUuid()));
+        UsergridEntity eLookup = Usergrid.GET(collectionName, entityName).first();
+        assertNotNull("The returned entity is null!", eLookup);
+        assertEquals("The returned entity does not have the same UUID", entity.getUuid(),eLookup.getUuid());
     }
 
     @Test
     public void testEntityLookupByUUID() {
         String collectionName = "testEntityLookupByUUID" + System.currentTimeMillis();
-
-        Map<String, String> fields = new HashMap<>(3);
-        fields.put("color", "red");
-        fields.put("shape", "square");
-
         String entityName = "testEntity5";
 
-        UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
+        UsergridEntity entity = new UsergridEntity(collectionName,entityName);
+        entity.save();
+        assertNotNull(entity.getUuid());
 
-        UsergridEntity eLookup = client.GET(collectionName, e.getUuid()).first();
-
-        assertTrue("The returned entity is null!", eLookup != null);
-        assertTrue("The returned entity does not have the same UUID", e.getUuid().equals(eLookup.getUuid()));
+        UsergridEntity eLookup = Usergrid.GET(collectionName, entity.getUuid()).first();
+        assertNotNull("The returned entity is null!", eLookup);
+        assertEquals("The returned entity does not have the same UUID", entity.getUuid(),eLookup.getUuid());
     }
 
     @Test
     public void testEntityLookupByQuery() {
         String collectionName = "testEntityLookupByQuery" + System.currentTimeMillis();
-
-        Map<String, String> fields = new HashMap<>(3);
-        fields.put("color", "red");
-        fields.put("shape", "square");
-
         String entityName = "testEntity6";
 
-        UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
-
-        UsergridQuery q;
-        UsergridEntity eLookup;
+        UsergridEntity entity = new UsergridEntity(collectionName,entityName);
+        entity.putProperty("color","red");
+        entity.putProperty("shape","square");
+        entity.save();
 
         SDKTestUtils.indexSleep();
 
-        q = new UsergridQuery()
-                .collectionName(collectionName)
-                .eq("color", "red");
+        UsergridQuery query = new UsergridQuery(collectionName).eq("color", "red");
+        UsergridEntity eLookup = Usergrid.GET(query).first();
 
-        eLookup = Usergrid.GET(q).first();
-        assertTrue("The entity was not returned on lookup", eLookup != null);
-        assertTrue("The returned entity does not have the same UUID", e.getUuid().equals(eLookup.getUuid()));
+        assertNotNull("The entity was not returned on lookup", eLookup);
+        assertEquals("The returned entity does not have the same UUID", entity.getUuid(),eLookup.getUuid());
 
-        q = new UsergridQuery(collectionName)
-                .eq("name", entityName);
+        query = new UsergridQuery(collectionName).eq("name", entityName);
+        eLookup = Usergrid.GET(query).first();
 
-        eLookup = Usergrid.GET(q).first();
+        assertNotNull("The entity was not returned on lookup", eLookup);
+        assertEquals("The returned entity does not have the same UUID", entity.getUuid(),eLookup.getUuid());
 
-        assertTrue("The entity was not returned on lookup", eLookup != null);
-        assertTrue("The returned entity does not have the same UUID", e.getUuid().equals(eLookup.getUuid()));
+        query = new UsergridQuery(collectionName).eq("shape", "square");
+        eLookup = Usergrid.GET(query).first();
 
-        q = new UsergridQuery()
-                .collectionName(collectionName)
-                .eq("shape", "square");
+        assertNotNull("The entity was not returned on lookup", eLookup);
+        assertEquals("The returned entity does not have the same UUID", entity.getUuid(),eLookup.getUuid());
 
-        eLookup = Usergrid.GET(q).first();
+        query = new UsergridQuery(collectionName).eq("shape", "circle");
+        eLookup = Usergrid.GET(query).first();
 
-        assertTrue("The entity was not returned on lookup", eLookup != null);
-        assertTrue("The returned entity does not have the same UUID", e.getUuid().equals(eLookup.getUuid()));
-
-        q = new UsergridQuery(collectionName)
-                .eq("shape", "circle");
-
-        eLookup = Usergrid.GET(q).first();
-
-        assertTrue("The entity was not expected to be returned on lookup", eLookup == null);
+        assertNull("The entity was not expected to be returned on lookup", eLookup);
     }
 
     @Test
     public void testEntityUpdate() {
         String collectionName = "testEntityLookupByUUID" + System.currentTimeMillis();
-
-        Map<String, String> fields = new HashMap<>(3);
-        fields.put("color", "red");
-        fields.put("shape", "square");
-        fields.put("orientation", "up");
-
         String entityName = "testEntity7";
 
-        UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
+        UsergridEntity entity = new UsergridEntity(collectionName,entityName);
+        entity.putProperty("color","red");
+        entity.putProperty("shape","square");
+        entity.putProperty("orientation","up");
+        entity.save();
 
         SDKTestUtils.sleep(1000);
 
-        UsergridQuery q;
-        q = new UsergridQuery()
-                .collectionName(collectionName)
-                .eq("orientation", "up");
+        UsergridQuery query = new UsergridQuery(collectionName).eq("orientation", "up");
+        UsergridEntity eLookup = Usergrid.GET(query).first();
+        assertNotNull(eLookup);
 
-        UsergridEntity eLookup;
+        assertEquals("The returned entity does not have the same UUID when querying by field", entity.getUuid(),eLookup.getUuid());
 
-        eLookup = Usergrid.GET(q).first();
+        entity.putProperty("orientation", "down");
+        entity.save();
+        assertNotNull(entity.getUuid());
 
-        assertTrue("The returned entity does not have the same UUID when querying by field", e.getUuid().equals(eLookup.getUuid()));
+        eLookup = Usergrid.GET(collectionName, entity.getUuid()).first();
+        assertNotNull(eLookup);
 
-        e.putProperty("orientation", "down");
-
-        client.PUT(e);
-
-
-        eLookup = client.GET(collectionName, e.getUuid()).first();
-
-        assertTrue("The returned entity does not have the same UUID", e.getUuid().equals(eLookup.getUuid()));
-        assertTrue("The field was not updated!", eLookup.getStringProperty("orientation").equals("down"));
+        assertEquals("The returned entity does not have the same UUID", entity.getUuid(),eLookup.getUuid());
+        assertEquals("The field was not updated!", eLookup.getStringProperty("orientation"),"down");
 
         SDKTestUtils.sleep(1000);
 
-        q = new UsergridQuery()
-                .collectionName(collectionName)
-                .eq("orientation", "up");
+        query = new UsergridQuery(collectionName).eq("orientation", "up");
+        eLookup = Usergrid.GET(query).first();
 
-        eLookup = Usergrid.GET(q).first();
-
-        assertTrue("The entity was returned for old value!", eLookup == null);
+        assertNull("The entity was returned for old value!", eLookup);
     }
 
     @Test
     public void testEntityDelete() {
         String collectionName = "testEntityDelete" + System.currentTimeMillis();
-
-        Map<String, String> fields = new HashMap<>(3);
-        fields.put("color", "red");
-        fields.put("shape", "square");
-        fields.put("orientation", "up");
-
         String entityName = "testEntity8";
 
-        UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
+        UsergridEntity entity = new UsergridEntity(collectionName,entityName);
+        entity.putProperty("color","red");
+        entity.putProperty("shape","square");
+        entity.putProperty("orientation","up");
+        entity.save();
 
         SDKTestUtils.indexSleep();
 
-        UsergridQuery q;
-        q = new UsergridQuery()
-                .collectionName(collectionName)
-                .eq("orientation", "up");
+        assertNotNull(entity.getUuid());
+        assertNotNull(entity.getName());
 
-        UsergridEntity eLookup;
-        eLookup = Usergrid.GET(q).first();
+        UsergridQuery query = new UsergridQuery(collectionName).eq("orientation", "up");
+        UsergridEntity eLookup = Usergrid.GET(query).first();
 
-        assertTrue("The returned entity was null!", eLookup != null);
-        assertTrue("The returned entity does not have the same UUID when querying by field", e.getUuid().equals(eLookup.getUuid()));
+        assertNotNull("The returned entity was null!", eLookup);
+        assertEquals("The returned entity does not have the same UUID when querying by field", entity.getUuid(),eLookup.getUuid());
 
-        client.DELETE(e);
+        Usergrid.DELETE(entity);
 
-        eLookup = client.GET(collectionName, e.getUuid()).first();
+        eLookup = Usergrid.GET(collectionName, entity.getUuid()).first();
+        assertNull("The entity was not expected to be returned by UUID", eLookup);
 
-        assertTrue("The entity was not expected to be returned by UUID", eLookup == null);
+        eLookup = Usergrid.GET(collectionName, entity.getName()).first();
+        assertNull("The entity was not expected to be returned by getName", eLookup);
 
-        eLookup = client.GET(collectionName, e.getName()).first();
+        query = new UsergridQuery(collectionName).eq("color", "red");
+        eLookup = Usergrid.GET(query).first();
+        assertNull("The entity was not expected to be returned", eLookup);
 
-        assertTrue("The entity was not expected to be returned by getName", eLookup == null);
+        query = new UsergridQuery(collectionName).eq("shape", "square");
+        eLookup = Usergrid.GET(query).first();
+        assertNull("The entity was not expected to be returned", eLookup);
 
-        q = new UsergridQuery()
-                .collectionName(collectionName)
-                .eq("color", "red");
-
-        eLookup = Usergrid.GET(q).first();
-
-        assertTrue("The entity was not expected to be returned", eLookup == null);
-
-        q = new UsergridQuery()
-                .collectionName(collectionName)
-                .eq("shape", "square");
-
-        eLookup = Usergrid.GET(q).first();
-
-        assertTrue("The entity was not expected to be returned", eLookup == null);
-
-        q = new UsergridQuery()
-                .collectionName(collectionName)
-                .eq("orientation", "up");
-
-        eLookup = Usergrid.GET(q).first();
-
-        assertTrue("The entity was not expected to be returned", eLookup == null);
+        query = new UsergridQuery(collectionName).eq("orientation", "up");
+        eLookup = Usergrid.GET(query).first();
+        assertNull("The entity was not expected to be returned", eLookup);
     }
 
     @Test
     public void testEntityPutPropertyAndSave() {
         String collectionName = "testEntityPutProperty" + System.currentTimeMillis();
-
-        Map<String, String> fields = new HashMap<>(3);
-        fields.put("color", "red");
-        fields.put("shape", "square");
-
         String entityName = "testEntity9";
 
-        UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
-        e.putProperty("orientation", "up");
-        e.putProperty("sides", Integer.valueOf(4));
-        e.save();
+        UsergridEntity entity = new UsergridEntity(collectionName,entityName);
+        entity.putProperty("color","red");
+        entity.putProperty("shape","square");
+        entity.putProperty("orientation","up");
+        entity.putProperty("sides", 4);
+        entity.save();
 
-        UsergridEntity eLookUp = client.GET(collectionName, "testEntity9").first();
+        UsergridEntity eLookUp = Usergrid.GET(collectionName, entityName).first();
 
         //Check if the property was added correctly
-        assertTrue("The entity returned is not null.", eLookUp != null);
-        assertTrue("The entity putProperty() was successfull ", eLookUp.getStringProperty("orientation").equals("up"));
-        assertTrue("The entity putProperty() was successfull ", eLookUp.getIntegerProperty("sides") == 4);
+        assertNotNull("The entity returned is not null.", eLookUp);
+        assertEquals("The entity putProperty() was successful ", eLookUp.getStringProperty("orientation"),"up");
+        assertEquals("The entity putProperty() was successful ", eLookUp.getIntegerProperty("sides"), new Integer(4));
 
         //Overwrite the property if it exists.
-        e.putProperty("orientation", "horizontal");
-        e.save();
-        eLookUp = client.GET(collectionName, "testEntity9").first();
-        assertTrue("The entity putProperty() was successfull ", eLookUp.getStringProperty("orientation").equals("horizontal"));
-        eLookUp = client.GET(collectionName, "entityNew").first();
+        entity.putProperty("orientation", "horizontal");
+        entity.save();
+
+        eLookUp = Usergrid.GET(collectionName, entityName).first();
+        assertNotNull("The returned entity was null!", eLookUp);
+        assertEquals("The entity putProperty() was successful ", eLookUp.getStringProperty("orientation"),"horizontal");
 
         //should not be able to set the name key (name is immutable)
-        e.putProperty("name","entityNew");
-        e.save();
-        eLookUp = client.GET(collectionName, "testEntity9").first();
-        assertTrue("The entity putProperty() was successfull ", eLookUp.getName().equals("testEntity9"));
-        eLookUp = client.GET(collectionName, "entityNew").first();
-        assertTrue("The entity putProperty() was successfull ", eLookUp == null);
+        entity.putProperty("name","entityNew");
+        entity.save();
 
+        eLookUp = Usergrid.GET(collectionName, entityName).first();
+        assertNotNull("The returned entity was null!", eLookUp);
+        assertEquals("The entity putProperty() was successful ", eLookUp.getName(),"testEntity9");
     }
 
     @Test
     public void testEntityPutProperties() {
         String collectionName = "testEntityProperties" + System.currentTimeMillis();
-
-        Map<String, String> fields = new HashMap<>(3);
-        fields.put("color", "red");
-
         String entityName = "testEntity9";
 
-        //should set properties for a given object, overwriting properties that exist and creating those that don\'t
-        UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
-        Map<String, Object> properties = new HashMap<>();
-        properties.put("shape", "square");
-        properties.put("orientation", "up");
-        properties.put("color", "black");
-        e.putProperties(properties);
-        e.save();
+        UsergridEntity entity = new UsergridEntity(collectionName,entityName);
+        entity.putProperty("color","black");
+        entity.putProperty("orientation","up");
+        entity.save();
 
-        UsergridEntity eLookUp = client.GET(collectionName, "testEntity9").first();
-        assertTrue("The entity returned is not null.", eLookUp != null);
-        assertTrue("The entity putProperty() was successfull ", eLookUp.getStringProperty("orientation").equals("up"));
-        assertTrue("overwrite existing property", eLookUp.getStringProperty("color").equals("black"));
-
+        UsergridEntity eLookUp = Usergrid.GET(collectionName, entityName).first();
+        assertNotNull("The entity returned is not null.", eLookUp);
+        assertEquals("The entity putProperty() was successful ", eLookUp.getStringProperty("orientation"),"up");
+        assertEquals("overwrite existing property", eLookUp.getStringProperty("color"),"black");
     }
 
     @Test
@@ -390,23 +283,23 @@ public class EntityTestSuite {
         String entityName = "testEntity9";
 
         //should set properties for a given object, overwriting properties that exist and creating those that don\'t
-        UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
+        UsergridEntity entity = SDKTestUtils.createEntity(collectionName, entityName, fields);
         Map<String, Object> properties = new HashMap<>();
         properties.put("shape", "square");
         properties.put("orientation", "up");
         properties.put("color", "black");
-        e.putProperties(properties);
-        e.save();
+        entity.putProperties(properties);
+        entity.save();
 
-        UsergridEntity eLookUp = client.GET(collectionName, "testEntity9").first();
-        assertTrue("The entity returned is not null.", eLookUp != null);
+        UsergridEntity eLookUp = Usergrid.GET(collectionName, "testEntity9").first();
+        assertNotNull("The entity returned is not null.", eLookUp);
 
         String[] removeProperties = {"shape", "color"};
-        e.removeProperties(Arrays.asList(removeProperties));
-        e.save();
+        entity.removeProperties(Arrays.asList(removeProperties));
+        entity.save();
 
-        eLookUp = client.GET(collectionName, "testEntity9").first();
-        assertTrue("The entity returned is not null.", eLookUp != null);
+        eLookUp = Usergrid.GET(collectionName, "testEntity9").first();
+        assertNotNull("The entity returned is not null.", eLookUp);
         assertTrue("overwrite existing property", eLookUp.getStringProperty("color") == null);
         assertTrue("overwrite existing property", eLookUp.getStringProperty("shape") == null);
 
@@ -423,23 +316,23 @@ public class EntityTestSuite {
         String entityName = "testEntity11";
 
         //should set properties for a given object, overwriting properties that exist and creating those that don\'t
-        UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
+        UsergridEntity entity = SDKTestUtils.createEntity(collectionName, entityName, fields);
         Map<String, Object> properties = new HashMap<>();
         properties.put("shape", "square");
         properties.put("orientation", "up");
         properties.put("color", "black");
-        e.putProperties(properties);
-        e.save();
+        entity.putProperties(properties);
+        entity.save();
 
-        UsergridEntity eLookUp = client.GET(collectionName, "testEntity11").first();
-        assertTrue("The entity returned is not null.", eLookUp != null);
+        UsergridEntity eLookUp = Usergrid.GET(collectionName, "testEntity11").first();
+        assertNotNull("The entity returned is not null.", eLookUp);
 
-        e.removeProperty("color");
-        e.removeProperty("shape");
-        e.save();
+        entity.removeProperty("color");
+        entity.removeProperty("shape");
+        entity.save();
 
-        eLookUp = client.GET(collectionName, "testEntity11").first();
-        assertTrue("The entity returned is not null.", eLookUp != null);
+        eLookUp = Usergrid.GET(collectionName, "testEntity11").first();
+        assertNotNull("The entity returned is not null.", eLookUp);
         assertTrue("overwrite existing property", eLookUp.getStringProperty("color") == null);
         assertTrue("overwrite existing property", eLookUp.getStringProperty("shape") == null);
 
@@ -455,25 +348,25 @@ public class EntityTestSuite {
         String entityName = "testEntity1";
 
         //should set properties for a given object, overwriting properties that exist and creating those that don\'t
-        UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
+        UsergridEntity entity = SDKTestUtils.createEntity(collectionName, entityName, fields);
         ArrayList<Object> lenArr = new ArrayList<>();
 //    {1,2,3};
         lenArr.add(1);
         lenArr.add(2);
         lenArr.add(3);
         lenArr.add(4);
-        e.insert("lenArray", lenArr);
-        e.save();
+        entity.insert("lenArray", lenArr);
+        entity.save();
 
         ArrayList<Object> lenArr2 = new ArrayList<>();
 
         lenArr2.add(6);
         lenArr2.add(7);
 
-        e.append("lenArray", lenArr2);
-        e.save();
-        UsergridEntity eLookUp = client.GET(collectionName, "testEntity1").first();
-        assertTrue("The entity returned is not null.", eLookUp != null);
+        entity.append("lenArray", lenArr2);
+        entity.save();
+        UsergridEntity eLookUp = Usergrid.GET(collectionName, "testEntity1").first();
+        assertNotNull("The entity returned is not null.", eLookUp);
 
 
         assertTrue("The entity returned is not null.", eLookUp != null);
@@ -493,28 +386,26 @@ public class EntityTestSuite {
         String entityName = "testEntity1";
 
         //should set properties for a given object, overwriting properties that exist and creating those that don\'t
-        UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
+        UsergridEntity entity = SDKTestUtils.createEntity(collectionName, entityName, fields);
         ArrayList<Object> lenArr = new ArrayList<>();
 //    {1,2,3};
         lenArr.add(1);
         lenArr.add(2);
         lenArr.add(3);
         lenArr.add(4);
-        e.putProperty("lenArray", lenArr);
-        e.save();
+        entity.putProperty("lenArray", lenArr);
+        entity.save();
 
         ArrayList<Object> lenArr2 = new ArrayList<>();
 
         lenArr2.add(6);
         lenArr2.add(7);
 
-        e.insert("lenArray", lenArr2, 0);
-        e.save();
-        UsergridEntity eLookUp = client.GET(collectionName, "testEntity1").first();
-        assertTrue("The entity returned is not null.", eLookUp != null);
+        entity.insert("lenArray", lenArr2, 0);
+        entity.save();
+        UsergridEntity eLookUp = Usergrid.GET(collectionName, "testEntity1").first();
+        assertNotNull("The entity returned is not null.", eLookUp);
 
-
-        assertTrue("The entity returned is not null.", eLookUp != null);
         ArrayNode toCompare = new ArrayNode(JsonNodeFactory.instance);
         toCompare.add(6).add(7).add(1).add(2).add(3).add(4);
         assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("lenArray").equals(toCompare));
@@ -529,42 +420,41 @@ public class EntityTestSuite {
         String entityName = "testEntity1";
 
         //should remove the last value of an existing array
-        UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
+        UsergridEntity entity = SDKTestUtils.createEntity(collectionName, entityName, fields);
         ArrayList<Object> lenArr = new ArrayList<>();
         lenArr.add(1);
         lenArr.add(2);
         lenArr.add(3);
-        e.putProperty("lenArray", lenArr);
-        e.save();
-        e.pop("lenArray");
-        e.save();
-        UsergridEntity eLookUp = client.GET(collectionName, "testEntity1").first();
-        assertTrue("The entity returned is not null.", eLookUp != null);
+        entity.putProperty("lenArray", lenArr);
+        entity.save();
+        entity.pop("lenArray");
+        entity.save();
+        UsergridEntity eLookUp = Usergrid.GET(collectionName, "testEntity1").first();
+        assertNotNull("The entity returned is not null.", eLookUp);
 
 
-        assertTrue("The entity returned is not null.", eLookUp != null);
         ArrayNode toCompare = new ArrayNode(JsonNodeFactory.instance);
         toCompare.add(1).add(2);
         assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("lenArray").equals(toCompare));
 
 
         //value should remain unchanged if it is not an array
-        e.putProperty("foo", "test1");
-        e.save();
-        e.pop("foo");
-        eLookUp = client.GET(collectionName, "testEntity1").first();
-        assertTrue("The entity returned is not null.", eLookUp != null);
+        entity.putProperty("foo", "test1");
+        entity.save();
+        entity.pop("foo");
+        eLookUp = Usergrid.GET(collectionName, "testEntity1").first();
+        assertNotNull("The entity returned is not null.", eLookUp);
         TextNode toCompare1 = new TextNode("test1");
         assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("foo").equals(toCompare1));
 
 
         //should gracefully handle empty arrays
         ArrayList<Object> lenArr2 = new ArrayList<>();
-        e.putProperty("foo", lenArr2);
-        e.save();
-        e.pop("foo");
-        eLookUp = client.GET(collectionName, "testEntity1").first();
-        assertTrue("The entity returned is not null.", eLookUp != null);
+        entity.putProperty("foo", lenArr2);
+        entity.save();
+        entity.pop("foo");
+        eLookUp = Usergrid.GET(collectionName, "testEntity1").first();
+        assertNotNull("The entity returned is not null.", eLookUp);
         toCompare = new ArrayNode(JsonNodeFactory.instance);
         assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("foo").equals(toCompare));
 
@@ -579,42 +469,41 @@ public class EntityTestSuite {
         String entityName = "testEntity1";
 
         //should remove the last value of an existing array
-        UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
+        UsergridEntity entity = SDKTestUtils.createEntity(collectionName, entityName, fields);
         ArrayList<Object> lenArr = new ArrayList<>();
         lenArr.add(1);
         lenArr.add(2);
         lenArr.add(3);
-        e.putProperty("lenArray", lenArr);
-        e.save();
-        e.shift("lenArray");
-        e.save();
-        UsergridEntity eLookUp = client.GET(collectionName, "testEntity1").first();
-        assertTrue("The entity returned is not null.", eLookUp != null);
+        entity.putProperty("lenArray", lenArr);
+        entity.save();
+        entity.shift("lenArray");
+        entity.save();
+        UsergridEntity eLookUp = Usergrid.GET(collectionName, "testEntity1").first();
+        assertNotNull("The entity returned is not null.", eLookUp);
 
 
-        assertTrue("The entity returned is not null.", eLookUp != null);
         ArrayNode toCompare = new ArrayNode(JsonNodeFactory.instance);
         toCompare.add(2).add(3);
         assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("lenArray").equals(toCompare));
 
 
         //value should remain unchanged if it is not an array
-        e.putProperty("foo", "test1");
-        e.save();
-        e.shift("foo");
-        eLookUp = client.GET(collectionName, "testEntity1").first();
-        assertTrue("The entity returned is not null.", eLookUp != null);
+        entity.putProperty("foo", "test1");
+        entity.save();
+        entity.shift("foo");
+        eLookUp = Usergrid.GET(collectionName, "testEntity1").first();
+        assertNotNull("The entity returned is not null.", eLookUp);
         TextNode toCompare1 = new TextNode("test1");
         assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("foo").equals(toCompare1));
 
 
         //should gracefully handle empty arrays
         ArrayList<Object> lenArr2 = new ArrayList<>();
-        e.putProperty("foo", lenArr2);
-        e.save();
-        e.shift("foo");
-        eLookUp = client.GET(collectionName, "testEntity1").first();
-        assertTrue("The entity returned is not null.", eLookUp != null);
+        entity.putProperty("foo", lenArr2);
+        entity.save();
+        entity.shift("foo");
+        eLookUp = Usergrid.GET(collectionName, "testEntity1").first();
+        assertNotNull("The entity returned is not null.", eLookUp);
         toCompare = new ArrayNode(JsonNodeFactory.instance);
         assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("foo").equals(toCompare));
 
@@ -631,28 +520,27 @@ public class EntityTestSuite {
         String entityName = "testEntity1";
 
         //should set properties for a given object, overwriting properties that exist and creating those that don\'t
-        UsergridEntity e = SDKTestUtils.createEntity(collectionName, entityName, fields);
+        UsergridEntity entity = SDKTestUtils.createEntity(collectionName, entityName, fields);
         ArrayList<Object> lenArr = new ArrayList<>();
 //    {1,2,3};
         lenArr.add(1);
         lenArr.add(2);
         lenArr.add(3);
         lenArr.add(4);
-        e.putProperty("lenArray", lenArr);
-        e.save();
+        entity.putProperty("lenArray", lenArr);
+        entity.save();
 
         ArrayList<Object> lenArr2 = new ArrayList<>();
 
         lenArr2.add(6);
         lenArr2.add(7);
 
-        e.insert("lenArray", lenArr2, 6);
-        e.save();
-        UsergridEntity eLookUp = client.GET(collectionName, "testEntity1").first();
-        assertTrue("The entity returned is not null.", eLookUp != null);
+        entity.insert("lenArray", lenArr2, 6);
+        entity.save();
+        UsergridEntity eLookUp = Usergrid.GET(collectionName, "testEntity1").first();
+        assertNotNull("The entity returned is not null.", eLookUp);
 
 
-        assertTrue("The entity returned is not null.", eLookUp != null);
         ArrayNode toCompare = new ArrayNode(JsonNodeFactory.instance);
         toCompare.add(1).add(2).add(3).add(4).add(6).add(7);
         assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("lenArray").equals(toCompare));
@@ -666,8 +554,8 @@ public class EntityTestSuite {
         lenArr.add(3);
         lenArr.add(4);
 
-        e.putProperty("lenArray", lenArr);
-        e.save();
+        entity.putProperty("lenArray", lenArr);
+        entity.save();
         lenArr2 = new ArrayList<>();
 
 //    {1,2,3};
@@ -676,31 +564,31 @@ public class EntityTestSuite {
         lenArr2.add(7);
         lenArr2.add(8);
 
-        e.insert("lenArray", lenArr2, 2);
-        e.save();
-        eLookUp = client.GET(collectionName, "testEntity1").first();
-        assertTrue("The entity returned is not null.", eLookUp != null);
+        entity.insert("lenArray", lenArr2, 2);
+        entity.save();
+        eLookUp = Usergrid.GET(collectionName, "testEntity1").first();
+        assertNotNull("The entity returned is not null.", eLookUp);
         toCompare = new ArrayNode(JsonNodeFactory.instance);
         toCompare.add(1).add(2).add(5).add(6).add(7).add(8).add(3).add(4);
         assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("lenArray").equals(toCompare));
 
         //should convert an existing value into an array when inserting a second value
-        e.putProperty("foo", "test");
-        e.save();
-        e.insert("foo", "test1", 1);
-        e.save();
-        eLookUp = client.GET(collectionName, "testEntity1").first();
-        assertTrue("The entity returned is not null.", eLookUp != null);
+        entity.putProperty("foo", "test");
+        entity.save();
+        entity.insert("foo", "test1", 1);
+        entity.save();
+        eLookUp = Usergrid.GET(collectionName, "testEntity1").first();
+        assertNotNull("The entity returned is not null.", eLookUp);
         toCompare = new ArrayNode(JsonNodeFactory.instance);
         toCompare.add("test").add("test1");
 
         assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("foo").equals(toCompare));
 
         //should create a new array when a property does not exist
-        e.insert("foo1", "test2", 1);
-        e.save();
-        eLookUp = client.GET(collectionName, "testEntity1").first();
-        assertTrue("The entity returned is not null.", eLookUp != null);
+        entity.insert("foo1", "test2", 1);
+        entity.save();
+        eLookUp = Usergrid.GET(collectionName, "testEntity1").first();
+        assertNotNull("The entity returned is not null.", eLookUp);
         toCompare = new ArrayNode(JsonNodeFactory.instance);
         toCompare.add("test2");
 
@@ -708,20 +596,20 @@ public class EntityTestSuite {
 
         //should gracefully handle indexes out of range
 
-        e.putProperty("Arrindex", "test1");
-        e.save();
-        e.insert("Arrindex", "test2", 1000);
-        e.save();
-        eLookUp = client.GET(collectionName, "testEntity1").first();
-        assertTrue("The entity returned is not null.", eLookUp != null);
+        entity.putProperty("Arrindex", "test1");
+        entity.save();
+        entity.insert("Arrindex", "test2", 1000);
+        entity.save();
+        eLookUp = Usergrid.GET(collectionName, "testEntity1").first();
+        assertNotNull("The entity returned is not null.", eLookUp);
         toCompare = new ArrayNode(JsonNodeFactory.instance);
         toCompare.add("test1").add("test2");
         assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("Arrindex").equals(toCompare));
 
-        e.insert("Arrindex", "test3", -1000);
-        e.save();
-        eLookUp = client.GET(collectionName, "testEntity1").first();
-        assertTrue("The entity returned is not null.", eLookUp != null);
+        entity.insert("Arrindex", "test3", -1000);
+        entity.save();
+        eLookUp = Usergrid.GET(collectionName, "testEntity1").first();
+        assertNotNull("The entity returned is not null.", eLookUp);
         toCompare = new ArrayNode(JsonNodeFactory.instance);
         toCompare.add("test3").add("test1").add("test2");
         assertTrue("The entity returned is not null.", eLookUp.getJsonNodeProperty("Arrindex").equals(toCompare));
@@ -739,60 +627,60 @@ public class EntityTestSuite {
         String entityName = "testEntity1";
 
         //should set properties for a given object, overwriting properties that exist and creating those that don\'t
-        UsergridEntity e1 = SDKTestUtils.createEntity(collectionName, entityName, fields);
+        UsergridEntity entityOne = SDKTestUtils.createEntity(collectionName, entityName, fields);
         Map<String, Object> properties1 = new HashMap<>();
         properties1.put("shape", "square");
-        e1.putProperties(properties1);
-        e1.save();
+        entityOne.putProperties(properties1);
+        entityOne.save();
 
         entityName = "testEntity2";
-        UsergridEntity e2 = SDKTestUtils.createEntity(collectionName, entityName, fields);
+        UsergridEntity entityTwo = SDKTestUtils.createEntity(collectionName, entityName, fields);
         Map<String, Object> properties2 = new HashMap<>();
         properties2.put("color", "green");
         properties2.put("shape", "circle");
-        e2.putProperties(properties2);
-        e2.save();
+        entityTwo.putProperties(properties2);
+        entityTwo.save();
 
         //should connect entities by passing a target UsergridEntity object as a parameter
-        e1.connect("likes", e2);
-        e1.save();
-        UsergridEntity eLookUp = client.GET(collectionName, "testEntity1").first();
-        assertTrue("The entity returned is not null.", eLookUp != null);
+        entityOne.connect("likes", entityTwo);
+        entityOne.save();
+        UsergridEntity eLookUp = Usergrid.GET(collectionName, "testEntity1").first();
+        assertNotNull("The entity returned is not null.", eLookUp);
         assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "likes").getEntities().get(0).getName().equals("testEntity2"));
-        UsergridEntity eLookUp2 = client.GET(collectionName, "testEntity2").first();
+        UsergridEntity eLookUp2 = Usergrid.GET(collectionName, "testEntity2").first();
         assertTrue("The entity returned is not null.", eLookUp2.getConnections(UsergridDirection.IN, "likes").getEntities().get(0).getName().equals("testEntity1"));
 
 
-        e1.disconnect("likes", e2);
-        e1.save();
-        eLookUp = client.GET(collectionName, "testEntity1").first();
-        assertTrue("The entity returned is not null.", eLookUp != null);
+        entityOne.disconnect("likes", entityTwo);
+        entityOne.save();
+        eLookUp = Usergrid.GET(collectionName, "testEntity1").first();
+        assertNotNull("The entity returned is not null.", eLookUp);
         assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "likes").getEntities().size() == 0);
 
         //should connect entities by passing target uuid as a parameter
-        Usergrid.connect(e1.getType(),e1.uuidOrName(),"visited",e2.getUuid());
-        e1.save();
-        eLookUp = client.GET(collectionName, "testEntity1").first();
-        assertTrue("The entity returned is not null.", eLookUp != null);
+        Usergrid.connect(entityOne.getType(),entityOne.uuidOrName(),"visited",entityTwo.getUuid());
+        entityOne.save();
+        eLookUp = Usergrid.GET(collectionName, "testEntity1").first();
+        assertNotNull("The entity returned is not null.", eLookUp);
         assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "visited").getEntities().get(0).getName().equals("testEntity2"));
 
-        Usergrid.disconnect(e1.getType(),e1.uuidOrName(),"visited",e2.getUuid());
-        e1.save();
-        eLookUp = client.GET(collectionName, "testEntity1").first();
-        assertTrue("The entity returned is not null.", eLookUp != null);
+        Usergrid.disconnect(entityOne.getType(),entityOne.uuidOrName(),"visited",entityTwo.getUuid());
+        entityOne.save();
+        eLookUp = Usergrid.GET(collectionName, "testEntity1").first();
+        assertNotNull("The entity returned is not null.", eLookUp);
         assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "visited").getEntities().size() == 0);
 
         //should connect entities by passing target type and name as parameters
-        Usergrid.connect(e1.getType(),e1.uuidOrName(),"revisit",e2.getType(),e2.getName());
-        e1.save();
-        eLookUp = client.GET(collectionName, "testEntity1").first();
-        assertTrue("The entity returned is not null.", eLookUp != null);
+        Usergrid.connect(entityOne.getType(),entityOne.uuidOrName(),"revisit",entityTwo.getType(),entityTwo.getName());
+        entityOne.save();
+        eLookUp = Usergrid.GET(collectionName, "testEntity1").first();
+        assertNotNull("The entity returned is not null.", eLookUp);
         assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "revisit").getEntities().get(0).getName().equals("testEntity2"));
 
-        Usergrid.disconnect(e1.getType(),e1.uuidOrName(),"revisit",e2.getType(),e2.getName());
-        e1.save();
-        eLookUp = client.GET(collectionName, "testEntity1").first();
-        assertTrue("The entity returned is not null.", eLookUp != null);
+        Usergrid.disconnect(entityOne.getType(),entityOne.uuidOrName(),"revisit",entityTwo.getType(),entityTwo.getName());
+        entityOne.save();
+        eLookUp = Usergrid.GET(collectionName, "testEntity1").first();
+        assertNotNull("The entity returned is not null.", eLookUp);
         assertTrue("The entity returned is not null.", eLookUp.getConnections(UsergridDirection.OUT, "revisit").getEntities().size() == 0);
     }
 }

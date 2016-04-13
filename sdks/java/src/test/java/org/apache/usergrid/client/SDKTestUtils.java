@@ -73,8 +73,10 @@ public class SDKTestUtils {
 
         UsergridEntity e = new UsergridEntity(collection, name);
 
-        for (Map.Entry<String, String> field : fields.entrySet()) {
-            e.putProperty(field.getKey(), field.getValue());
+        if( fields != null ) {
+            for (Map.Entry<String, String> field : fields.entrySet()) {
+                e.putProperty(field.getKey(), field.getValue());
+            }
         }
 
         UsergridResponse r = Usergrid.getInstance().POST(e);

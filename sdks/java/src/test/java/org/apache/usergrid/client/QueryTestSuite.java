@@ -103,36 +103,6 @@ public class QueryTestSuite {
         Usergrid.DELETE(qDelete);
     }
 
-    @Test
-    public void testQueryWithPagingSize1() {
-//        fail("Not implemented");
-    }
-
-    @Test
-    public void testByQueryWithPagingSize100() {
-//        fail("Not implemented");
-    }
-
-    @Test
-    public void testQueryWithPagingSize1000() {
-//        fail("Not implemented");
-    }
-
-    @Test
-    public void testDeleteByQueryWithString() {
-//        fail("Not implemented");
-    }
-
-    @Test
-    public void testDeleteByQueryWithFloat() {
-//        fail("Not implemented");
-    }
-
-    @Test
-    public void testDeleteByQueryWithGeo() {
-//        fail("Not implemented");
-    }
-
     /**
      * Test that geolocation is working as expected with different ranges and radius
      * also test that results are sorted ascending by distance from the specified point
@@ -180,9 +150,9 @@ public class QueryTestSuite {
         UsergridQuery q1 = new UsergridQuery(collectionName).locationWithin(611.00000, centerLat, centerLon);
 
         UsergridResponse qr = Usergrid.GET(q1);
-        System.out.println(qr.getEntities().size());
-        UsergridEntity lastEntity = null;
+        assertNotNull(qr.getEntities());
 
+        UsergridEntity lastEntity = null;
         for (UsergridEntity entity : qr.getEntities()) {
 
             JsonNode locationNode = entity.getEntityProperty("location");
@@ -206,12 +176,9 @@ public class QueryTestSuite {
 
             lastEntity = entity;
         }
-        UsergridQuery q2 = new UsergridQuery()
-                .collectionName(collectionName)
-                .locationWithin(150, centerLat, centerLon);
+        UsergridQuery q2 = new UsergridQuery(collectionName).locationWithin(150, centerLat, centerLon);
 
         UsergridResponse qr2 = Usergrid.GET(q2);
-        System.out.println(qr.getEntities().size());
 
         for (UsergridEntity entity : qr2.getEntities()) {
 
