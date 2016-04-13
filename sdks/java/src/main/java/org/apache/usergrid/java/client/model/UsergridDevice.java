@@ -28,7 +28,7 @@ public class UsergridDevice extends UsergridEntity {
         return this.model;
     }
     @JsonProperty("deviceModel")
-    public void setModel(@NotNull String model) {
+    public void setModel(@Nullable final String model) {
         this.model = model;
     }
 
@@ -37,7 +37,7 @@ public class UsergridDevice extends UsergridEntity {
         return this.platform;
     }
     @JsonProperty("devicePlatform")
-    public void setPlatform(@Nullable String platform) {
+    public void setPlatform(@Nullable final String platform) {
         this.platform = platform;
     }
 
@@ -46,7 +46,7 @@ public class UsergridDevice extends UsergridEntity {
         return this.osVersion;
     }
     @JsonProperty("deviceOSVersion")
-    public void setOsVersion(@Nullable String osVersion) {
+    public void setOsVersion(@Nullable final String osVersion) {
         this.osVersion = osVersion;
     }
 }
