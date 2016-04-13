@@ -30,7 +30,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertTrue;
 
-public class UsergridResponseErrorTest {
+public class UsergridResponseErrorTestCase {
     public static UsergridClient client = null;
 
     @Before

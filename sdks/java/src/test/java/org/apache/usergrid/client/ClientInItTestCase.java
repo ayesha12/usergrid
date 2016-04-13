@@ -28,7 +28,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class ClientInItTestSuite {
+public class ClientInItTestCase {
 
     @Before
     public void before() {

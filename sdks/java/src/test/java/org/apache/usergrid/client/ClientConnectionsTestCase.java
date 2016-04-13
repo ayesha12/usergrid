@@ -26,7 +26,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class ClientConnectionsTestSuite {
+public class ClientConnectionsTestCase {
 
     @Before
     public void before() {

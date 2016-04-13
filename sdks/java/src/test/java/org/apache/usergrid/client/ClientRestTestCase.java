@@ -28,7 +28,7 @@ import java.util.ArrayList;
 
 import static org.junit.Assert.*;
 
-public class ClientRestTestSuite {
+public class ClientRestTestCase {
 
     final String collectionName = "testClientConnection" + System.currentTimeMillis();
 

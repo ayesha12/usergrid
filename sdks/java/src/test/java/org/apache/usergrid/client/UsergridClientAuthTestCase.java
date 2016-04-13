@@ -30,7 +30,7 @@ import org.junit.Test;
 
 import java.util.List;
 
-public class UsergridClientAuthTestSuite {
+public class UsergridClientAuthTestCase {
 
     @After
     public void after() {

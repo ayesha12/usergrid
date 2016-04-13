@@ -36,7 +36,7 @@ import java.util.Map;
 
 import static org.junit.Assert.*;
 
-public class EntityTestSuite {
+public class EntityTestCase {
 
     @Before
     public void before() {

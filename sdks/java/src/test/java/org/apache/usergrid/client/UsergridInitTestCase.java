@@ -17,14 +17,32 @@
 package org.apache.usergrid.client;
 
 import org.apache.usergrid.java.client.Usergrid;
+import org.apache.usergrid.java.client.UsergridClient;
 import org.apache.usergrid.java.client.auth.UsergridAppAuth;
-import org.junit.Before;
+import org.apache.usergrid.java.client.auth.UsergridUserAuth;
+import org.junit.After;
 import org.junit.Test;
 
-public class UsergridTest {
+import static org.junit.Assert.assertTrue;
+
+public class UsergridInitTestCase {
+
+    @After
+    public void after() {
+        Usergrid.reset();
+    }
 
     @Test
-    public void initialize() {
+    public void testInitAppUsergrid() {
         Usergrid.initSharedInstance(SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.USERGRID_URL);
+        Usergrid.authenticateApp(new UsergridAppAuth(SDKTestConfiguration.APP_CLIENT_ID, SDKTestConfiguration.APP_CLIENT_SECRET));
+        assertTrue("usergrid should be an instance of usergrid client", Usergrid.getInstance().getClass() == UsergridClient.class);
+    }
+
+    @Test
+    public void testInitUserUsergrid() {
+        Usergrid.initSharedInstance(SDKTestConfiguration.ORG_NAME, SDKTestConfiguration.APP_NAME, SDKTestConfiguration.USERGRID_URL);
+        Usergrid.authenticateUser(new UsergridUserAuth(SDKTestConfiguration.APP_UserName, SDKTestConfiguration.APP_Password));
+        assertTrue("usergrid should be an instance of usergrid client", Usergrid.getInstance().getClass() == UsergridClient.class);
     }
 }

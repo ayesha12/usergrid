@@ -31,7 +31,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertTrue;
 
-public class UsergridResponseTest {
+public class UsergridResponseTestCase {
     public UsergridClient client = null;
     public UsergridUserAuth appUser = null;
 

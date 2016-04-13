@@ -29,7 +29,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertTrue;
 
-public class ClientAuthFallBackTestSuite {
+public class ClientAuthFallBackTestCase {
 
     private static UsergridQuery usersQuery = new UsergridQuery("users").desc("created");
 

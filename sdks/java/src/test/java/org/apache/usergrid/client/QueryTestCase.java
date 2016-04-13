@@ -34,7 +34,7 @@ import java.util.Map;
 
 import static org.junit.Assert.*;
 
-public class QueryTestSuite {
+public class QueryTestCase {
 
     public static final String COLLECTION = "shapes";
 
