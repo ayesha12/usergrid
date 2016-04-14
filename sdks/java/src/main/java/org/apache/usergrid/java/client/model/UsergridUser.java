@@ -134,7 +134,7 @@ public class UsergridUser extends UsergridEntity {
         UsergridResponse response = client.POST(this);
         UsergridUser createdUser = response.user();
         if( createdUser != null ) {
-            this.copyInternalProperties(createdUser);
+            this.copyAllProperties(createdUser);
         }
         return response;
     }

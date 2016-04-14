@@ -67,7 +67,7 @@ public class UsergridEntity {
 
     public UsergridEntity(@NotNull final String type, @Nullable final String name, @NotNull final Map<String, JsonNode> properties) {
         this(type,name);
-        this.updatePropertiesWith(properties);
+        this.updatePropertiesWithMap(properties);
     }
 
     @Nullable
@@ -75,16 +75,22 @@ public class UsergridEntity {
         return UsergridEntity.subclassMappings.get(type);
     }
 
-    public void copyInternalProperties(@NotNull final UsergridEntity fromEntity) {
+    public void copyAllProperties(@NotNull final UsergridEntity fromEntity) {
         try {
-            entityUpdateReader.readValue(entityUpdateMapper.valueToTree(fromEntity));
-        } catch( IOException ignored ) { System.out.print("Usergrid Error: Unable to update properties from entity - " + fromEntity.toString()); }
+            this.updatePropertiesWithJsonNode(entityUpdateMapper.valueToTree(fromEntity));
+        } catch( IllegalArgumentException e ) { System.out.print("Usergrid Error: Unable to update properties from entity - " + fromEntity.toString()); }
     }
 
-    public void updatePropertiesWith(@NotNull final Map<String,JsonNode> properties) {
+    public void updatePropertiesWithMap(@NotNull final Map<String,JsonNode> properties) {
         try {
-            entityUpdateReader.readValue(entityUpdateMapper.valueToTree(properties));
-        } catch( IOException ignored ) { System.out.print("Usergrid Error: Unable to update properties from map - " + properties.toString()); }
+            this.updatePropertiesWithJsonNode(entityUpdateMapper.valueToTree(properties));
+        } catch( IllegalArgumentException e ) { System.out.print("Usergrid Error: Unable to update properties from map - " + properties.toString()); }
+    }
+
+    public void updatePropertiesWithJsonNode(@NotNull final JsonNode node) {
+        try {
+            entityUpdateReader.readValue(node);
+        } catch( IOException e ) { System.out.print("Usergrid Error: Unable to update properties from jsonNode - " + node.toString()); }
     }
 
     public static void mapCustomSubclassToType(@NotNull final String type, @NotNull final Class<? extends UsergridEntity> subclass) {
@@ -147,7 +153,7 @@ public class UsergridEntity {
         if( response.ok() ) {
             UsergridEntity responseEntity = response.first();
             if( responseEntity != null ) {
-                this.copyInternalProperties(responseEntity);
+                this.copyAllProperties(responseEntity);
             }
         }
         return response;
@@ -169,7 +175,7 @@ public class UsergridEntity {
         if( response.ok() ) {
             UsergridEntity responseEntity = response.first();
             if( responseEntity != null ) {
-                this.copyInternalProperties(responseEntity);
+                this.copyAllProperties(responseEntity);
             }
         }
         return response;
@@ -253,7 +259,7 @@ public class UsergridEntity {
         if( valueNode == null ) {
             valueNode = NullNode.getInstance();
         }
-        this.updatePropertiesWith(Collections.singletonMap(name,valueNode));
+        this.updatePropertiesWithMap(Collections.singletonMap(name,valueNode));
     }
     public void putProperties(@NotNull final String jsonString) {
         try {
@@ -279,7 +285,7 @@ public class UsergridEntity {
             }
         }
         if( !propertiesToUpdate.isEmpty() ) {
-            this.updatePropertiesWith(propertiesToUpdate);
+            this.updatePropertiesWithMap(propertiesToUpdate);
         }
     }
 
