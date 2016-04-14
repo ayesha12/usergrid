@@ -247,7 +247,7 @@ public class UsergridEntity {
     }
     public void putProperty(@NotNull final String name, @Nullable final JsonNode value) {
         UsergridEntityProperties entityProperty = UsergridEntityProperties.fromString(name);
-        if( entityProperty == null || !entityProperty.isMutableForEntity(this)) {
+        if( entityProperty != null && !entityProperty.isMutableForEntity(this)) {
             return;
         }
 
