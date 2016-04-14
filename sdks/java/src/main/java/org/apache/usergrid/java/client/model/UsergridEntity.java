@@ -19,6 +19,7 @@ package org.apache.usergrid.java.client.model;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.node.*;
 import org.apache.usergrid.java.client.UsergridEnums.*;
 import org.apache.usergrid.java.client.Usergrid;
@@ -38,6 +39,7 @@ public class UsergridEntity {
 
     @NotNull private static final HashMap<String,Class<? extends UsergridEntity>> subclassMappings = new HashMap<>();
     @NotNull private static final ObjectMapper entityUpdateMapper = new ObjectMapper();
+    @NotNull private final ObjectReader entityUpdateReader = entityUpdateMapper.readerForUpdating(this);
 
     static {
         subclassMappings.put("user",UsergridUser.class);
@@ -75,18 +77,14 @@ public class UsergridEntity {
 
     public void copyInternalProperties(@NotNull final UsergridEntity fromEntity) {
         try {
-            entityUpdateMapper.readerForUpdating(this).readValue(entityUpdateMapper.valueToTree(fromEntity));
-        } catch( IOException ignored ) {
-            System.out.print(ignored.toString());
-        }
+            entityUpdateReader.readValue(entityUpdateMapper.valueToTree(fromEntity));
+        } catch( IOException ignored ) { System.out.print("Usergrid Error: Unable to update properties from entity - " + fromEntity.toString()); }
     }
 
     public void updatePropertiesWith(@NotNull final Map<String,JsonNode> properties) {
         try {
-            entityUpdateMapper.readerForUpdating(this).readValue(entityUpdateMapper.valueToTree(properties));
-        } catch( IOException ignored ) {
-            System.out.print(ignored.toString());
-        }
+            entityUpdateReader.readValue(entityUpdateMapper.valueToTree(properties));
+        } catch( IOException ignored ) { System.out.print("Usergrid Error: Unable to update properties from map - " + properties.toString()); }
     }
 
     public static void mapCustomSubclassToType(@NotNull final String type, @NotNull final Class<? extends UsergridEntity> subclass) {
@@ -259,13 +257,13 @@ public class UsergridEntity {
     }
     public void putProperties(@NotNull final String jsonString) {
         try {
-            JsonNode jsonNode = JsonUtils.mapper.readTree(jsonString);
+            JsonNode jsonNode = entityUpdateMapper.readTree(jsonString);
             this.putProperties(jsonNode);
         } catch( Exception ignore ) {}
     }
     public void putProperties(@NotNull final Map<String, Object> properties) {
         try {
-            JsonNode jsonNode = JsonUtils.mapper.valueToTree(properties);
+            JsonNode jsonNode = entityUpdateMapper.valueToTree(properties);
             this.putProperties(jsonNode);
         } catch( Exception ignore ) {}
     }

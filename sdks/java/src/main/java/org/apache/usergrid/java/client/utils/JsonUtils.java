@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.UUID;
 
 @SuppressWarnings("unused")
 public final class JsonUtils {
@@ -59,22 +58,6 @@ public final class JsonUtils {
         return null;
     }
 
-    public static void setStringProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name, @Nullable final String value) {
-        if (value == null) {
-            properties.remove(name);
-        } else {
-            properties.put(name, JsonNodeFactory.instance.textNode(value));
-        }
-    }
-
-    public static void setArrayProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name, @Nullable final ArrayList<Object> value) {
-        if (value == null) {
-            properties.remove(name);
-        } else {
-            properties.put(name, JsonNodeFactory.instance.pojoNode(value));
-        }
-    }
-
     @NotNull
     public static ArrayList<Object> convertToArrayList(@NotNull final ArrayNode arrayNode) {
         ArrayList<Object> arrayList = new ArrayList<>();
@@ -85,84 +68,10 @@ public final class JsonUtils {
         return arrayList;
     }
 
-    @Nullable
-    public static Long getLongProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name) {
-        JsonNode value = properties.get(name);
-        if (value != null) {
-            return value.asLong(0);
-        }
-        return null;
-    }
-
-    public static void setLongProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name, @Nullable final Long value) {
-        if (value == null) {
-            properties.remove(name);
-        } else {
-            properties.put(name, JsonNodeFactory.instance.numberNode(value));
-        }
-    }
-
-    public static void setFloatProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name, @Nullable final Float value) {
-        if (value == null) {
-            properties.remove(name);
-        } else {
-            properties.put(name, JsonNodeFactory.instance.numberNode(value));
-        }
-    }
-
-    @NotNull
-    public static Boolean getBooleanProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name) {
-        JsonNode value = properties.get(name);
-        return value != null && value.asBoolean();
-    }
-
-    public static void setBooleanProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name, @Nullable Boolean value) {
-        if (value == null) {
-            properties.remove(name);
-        } else {
-            properties.put(name, JsonNodeFactory.instance.booleanNode(value));
-        }
-    }
-
-    @Nullable
-    public static UUID getUUIDProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name) {
-        JsonNode value = properties.get(name);
-        if (value != null) {
-            UUID uuid = null;
-            try {
-                uuid = UUID.fromString(value.asText());
-            } catch (Exception ignore) {
-            }
-            return uuid;
-        }
-        return null;
-    }
-
-    public static void setUUIDProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name, @Nullable final UUID value) {
-        if (value == null) {
-            properties.remove(name);
-        } else {
-            properties.put(name, JsonNodeFactory.instance.textNode(value.toString()));
-        }
-    }
-
     @NotNull
     public static String toJsonString(@NotNull final Object obj) {
         try {
             return mapper.writeValueAsString(obj);
-        } catch (JsonGenerationException e) {
-            throw new UsergridException("Unable to generate json", e);
-        } catch (JsonMappingException e) {
-            throw new UsergridException("Unable to map json", e);
-        } catch (IOException e) {
-            throw new UsergridException("IO error", e);
-        }
-    }
-
-    @NotNull
-    public static <T> T parse(@NotNull final String json, @NotNull final Class<T> c) {
-        try {
-            return mapper.readValue(json, c);
         } catch (JsonGenerationException e) {
             throw new UsergridException("Unable to generate json", e);
         } catch (JsonMappingException e) {
@@ -189,15 +98,6 @@ public final class JsonUtils {
         } catch (IOException e) {
             throw new UsergridException("IO error", e);
         }
-    }
-
-    @Nullable
-    public static <T> T getObjectProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name, @NotNull final Class<T> c) {
-        JsonNode value = properties.get(name);
-        if (value != null) {
-            return fromJsonNode(value, c);
-        }
-        return null;
     }
 
     public static void setObjectProperty(@NotNull final Map<String, JsonNode> properties, @NotNull final String name, @Nullable final ObjectNode value) {
