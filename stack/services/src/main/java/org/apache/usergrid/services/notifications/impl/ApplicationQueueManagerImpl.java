@@ -20,10 +20,7 @@ import com.codahale.metrics.Meter;
 import org.apache.usergrid.batch.JobExecution;
 import org.apache.usergrid.persistence.*;
 import org.apache.usergrid.persistence.core.metrics.MetricsFactory;
-import org.apache.usergrid.persistence.entities.Device;
-import org.apache.usergrid.persistence.entities.Notification;
-import org.apache.usergrid.persistence.entities.Notifier;
-import org.apache.usergrid.persistence.entities.Receipt;
+import org.apache.usergrid.persistence.entities.*;
 import org.apache.usergrid.persistence.Query;
 import org.apache.usergrid.persistence.queue.QueueManager;
 import org.apache.usergrid.persistence.queue.QueueMessage;
@@ -33,7 +30,9 @@ import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.Subscriber;
 import rx.functions.Func1;
+import rx.schedulers.Schedulers;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -119,7 +118,7 @@ public class ApplicationQueueManagerImpl implements ApplicationQueueManager {
             final UUID appId = em.getApplication().getUuid();
             final Map<String, Object> payloads = notification.getPayloads();
 
-            final Func1<EntityRef, EntityRef> sendMessageFunction = deviceRef -> {
+            final Func1<EntityRef, Optional<ApplicationQueueMessage>> sendMessageFunction = deviceRef -> {
                 try {
 
                     long now = System.currentTimeMillis();
@@ -143,7 +142,8 @@ public class ApplicationQueueManagerImpl implements ApplicationQueueManager {
                     }
 
                     if (notifierId == null) {
-                        return deviceRef;
+                        //TODO need to leverage optional here
+                        return Optional.empty();
                     }
 
                     ApplicationQueueMessage message = new ApplicationQueueMessage(appId, notification.getUuid(), deviceRef.getUuid(), notifierKey, notifierId);
@@ -153,16 +153,18 @@ public class ApplicationQueueManagerImpl implements ApplicationQueueManager {
                         notification.setQueued(System.currentTimeMillis());
 
                     }
-                    qm.sendMessage(message);
                     deviceCount.incrementAndGet();
-                    queueMeter.mark();
+
+                    return Optional.of(message);
 
 
                 } catch (Exception deviceLoopException) {
                     logger.error("Failed to add device", deviceLoopException);
                     errorMessages.add("Failed to add device: " + deviceRef.getUuid() + ", error:" + deviceLoopException);
+
+                    return Optional.empty();
                 }
-                return deviceRef;
+
             };
 
 
@@ -170,13 +172,52 @@ public class ApplicationQueueManagerImpl implements ApplicationQueueManager {
             //process up to 10 concurrently
             Observable processMessagesObservable = Observable.create(new IteratorObservable<Entity>(iterator))
                 .flatMap(entity -> {
+
+                    if(entity.getType().equals(Device.ENTITY_TYPE)){
+                        return Observable.from(Collections.singletonList(entity));
+                    }
+
+                    // if it's not a device, drill down and get them
                     return Observable.from(getDevices(entity));
-                }, 10)
+
+                }, 50)
                 .distinct(ref -> ref.getUuid())
                 .map(sendMessageFunction)
+                .doOnNext( message -> {
+                        try {
+                            if(message.isPresent()){
+                                qm.sendMessage( message.get() );
+                                queueMeter.mark();
+                            }
+
+                        } catch (IOException e) {
+
+                            if(message.isPresent()){
+                                logger.error("Unable to queue notification for notification UUID {} and device UUID {} ",
+                                    message.get().getNotificationId(), message.get().getDeviceId());
+                            }
+                            else{
+                                logger.error("Unable to queue notification as it's not present when trying to send to queue");
+                            }
+
+                        }
+
+
+                })
+                .doOnCompleted( () -> {
+
+                    try {
+                        notification.setProcessingFinished(System.currentTimeMillis());
+                        em.update(notification);
+                    } catch (Exception e) {
+                        logger.error("Unable to set processing finished timestamp for notification");
+                    }
+
+                })
                 .doOnError(throwable -> logger.error("Failed while trying to send notification", throwable));
 
-            processMessagesObservable.toBlocking().lastOrDefault(null);
+            //TODO verify error handling here
+            processMessagesObservable.subscribeOn(Schedulers.io()).subscribe(); // fire the queuing into the background
 
         }
 
@@ -190,7 +231,6 @@ public class ApplicationQueueManagerImpl implements ApplicationQueueManager {
             }
         }
 
-        notification.setExpectedCount(deviceCount.get());
         notification.addProperties(properties);
         em.update(notification);
 
@@ -289,8 +329,22 @@ public class ApplicationQueueManagerImpl implements ApplicationQueueManager {
                     String notifierName = message.getNotifierKey().toLowerCase();
                     ProviderAdapter providerAdapter = notifierMap.get(notifierName.toLowerCase());
                     Object payload = translatedPayloads.get(notifierName);
-                    Receipt receipt = new Receipt(notification.getUuid(), message.getNotifierId(), payload, deviceUUID);
-                    TaskTracker tracker = new TaskTracker(providerAdapter.getNotifier(), taskManager, receipt, deviceUUID);
+
+                    TaskTracker tracker = null;
+
+                    if(notification.getSaveReceipts()){
+
+                        final Receipt receipt =
+                            new Receipt( notification.getUuid(), message.getNotifierId(), payload, deviceUUID );
+                        tracker =
+                            new TaskTracker( providerAdapter.getNotifier(), taskManager, receipt, deviceUUID );
+
+                    }
+                    else {
+
+                        tracker =
+                            new TaskTracker( providerAdapter.getNotifier(), taskManager, null, deviceUUID );
+                    }
                     if (!isOkToSend(notification)) {
                         tracker.failed(0, "Notification is duplicate/expired/cancelled.");
                     } else {
@@ -460,14 +514,7 @@ public class ApplicationQueueManagerImpl implements ApplicationQueueManager {
 
 
     private boolean isOkToSend(Notification notification) {
-        Map<String, Long> stats = notification.getStatistics();
-        if (stats != null && notification.getExpectedCount() == (stats.get("sent") + stats.get("errors"))) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("notification {} already processed. not sending.",
-                    notification.getUuid());
-            }
-            return false;
-        }
+
         if (notification.getCanceled() == Boolean.TRUE) {
             if (logger.isDebugEnabled()) {
                 logger.debug("notification {} canceled. not sending.",
@@ -487,20 +534,63 @@ public class ApplicationQueueManagerImpl implements ApplicationQueueManager {
 
     private List<EntityRef> getDevices(EntityRef ref) {
 
-        List<EntityRef> devices = Collections.EMPTY_LIST;
+        List<EntityRef> devices = new ArrayList<>();
+
+        final int LIMIT = Query.MID_LIMIT;
 
         try {
-            if ("device".equals(ref.getType())) {
-                devices = Collections.singletonList(ref);
-            } else if ("user".equals(ref.getType())) {
-                devices = em.getCollection(ref, "devices", null, Query.MAX_LIMIT,
-                    Query.Level.REFS, false).getRefs();
-            } else if ("group".equals(ref.getType())) {
-                devices = new ArrayList<>();
-                for (EntityRef r : em.getCollection(ref, "users", null,
-                    Query.MAX_LIMIT, Query.Level.REFS, false).getRefs()) {
-                    devices.addAll(getDevices(r));
+
+           if (User.ENTITY_TYPE.equals(ref.getType())) {
+
+                UUID start = null;
+                boolean initial = true;
+                int resultSize = 0;
+                while( initial || resultSize >= Query.DEFAULT_LIMIT) {
+
+                    initial = false;
+
+                    final List<EntityRef> mydevices = em.getCollection(ref, "devices", start, LIMIT,
+                        Query.Level.REFS, true).getRefs();
+
+                    resultSize = mydevices.size();
+
+                    if(mydevices.size() > 0){
+                        start = mydevices.get(mydevices.size() - 1 ).getUuid();
+                    }
+
+                    devices.addAll( mydevices  );
+
                 }
+
+            } else if (Group.ENTITY_TYPE.equals(ref.getType())) {
+
+                UUID start = null;
+                boolean initial = true;
+                int resultSize = 0;
+
+                while( initial || resultSize >= LIMIT){
+
+                    initial = false;
+                    final List<EntityRef> myusers =  em.getCollection(ref, "users", start,
+                        LIMIT, Query.Level.REFS, true).getRefs();
+
+                    resultSize = myusers.size();
+
+                    if(myusers.size() > 0){
+                        start = myusers.get(myusers.size() - 1 ).getUuid();
+                    }
+
+
+                    // don't allow a single user to have more than 100 devices?
+                    for (EntityRef user : myusers) {
+
+                        devices.addAll( em.getCollection(user, "devices", null, 100,
+                            Query.Level.REFS, true).getRefs() );
+
+                    }
+
+                }
+
             }
         } catch (Exception e) {
 

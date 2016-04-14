@@ -17,14 +17,7 @@
 package org.apache.usergrid.corepersistence;
 
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,9 +58,6 @@ import org.apache.usergrid.persistence.graph.SearchByEdgeType;
 import org.apache.usergrid.persistence.graph.impl.SimpleSearchByEdge;
 import org.apache.usergrid.persistence.graph.impl.SimpleSearchByEdgeType;
 import org.apache.usergrid.persistence.graph.impl.SimpleSearchEdgeType;
-import org.apache.usergrid.persistence.index.EntityIndex;
-import org.apache.usergrid.persistence.index.EntityIndexBatch;
-import org.apache.usergrid.persistence.index.SearchEdge;
 import org.apache.usergrid.persistence.index.query.Identifier;
 import org.apache.usergrid.persistence.model.entity.Id;
 import org.apache.usergrid.persistence.model.entity.SimpleId;
@@ -79,10 +69,8 @@ import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 
 import rx.Observable;
-import rx.functions.Func1;
 
 import static org.apache.usergrid.corepersistence.util.CpNamingUtils.createCollectionEdge;
-import static org.apache.usergrid.corepersistence.util.CpNamingUtils.createCollectionSearchEdge;
 import static org.apache.usergrid.corepersistence.util.CpNamingUtils.createConnectionEdge;
 import static org.apache.usergrid.corepersistence.util.CpNamingUtils.createConnectionSearchByEdge;
 import static org.apache.usergrid.corepersistence.util.CpNamingUtils.getNameFromEdgeType;
@@ -323,14 +311,31 @@ public class CpRelationManager implements RelationManager {
 
         final String ql;
 
-        if ( startResult != null ) {
-            ql = "select * where created > " + startResult.timestamp();
-        }
-        else {
+
+        if (startResult != null ) {
+
+            // UUID timestamp is a different measure than 'created' field on entities
+            Calendar uuidEpoch = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+            uuidEpoch.clear();
+            uuidEpoch.set(1582, 9, 15, 0, 0, 0); // 9 = October
+            long epochMillis = uuidEpoch.getTime().getTime();
+
+            long time = (startResult.timestamp() / 10000L) + epochMillis;
+
+            if ( !reversed ) {
+                ql = "select * where created > " + time;
+            } else {
+                ql = "select * where created < " + time;
+            }
+
+        } else {
             ql = "select *";
         }
 
         Query query = Query.fromQL( ql );
+        if(query == null ){
+            throw new RuntimeException("Unable to get data for collection: "+collectionName);
+        }
         query.setLimit( count );
         query.setReversed( reversed );
 
@@ -937,6 +942,13 @@ public class CpRelationManager implements RelationManager {
             if ( query.getEntityType().equals( User.ENTITY_TYPE ) && ident.isEmail() ) {
 
                 final String newQuery = "select * where email='" + query.getSingleNameOrEmailIdentifier() + "'";
+
+                query.setQl( newQuery );
+            }
+            // groups have a special unique identifier
+            else if ( query.getEntityType().equals( Group.ENTITY_TYPE ) ){
+
+                final String newQuery = "select * where path='" + query.getSingleNameOrEmailIdentifier() + "'";
 
                 query.setQl( newQuery );
             }

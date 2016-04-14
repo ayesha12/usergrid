@@ -41,11 +41,6 @@ public class Notification extends TypedEntity {
         NORMAL, HIGH
     }
 
-
-    /** Total count of notifications sent based on the API path/query */
-    @EntityProperty
-    protected int expectedCount;
-
     /** The pathQuery/query that Usergrid used to idenitfy the devices to send the notification to */
     @EntityProperty
     private PathTokens pathQuery;
@@ -61,6 +56,10 @@ public class Notification extends TypedEntity {
     /** Timestamp (ms) when the notification was processed */
     @EntityProperty
     protected Long queued;
+
+    /** Timestamp (ms) when the notification was processed */
+    @EntityProperty
+    protected Long processingFinished;
 
     /** Timestamp (ms) when send notification started */
     @EntityProperty
@@ -94,6 +93,10 @@ public class Notification extends TypedEntity {
     @EntityProperty
     protected String errorMessage;
 
+    /** Flag to disable the creation, saving, connecting of receipt entities for a notification.  */
+    @EntityProperty
+    protected boolean saveReceipts;
+
     @EntityCollection(type = "receipt")
     protected List<UUID> receipts;
 
@@ -105,11 +108,6 @@ public class Notification extends TypedEntity {
     public Notification() {
         pathQuery = new PathTokens();
     }
-
-    @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
-    public int getExpectedCount() {  return expectedCount;  }
-
-    public void setExpectedCount(int expectedCount) {  this.expectedCount = expectedCount;  }
 
     @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
     public PathTokens getPathQuery(){
@@ -148,6 +146,15 @@ public class Notification extends TypedEntity {
     }
 
     @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
+    public Long getProcessingFinished() {
+        return processingFinished;
+    }
+
+    public void setProcessingFinished(Long processingFinished) {
+        this.processingFinished = processingFinished;
+    }
+
+    @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
     public Long getDeliver() {
         return deliver;
     }
@@ -172,6 +179,15 @@ public class Notification extends TypedEntity {
 
     public void setCanceled(Boolean canceled) {
         this.canceled = canceled;
+    }
+
+    @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
+    public boolean getSaveReceipts() {
+        return saveReceipts;
+    }
+
+    public void setSaveReceipts(boolean saveReceipts) {
+        this.saveReceipts = saveReceipts;
     }
 
     @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
