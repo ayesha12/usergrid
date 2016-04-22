@@ -51,7 +51,8 @@ public interface EntityManager {
 
     public void updateApplication( Application app ) throws Exception;
 
-    public void updateApplication( Map<String, Object> properties ) throws Exception;
+    public void updateApplication( Map<String, Object> properties,
+                                   Map<String, Object> metadataRequestQueryParams ) throws Exception;
 
     public RelationManager getRelationManager( EntityRef entityRef );
 
@@ -67,12 +68,26 @@ public interface EntityManager {
      *
      * @param entityType the type of the entity to create.
      * @param properties property values to create in the new entity or null.
-     *
-     * @return the newly created entity object.
+     ** @return the newly created entity object.
      */
-    public Entity create( String entityType, Map<String, Object> properties ) throws Exception;
+    public Entity create(String entityType, Map<String, Object> properties) throws Exception;
 
-    public <A extends Entity> A create( String entityType, Class<A> entityClass, Map<String, Object> properties )
+    /**
+     * Creates an entity of the specified type attached to the specified application.
+     *
+     * @param entityType the type of the entity to create.
+     * @param properties property values to create in the new entity or null.
+     * @metadataQueryParamProperties metadata properties to add to an entity.
+     ** @return the newly created entity object.
+     */
+    public Entity newCreate(String entityType, Map<String, Object> properties,
+                            Map<String,Object> metadataQueryParamProperties) throws Exception;
+
+    public <A extends Entity> A newCreate( String entityType, Class<A> entityClass, Map<String, Object> properties,
+                                        Map<String,Object> metadataQueryParamProperties)
+        throws Exception;
+
+    public <A extends Entity> A create( String entityType, Class<A> entityClass, Map<String, Object> properties)
             throws Exception;
 
     public <A extends TypedEntity> A create( A entity ) throws Exception;
@@ -228,9 +243,10 @@ public interface EntityManager {
      * @param entityRef an entity reference
      * @param properties the properties
      *
+     * @param metadataRequestQueryParams
      * @throws Exception the exception
      */
-    public void updateProperties( EntityRef entityRef, Map<String, Object> properties )
+    public void updateProperties(EntityRef entityRef, Map<String, Object> properties, Map<String, Object> metadataRequestQueryParams)
             throws Exception;
 
     public void deleteProperty( EntityRef entityRef, String propertyName ) throws Exception;
@@ -384,14 +400,14 @@ public interface EntityManager {
 
     /**
      * Create the item in a sub collection
-     *
-     * @param entityRef The owning entity
+     *  @param entityRef The owning entity
      * @param collectionName The name of the collection
      * @param itemType The type of the item
      * @param properties The properties for the item
      */
-    public Entity createItemInCollection( EntityRef entityRef, String collectionName, String itemType,
-                                          Map<String, Object> properties ) throws Exception;
+    public Entity createItemInCollection(EntityRef entityRef, String collectionName, String itemType,
+                                         Map<String, Object> properties,
+                                         Map<String,Object> metadataQueryParamProperties) throws Exception;
 
     /**
      * Removes an entity to the specified collection belonging to the specified entity.
@@ -633,8 +649,10 @@ public interface EntityManager {
     public void revokeGroupPermission( UUID groupId, String permission ) throws Exception;
 
 
-    <A extends Entity> A batchCreate(String entityType, Class<A> entityClass, Map<String, Object> properties, UUID
-        importId) throws Exception;
+    <A extends Entity> A batchCreate(String entityType, Class<A> entityClass, Map<String, Object> properties,
+                                     UUID importId, Map<String,Object> metadataQueryParamProperties)
+        throws Exception;
+
     /**
      * Batch dictionary property.
      *

@@ -17,54 +17,6 @@
 package org.apache.usergrid.persistence;
 
 
-import java.beans.PropertyDescriptor;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.nio.ByteBuffer;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-
-import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-
-import org.apache.usergrid.persistence.model.collection.SchemaManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
-import org.springframework.core.type.filter.AssignableTypeFilter;
-
-import org.apache.commons.beanutils.PropertyUtils;
-import org.apache.commons.lang.reflect.FieldUtils;
-
-import org.apache.usergrid.persistence.annotations.EntityCollection;
-import org.apache.usergrid.persistence.annotations.EntityDictionary;
-import org.apache.usergrid.persistence.annotations.EntityProperty;
-import org.apache.usergrid.persistence.cassandra.CassandraPersistenceUtils;
-import org.apache.usergrid.persistence.entities.Application;
-import org.apache.usergrid.persistence.exceptions.PropertyTypeConversionException;
-import org.apache.usergrid.persistence.schema.CollectionInfo;
-import org.apache.usergrid.persistence.schema.DictionaryInfo;
-import org.apache.usergrid.persistence.schema.EntityInfo;
-import org.apache.usergrid.persistence.schema.PropertyInfo;
-import org.apache.usergrid.utils.InflectionUtils;
-import org.apache.usergrid.utils.JsonUtils;
-import org.apache.usergrid.utils.MapUtils;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -74,15 +26,48 @@ import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-
 import me.prettyprint.hector.api.beans.ColumnSlice;
 import me.prettyprint.hector.api.beans.HColumn;
 import me.prettyprint.hector.api.beans.Row;
+import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.lang.reflect.FieldUtils;
+import org.apache.usergrid.persistence.annotations.EntityCollection;
+import org.apache.usergrid.persistence.annotations.EntityDictionary;
+import org.apache.usergrid.persistence.annotations.EntityProperty;
+import org.apache.usergrid.persistence.cassandra.CassandraPersistenceUtils;
+import org.apache.usergrid.persistence.entities.Application;
+import org.apache.usergrid.persistence.exceptions.PropertyTypeConversionException;
+import org.apache.usergrid.persistence.model.collection.SchemaManager;
+import org.apache.usergrid.persistence.schema.CollectionInfo;
+import org.apache.usergrid.persistence.schema.DictionaryInfo;
+import org.apache.usergrid.persistence.schema.EntityInfo;
+import org.apache.usergrid.persistence.schema.PropertyInfo;
+import org.apache.usergrid.utils.InflectionUtils;
+import org.apache.usergrid.utils.JsonUtils;
+import org.apache.usergrid.utils.MapUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
+import org.springframework.core.type.filter.AssignableTypeFilter;
+
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.beans.PropertyDescriptor;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
+import java.security.SecureRandom;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import static org.apache.commons.lang.StringUtils.isNotBlank;
-import static org.apache.usergrid.utils.ConversionUtils.bytebuffer;
-import static org.apache.usergrid.utils.ConversionUtils.string;
-import static org.apache.usergrid.utils.ConversionUtils.uuid;
+import static org.apache.usergrid.utils.ConversionUtils.*;
 import static org.apache.usergrid.utils.InflectionUtils.pluralize;
 import static org.apache.usergrid.utils.InflectionUtils.singularize;
 import static org.apache.usergrid.utils.JsonUtils.toJsonNode;
@@ -134,6 +119,7 @@ public class Schema implements SchemaManager {
     public static final String PROPERTY_URI = "uri";
     public static final String PROPERTY_USERNAME = "username";
     public static final String PROPERTY_INACTIVITY = "inactivity";
+    public static final String PROPERTY_TTL = "ttl";
 
     public static final String PROPERTY_CONNECTION = "connection";
     public static final String PROPERTY_ASSOCIATED = "associated";
@@ -1258,6 +1244,15 @@ public class Schema implements SchemaManager {
         property.setBasic( true );
         property.setUnique( true );
         properties.put( PROPERTY_NAME, property );
+
+        property = new PropertyInfo();
+        property.setName( PROPERTY_TTL );
+        property.setRequired( true );
+        property.setType( Integer.class );
+        property.setMutable( false );
+        property.setIndexed( true );
+        properties.put( PROPERTY_TTL, property );
+
 
         property = new PropertyInfo();
         property.setName( PROPERTY_CREATED );

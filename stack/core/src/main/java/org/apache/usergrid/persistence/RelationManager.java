@@ -17,15 +17,11 @@
 package org.apache.usergrid.persistence;
 
 
-import java.nio.ByteBuffer;
-import org.apache.usergrid.persistence.Query;
-import java.util.List;
+import org.apache.usergrid.persistence.Query.Level;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import org.apache.usergrid.persistence.Query.Level;
-
-import me.prettyprint.hector.api.mutation.Mutator;
 
 
 public interface RelationManager {
@@ -54,7 +50,8 @@ public interface RelationManager {
 
     public Entity addToCollection( String collectionName, EntityRef itemRef ) throws Exception;
 
-    public Entity createItemInCollection( String collectionName, String itemType, Map<String, Object> properties )
+    public Entity createItemInCollection(String collectionName, String itemType, Map<String, Object> properties,
+                                         Map<String, Object> metadataQueryParamProperties)
             throws Exception;
 
     public void removeFromCollection( String collectionName, EntityRef itemRef ) throws Exception;

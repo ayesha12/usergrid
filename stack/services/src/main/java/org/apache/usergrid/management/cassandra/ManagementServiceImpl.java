@@ -17,7 +17,6 @@
 package org.apache.usergrid.management.cassandra;
 
 
-import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -88,6 +87,8 @@ import static org.apache.commons.codec.digest.DigestUtils.sha;
 import static org.apache.commons.lang.StringUtils.isBlank;
 import static org.apache.usergrid.locking.LockHelper.getUniqueUpdateLock;
 import static org.apache.usergrid.management.AccountCreationProps.*;
+import static org.apache.usergrid.management.OrganizationConfigProps.ORGPROPERTIES_ADMIN_SYSADMIN_EMAIL;
+import static org.apache.usergrid.management.OrganizationConfigProps.WorkflowUrl;
 import static org.apache.usergrid.persistence.CredentialsInfo.getCredentialsSecret;
 import static org.apache.usergrid.persistence.Schema.*;
 import static org.apache.usergrid.persistence.Schema.PROPERTY_UUID;
@@ -107,7 +108,6 @@ import static org.apache.usergrid.utils.ConversionUtils.uuid;
 import static org.apache.usergrid.utils.ListUtils.anyNull;
 import static org.apache.usergrid.utils.MapUtils.hashMap;
 import static org.apache.usergrid.utils.PasswordUtils.mongoPassword;
-import static org.apache.usergrid.management.OrganizationConfigProps.*;
 
 
 public class ManagementServiceImpl implements ManagementService {
@@ -1056,7 +1056,7 @@ public class ManagementServiceImpl implements ManagementService {
                 Map<String, Object> userProperties = user.getProperties();
                 userProperties.putAll( json );
                 Entity entity = em.get( entityRef, User.class);
-                em.updateProperties( entity, userProperties );
+                em.updateProperties( entity, userProperties, null);
             }
 
             user = getAdminUserByUuid( user.getUuid() );

@@ -17,13 +17,7 @@
 package org.apache.usergrid.services.applications;
 
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.lang.StringUtils;
 import org.apache.usergrid.persistence.Entity;
 import org.apache.usergrid.persistence.EntityRef;
 import org.apache.usergrid.persistence.Query;
@@ -36,8 +30,13 @@ import org.apache.usergrid.services.ServiceRequest;
 import org.apache.usergrid.services.ServiceResults;
 import org.apache.usergrid.services.ServiceResults.Type;
 import org.apache.usergrid.services.exceptions.UnsupportedServiceOperationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import org.apache.commons.lang.StringUtils;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 import static org.apache.usergrid.services.ServiceResults.genericServiceResults;
 import static org.apache.usergrid.services.ServiceResults.simpleServiceResults;
@@ -170,7 +169,7 @@ public class ApplicationsService extends AbstractService {
         }
 
         Entity entity = em.get( em.getApplicationRef() );
-        em.updateProperties( entity, properties );
+        em.updateProperties( entity, properties, null);
         entity.addProperties( properties );
         Results r = Results.fromEntity( entity );
 
@@ -227,5 +226,11 @@ public class ApplicationsService extends AbstractService {
             //          TODO TN finish this  return getApplicationRoles();
         }
         return super.postEntityCommand( context, refs, command, payload );
+    }
+
+    //todo : check this method.
+    @Override
+    public Entity updateEntity(ServiceRequest request, EntityRef ref, ServicePayload payload) throws Exception {
+        return null;
     }
 }

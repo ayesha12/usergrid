@@ -17,20 +17,20 @@
 package org.apache.usergrid.services;
 
 
+import org.apache.shiro.SecurityUtils;
+import org.apache.usergrid.persistence.EntityRef;
+import org.apache.usergrid.persistence.Query;
+import org.apache.usergrid.services.ServiceParameter.QueryParameter;
+import org.apache.usergrid.services.ServiceResults.Type;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.apache.usergrid.persistence.EntityRef;
-import org.apache.usergrid.persistence.Query;
-import org.apache.usergrid.services.ServiceParameter.QueryParameter;
-import org.apache.usergrid.services.ServiceResults.Type;
-
-import org.apache.shiro.SecurityUtils;
+import java.util.Map;
 
 import static org.apache.commons.lang.StringUtils.isNotBlank;
 import static org.apache.usergrid.utils.ListUtils.isEmpty;
@@ -59,13 +59,15 @@ public class ServiceRequest {
     private final boolean returnsOutboundConnections;
     private final ServicePayload payload;
     private final List<ServiceParameter> originalParameters;
+    private final Map<String, Object> metadataRequestQueryParams;
 
     // return results_set, result_entity, new_service, param_list, properties
 
 
     public ServiceRequest( ServiceManager services, ServiceAction action, String serviceName,
                            List<ServiceParameter> parameters, ServicePayload payload, boolean returnsTree,
-                           boolean returnsInboundConnections, boolean returnsOutboundConnections ) {
+                           boolean returnsInboundConnections, boolean returnsOutboundConnections,
+                           Map<String, Object> metadataRequestQueryParams ) {
         this.services = services;
         this.action = action;
         parent = null;
@@ -83,17 +85,19 @@ public class ServiceRequest {
         }
 
         this.payload = payload;
+        this.metadataRequestQueryParams = metadataRequestQueryParams;
     }
 
     public ServiceRequest( ServiceManager services, ServiceAction action, String serviceName,
                            List<ServiceParameter> parameters, ServicePayload payload, boolean returnsTree) {
-        this( services, action, serviceName, parameters, payload, returnsTree, true, true);
+        this( services, action, serviceName, parameters, payload, returnsTree, true, true, null);
     }
 
 
-    public ServiceRequest( ServiceManager services, ServiceAction action, String serviceName,
-                           List<ServiceParameter> parameters, ServicePayload payload ) {
-        this( services, action, serviceName, parameters, payload, false, true, true );
+    public ServiceRequest(ServiceManager services, ServiceAction action, String serviceName,
+                          List<ServiceParameter> parameters, ServicePayload payload, boolean returnsTree,
+                          boolean returnsInboundConnections, boolean returnsOutboundConnections) {
+        this( services, action, serviceName, parameters, payload, false, true, true, null );
     }
 
 
@@ -115,13 +119,14 @@ public class ServiceRequest {
         this.originalParameters = Collections.unmodifiableList( new ArrayList<ServiceParameter>( parameters ) );
         this.path = path;
         this.childPath = childPath;
+        this.metadataRequestQueryParams = parent.metadataRequestQueryParams;
     }
 
 
-    public ServiceRequest( ServiceManager services, ServiceAction action, ServiceRequest parent, EntityRef owner,
-                           String path, String childPath, String serviceName, List<ServiceParameter> parameters,
-                           ServicePayload payload, boolean returnsTree, boolean returnsInboundConnections,
-                           boolean returnsOutboundConnections ) {
+    public ServiceRequest(ServiceManager services, ServiceAction action, ServiceRequest parent, EntityRef owner,
+                          String path, String childPath, String serviceName, List<ServiceParameter> parameters,
+                          ServicePayload payload, boolean returnsTree, boolean returnsInboundConnections,
+                          boolean returnsOutboundConnections, Map<String, Object> metadataRequestQueryParams) {
         this.services = services;
         this.action = action;
         this.parent = parent;
@@ -135,24 +140,25 @@ public class ServiceRequest {
         this.returnsInboundConnections = returnsInboundConnections;
         this.returnsOutboundConnections = returnsOutboundConnections;
         this.payload = payload;
+        this.metadataRequestQueryParams = metadataRequestQueryParams;
     }
 
     public ServiceRequest( ServiceManager services, ServiceAction action, ServiceRequest parent, EntityRef owner,
                            String path, String childPath, String serviceName, List<ServiceParameter> parameters,
                            ServicePayload payload, boolean returnsTree ) {
-        this(services, action, parent, owner, path, childPath, serviceName, parameters, payload, returnsTree, true, true);
+        this(services, action, parent, owner, path, childPath, serviceName, parameters, payload, returnsTree, true, true, null);
     }
 
 
     public static ServiceRequest withPath( ServiceRequest r, String path ) {
         return new ServiceRequest( r.services, r.action, r.parent, r.owner, path, r.childPath, r.serviceName,
-                r.parameters, r.payload, r.returnsTree, r.returnsInboundConnections, r.returnsOutboundConnections );
+                r.parameters, r.payload, r.returnsTree, r.returnsInboundConnections, r.returnsOutboundConnections, null );
     }
 
 
     public static ServiceRequest withChildPath( ServiceRequest r, String childPath ) {
         return new ServiceRequest( r.services, r.action, r.parent, r.owner, r.path, childPath, r.serviceName,
-                r.parameters, r.payload, r.returnsTree, r.returnsInboundConnections, r.returnsOutboundConnections );
+                r.parameters, r.payload, r.returnsTree, r.returnsInboundConnections, r.returnsOutboundConnections, null );
     }
 
 
@@ -239,7 +245,7 @@ public class ServiceRequest {
     public ServiceContext getAppContext() throws Exception {
         Service s = services.getService( serviceName );
 
-        return s.getContext( action,this,null,payload );
+        return s.getContext( action,this,null,payload,null ); //todo : the metadata properties passed to getcontext.
     }
 
     public ServiceResults execute( ServiceResults previousResults ) throws Exception {
@@ -249,7 +255,7 @@ public class ServiceRequest {
         ServiceResults results = null;
         Service s = services.getService( serviceName );
         if ( s != null ) {
-            results = s.invoke( action, this, previousResults, payload );
+            results = s.invoke( action, this, previousResults, payload, metadataRequestQueryParams );
             if ( ( results != null ) && results.hasMoreRequests() ) {
 
                 results = invokeMultiple( results );

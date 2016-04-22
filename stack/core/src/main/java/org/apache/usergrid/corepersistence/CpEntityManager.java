@@ -16,29 +16,17 @@
 package org.apache.usergrid.corepersistence;
 
 
-import java.nio.ByteBuffer;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.UUID;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.util.Assert;
-
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.Timer;
+import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
+import me.prettyprint.hector.api.Keyspace;
+import me.prettyprint.hector.api.beans.*;
+import me.prettyprint.hector.api.factory.HFactory;
+import me.prettyprint.hector.api.mutation.Mutator;
+import me.prettyprint.hector.api.query.MultigetSliceCounterQuery;
+import me.prettyprint.hector.api.query.QueryResult;
+import me.prettyprint.hector.api.query.SliceCounterQuery;
 import org.apache.usergrid.corepersistence.asyncevents.AsyncEventService;
 import org.apache.usergrid.corepersistence.index.IndexSchemaCache;
 import org.apache.usergrid.corepersistence.index.IndexSchemaCacheFactory;
@@ -46,40 +34,16 @@ import org.apache.usergrid.corepersistence.service.CollectionService;
 import org.apache.usergrid.corepersistence.service.ConnectionService;
 import org.apache.usergrid.corepersistence.util.CpEntityMapUtils;
 import org.apache.usergrid.corepersistence.util.CpNamingUtils;
-import org.apache.usergrid.persistence.AggregateCounter;
-import org.apache.usergrid.persistence.AggregateCounterSet;
-import org.apache.usergrid.persistence.CollectionRef;
-import org.apache.usergrid.persistence.ConnectedEntityRef;
-import org.apache.usergrid.persistence.ConnectionRef;
-import org.apache.usergrid.persistence.Entity;
-import org.apache.usergrid.persistence.EntityFactory;
-import org.apache.usergrid.persistence.EntityManager;
-import org.apache.usergrid.persistence.EntityRef;
-import org.apache.usergrid.persistence.IndexBucketLocator;
-import org.apache.usergrid.persistence.Query;
+import org.apache.usergrid.persistence.*;
 import org.apache.usergrid.persistence.Query.Level;
-import org.apache.usergrid.persistence.RelationManager;
-import org.apache.usergrid.persistence.Results;
-import org.apache.usergrid.persistence.Schema;
-import org.apache.usergrid.persistence.SimpleEntityRef;
-import org.apache.usergrid.persistence.SimpleRoleRef;
-import org.apache.usergrid.persistence.TypedEntity;
-import org.apache.usergrid.persistence.cassandra.ApplicationCF;
-import org.apache.usergrid.persistence.cassandra.CassandraPersistenceUtils;
-import org.apache.usergrid.persistence.cassandra.CassandraService;
-import org.apache.usergrid.persistence.cassandra.ConnectionRefImpl;
-import org.apache.usergrid.persistence.cassandra.CounterUtils;
+import org.apache.usergrid.persistence.cassandra.*;
 import org.apache.usergrid.persistence.cassandra.util.TraceParticipant;
 import org.apache.usergrid.persistence.collection.EntityCollectionManager;
 import org.apache.usergrid.persistence.collection.FieldSet;
 import org.apache.usergrid.persistence.collection.exception.WriteUniqueVerifyException;
 import org.apache.usergrid.persistence.core.metrics.MetricsFactory;
 import org.apache.usergrid.persistence.core.scope.ApplicationScope;
-import org.apache.usergrid.persistence.entities.Application;
-import org.apache.usergrid.persistence.entities.Event;
-import org.apache.usergrid.persistence.entities.Group;
-import org.apache.usergrid.persistence.entities.Role;
-import org.apache.usergrid.persistence.entities.User;
+import org.apache.usergrid.persistence.entities.*;
 import org.apache.usergrid.persistence.exceptions.DuplicateUniquePropertyExistsException;
 import org.apache.usergrid.persistence.exceptions.EntityNotFoundException;
 import org.apache.usergrid.persistence.exceptions.RequiredPropertyNotFoundException;
@@ -97,75 +61,31 @@ import org.apache.usergrid.persistence.model.entity.SimpleId;
 import org.apache.usergrid.persistence.model.field.Field;
 import org.apache.usergrid.persistence.model.field.StringField;
 import org.apache.usergrid.persistence.model.util.UUIDGenerator;
-import org.apache.usergrid.utils.ClassUtils;
-import org.apache.usergrid.utils.CompositeUtils;
-import org.apache.usergrid.utils.InflectionUtils;
-import org.apache.usergrid.utils.Inflector;
-import org.apache.usergrid.utils.JsonUtils;
-import org.apache.usergrid.utils.StringUtils;
-import org.apache.usergrid.utils.UUIDUtils;
-
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.Timer;
-import com.google.common.base.Optional;
-import com.google.common.base.Preconditions;
-
-import me.prettyprint.hector.api.Keyspace;
-import me.prettyprint.hector.api.beans.ColumnSlice;
-import me.prettyprint.hector.api.beans.CounterRow;
-import me.prettyprint.hector.api.beans.CounterRows;
-import me.prettyprint.hector.api.beans.CounterSlice;
-import me.prettyprint.hector.api.beans.DynamicComposite;
-import me.prettyprint.hector.api.beans.HColumn;
-import me.prettyprint.hector.api.beans.HCounterColumn;
-import me.prettyprint.hector.api.factory.HFactory;
-import me.prettyprint.hector.api.mutation.Mutator;
-import me.prettyprint.hector.api.query.MultigetSliceCounterQuery;
-import me.prettyprint.hector.api.query.QueryResult;
-import me.prettyprint.hector.api.query.SliceCounterQuery;
+import org.apache.usergrid.utils.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.util.Assert;
 import rx.Observable;
+
+import java.nio.ByteBuffer;
+import java.time.Instant;
+import java.util.*;
 
 import static java.lang.String.CASE_INSENSITIVE_ORDER;
 import static java.util.Arrays.asList;
-
 import static me.prettyprint.hector.api.factory.HFactory.createCounterSliceQuery;
 import static me.prettyprint.hector.api.factory.HFactory.createMutator;
 import static org.apache.commons.lang.StringUtils.capitalize;
 import static org.apache.commons.lang.StringUtils.isBlank;
 import static org.apache.usergrid.corepersistence.util.CpEntityMapUtils.entityToCpEntity;
-import static org.apache.usergrid.corepersistence.util.CpNamingUtils.createConnectionTypeSearch;
-import static org.apache.usergrid.corepersistence.util.CpNamingUtils.createGraphOperationTimestamp;
-import static org.apache.usergrid.corepersistence.util.CpNamingUtils.getConnectionNameFromEdgeName;
-import static org.apache.usergrid.persistence.Schema.COLLECTION_ROLES;
-import static org.apache.usergrid.persistence.Schema.COLLECTION_USERS;
-import static org.apache.usergrid.persistence.Schema.DICTIONARY_PERMISSIONS;
-import static org.apache.usergrid.persistence.Schema.DICTIONARY_ROLENAMES;
-import static org.apache.usergrid.persistence.Schema.DICTIONARY_ROLETIMES;
-import static org.apache.usergrid.persistence.Schema.DICTIONARY_SETS;
-import static org.apache.usergrid.persistence.Schema.PROPERTY_CREATED;
-import static org.apache.usergrid.persistence.Schema.PROPERTY_INACTIVITY;
-import static org.apache.usergrid.persistence.Schema.PROPERTY_MODIFIED;
-import static org.apache.usergrid.persistence.Schema.PROPERTY_NAME;
-import static org.apache.usergrid.persistence.Schema.PROPERTY_TIMESTAMP;
-import static org.apache.usergrid.persistence.Schema.PROPERTY_TYPE;
-import static org.apache.usergrid.persistence.Schema.PROPERTY_UUID;
-import static org.apache.usergrid.persistence.Schema.TYPE_APPLICATION;
-import static org.apache.usergrid.persistence.Schema.TYPE_ENTITY;
+import static org.apache.usergrid.corepersistence.util.CpNamingUtils.*;
+import static org.apache.usergrid.persistence.Schema.*;
 import static org.apache.usergrid.persistence.SimpleEntityRef.getUuid;
-import static org.apache.usergrid.persistence.cassandra.ApplicationCF.APPLICATION_AGGREGATE_COUNTERS;
-import static org.apache.usergrid.persistence.cassandra.ApplicationCF.ENTITY_COMPOSITE_DICTIONARIES;
-import static org.apache.usergrid.persistence.cassandra.ApplicationCF.ENTITY_COUNTERS;
-import static org.apache.usergrid.persistence.cassandra.ApplicationCF.ENTITY_DICTIONARIES;
+import static org.apache.usergrid.persistence.cassandra.ApplicationCF.*;
 import static org.apache.usergrid.persistence.cassandra.CassandraService.ALL_COUNT;
-import static org.apache.usergrid.persistence.cassandra.Serializers.be;
-import static org.apache.usergrid.persistence.cassandra.Serializers.le;
-import static org.apache.usergrid.persistence.cassandra.Serializers.se;
-import static org.apache.usergrid.persistence.cassandra.Serializers.ue;
+import static org.apache.usergrid.persistence.cassandra.Serializers.*;
 import static org.apache.usergrid.utils.ClassUtils.cast;
-import static org.apache.usergrid.utils.ConversionUtils.bytebuffer;
-import static org.apache.usergrid.utils.ConversionUtils.getLong;
-import static org.apache.usergrid.utils.ConversionUtils.object;
-import static org.apache.usergrid.utils.ConversionUtils.string;
+import static org.apache.usergrid.utils.ConversionUtils.*;
 import static org.apache.usergrid.utils.InflectionUtils.singularize;
 
 
@@ -343,13 +263,13 @@ public class CpEntityManager implements EntityManager {
 
 
     @Override
-    public Entity create( String entityType, Map<String, Object> properties ) throws Exception {
+    public Entity create(String entityType, Map<String, Object> properties) throws Exception {
         return create( entityType, null, properties );
     }
 
 
     @Override
-    public <A extends Entity> A create( String entityType, Class<A> entityClass, Map<String, Object> properties )
+    public <A extends Entity> A create( String entityType, Class<A> entityClass, Map<String, Object> properties)
             throws Exception {
 
         if ( ( entityType != null ) && ( entityType.startsWith( TYPE_ENTITY ) || entityType
@@ -366,6 +286,59 @@ public class CpEntityManager implements EntityManager {
         return e;
     }
 
+    @Override
+    public Entity newCreate(String entityType, Map<String, Object> properties,
+                         Map<String,Object> metadataQueryParamProperties) throws Exception {
+        return newCreate( entityType, null, properties, metadataQueryParamProperties );
+    }
+
+    @Override
+    public <A extends Entity> A newCreate( String entityType, Class<A> entityClass, Map<String, Object> properties,
+                                           Map<String,Object> metadataQueryParamProperties)
+        throws Exception {
+
+        if ( ( entityType != null ) && ( entityType.startsWith( TYPE_ENTITY ) || entityType
+            .startsWith( "entities" ) ) ) {
+            throw new IllegalArgumentException( "Invalid entity type" );
+        }
+        A e = null;
+        try {
+            e = ( A ) newCreate( entityType, ( Class<Entity> ) entityClass, properties, null, metadataQueryParamProperties );
+        }
+        catch ( ClassCastException e1 ) {
+            logger.error( "Unable to create typed entity", e1 );
+        }
+        return e;
+    }
+
+    /**
+     * Creates a new entity.
+     *
+     * @param entityType the entity type
+     * @param entityClass the entity class
+     * @param properties the properties
+     * @param importId an existing external UUID to use as the id for the new entity
+     *
+     * @return new entity
+     *
+     * @throws Exception the exception
+     */
+    @TraceParticipant
+    public <A extends Entity> A newCreate(String entityType, Class<A> entityClass,
+                                       Map<String, Object> properties, UUID importId,
+                                          Map<String,Object> metadataQueryParamProperties) throws Exception {
+
+        Timer.Context timeEntityCassCreation = entCreateBatchTimer.time();
+
+
+        A entity = batchCreate( entityType, entityClass, properties, importId, metadataQueryParamProperties);
+
+        //Adding graphite metrics
+        timeEntityCassCreation.stop();
+
+        return entity;
+    }
+
 
     @Override
     public <A extends TypedEntity> A create( A entity ) throws Exception {
@@ -374,24 +347,24 @@ public class CpEntityManager implements EntityManager {
 
 
     @Override
-    public Entity create( UUID importId, String entityType, Map<String, Object> properties ) throws Exception {
+    public Entity create( UUID importId, String entityType, Map<String, Object> properties) throws Exception {
 
         //Adding graphite metrics
         Timer.Context timeCassCreation = entCreateTimer.time();
 
-        Entity entity = batchCreate( entityType, null, properties, importId);
+        Entity entity = batchCreate( entityType, null, properties, importId, null); //todo : check what metadata properties needs to be passed.
 
         timeCassCreation.stop();
         return entity;
     }
 
     @Override
-    public Entity create( Id id, Map<String, Object> properties ) throws Exception {
+    public Entity create( Id id, Map<String, Object> properties) throws Exception {
 
         //Adding graphite metrics
         Timer.Context timeCassCreation = entCreateTimer.time();
 
-        Entity entity = batchCreate( id.getType(), null, properties, id.getUuid());
+        Entity entity = batchCreate( id.getType(), null, properties, id.getUuid(), null); //todo : check what metadata properties needs to be passed.
 
         timeCassCreation.stop();
 
@@ -412,13 +385,13 @@ public class CpEntityManager implements EntityManager {
      * @throws Exception the exception
      */
     @TraceParticipant
-    public <A extends Entity> A create( String entityType, Class<A> entityClass,
-            Map<String, Object> properties, UUID importId ) throws Exception {
+    public <A extends Entity> A create(String entityType, Class<A> entityClass,
+                                       Map<String, Object> properties, UUID importId) throws Exception {
 
         Timer.Context timeEntityCassCreation = entCreateBatchTimer.time();
 
 
-        A entity = batchCreate( entityType, entityClass, properties, importId);
+        A entity = batchCreate( entityType, entityClass, properties, importId, null); //todo : check what metadata properties needs to be passed.
 
         //Adding graphite metrics
         timeEntityCassCreation.stop();
@@ -767,9 +740,10 @@ public class CpEntityManager implements EntityManager {
 
 
     @Override
-    public void updateApplication( Map<String, Object> properties ) throws Exception {
+    public void updateApplication( Map<String, Object> properties,
+                                   Map<String, Object> metadataRequestQueryParams) throws Exception {
         Entity entity = this.get(applicationId, Application.class);
-        this.updateProperties(entity, properties);
+        this.updateProperties(entity, properties, metadataRequestQueryParams);
         this.application = get( applicationId, Application.class );
     }
 
@@ -842,7 +816,7 @@ public class CpEntityManager implements EntityManager {
 
     @Override
     public void createApplicationCollection( String entityType ) throws Exception {
-        create( entityType, null );
+        create( entityType, null, null);
     }
 
     @Override
@@ -1089,7 +1063,8 @@ public class CpEntityManager implements EntityManager {
 
 
     @Override
-    public void updateProperties( EntityRef ref, Map<String, Object> properties ) throws Exception {
+    public void updateProperties(EntityRef ref, Map<String, Object> properties,
+                                 Map<String, Object> metadataRequestQueryParams) throws Exception {
 
         ref = validate( ref );
         properties = Schema.getDefaultSchema().cleanUpdatedProperties( ref.getType(), properties, false );
@@ -1105,6 +1080,21 @@ public class CpEntityManager implements EntityManager {
         Entity entity = ( Entity )entityRef;
 
         properties.put(PROPERTY_MODIFIED, UUIDUtils.getTimestampInMillis(UUIDUtils.newTimeUUID()));
+
+        Map<String, Object> metadata = new LinkedHashMap<String, Object>();
+        if ( entity.getProperties().get("metadata") !=null ) {
+            metadata = (Map<String, Object>) entity.getProperties().get("metadata");
+        }
+
+        if(metadataRequestQueryParams.containsKey( PROPERTY_TTL)){
+            Integer ttl = getInt( metadataRequestQueryParams.get( PROPERTY_TTL ) );
+            if ( ttl >= 30 ) {
+                metadata.put( PROPERTY_TTL, ttl );
+            }
+            else{
+                metadata.put( PROPERTY_TTL, Integer.valueOf(-1) );
+            }
+        }
 
         for ( String propertyName : properties.keySet() ) {
             Object propertyValue = properties.get( propertyName );
@@ -1129,6 +1119,7 @@ public class CpEntityManager implements EntityManager {
 
             entity.setProperty( propertyName, propertyValue );
         }
+
 
         update( entity );
     }
@@ -1517,10 +1508,11 @@ public class CpEntityManager implements EntityManager {
 
 
     @Override
-    public Entity createItemInCollection( EntityRef entityRef, String collectionName,
-            String itemType, Map<String, Object> props ) throws Exception {
+    public Entity createItemInCollection(EntityRef entityRef, String collectionName,
+                                         String itemType, Map<String, Object> props,
+                                         Map<String,Object> metadataQueryParamProperties) throws Exception {
 
-        return getRelationManager( entityRef ).createItemInCollection( collectionName, itemType, props );
+        return getRelationManager( entityRef ).createItemInCollection( collectionName, itemType, props, metadataQueryParamProperties);
     }
 
 
@@ -1754,7 +1746,7 @@ public class CpEntityManager implements EntityManager {
         }
 
         UUID id = UUIDGenerator.newTimeUUID();
-        batchCreate( Role.ENTITY_TYPE, null, properties, id);
+        batchCreate( Role.ENTITY_TYPE, null, properties, id, null); //todo : check what metadata properties needs to be passed.
 
         Mutator<ByteBuffer> batch = createMutator( cass.getApplicationKeyspace( applicationId ), be );
         CassandraPersistenceUtils.addInsertToMutator( batch, ENTITY_DICTIONARIES,
@@ -2639,7 +2631,7 @@ public class CpEntityManager implements EntityManager {
 
     @Override
     public <A extends Entity> A batchCreate(String entityType, Class<A> entityClass, Map<String, Object> properties,
-                                            UUID importId)
+                                            UUID importId, Map<String,Object> metadataQueryParamProperties)
             throws Exception {
 
         String eType = Schema.normalizeEntityType( entityType );
@@ -2694,7 +2686,7 @@ public class CpEntityManager implements EntityManager {
         if ( required != null ) {
             for ( String p : required ) {
                 if ( !PROPERTY_UUID.equals( p ) && !PROPERTY_TYPE.equals( p ) && !PROPERTY_CREATED.equals( p )
-                        && !PROPERTY_MODIFIED.equals( p ) ) {
+                        && !PROPERTY_MODIFIED.equals( p ) && !PROPERTY_TTL.equals(p) ) {
                     Object v = properties.get( p );
                     if ( schema.isPropertyTimestamp( entityType, p ) ) {
                         if ( v == null ) {
@@ -2749,6 +2741,25 @@ public class CpEntityManager implements EntityManager {
                 properties.put( PROPERTY_TIMESTAMP, ( long ) ( timestamp / 1000 ) );
             }
         }
+
+        Map<String, Object> metadata = new LinkedHashMap<String, Object>();
+
+        //todo : required? or will 'properties.containsKey( PROPERTY_METADATA)' always return null ?
+        if ( properties.containsKey( PROPERTY_METADATA) ) {
+            metadata = (Map<String, Object>) properties.get(PROPERTY_METADATA);
+        }
+
+        if(metadataQueryParamProperties.containsKey( PROPERTY_TTL)){
+            Integer ttl = getInt( metadataQueryParamProperties.get( PROPERTY_TTL ) );
+            if ( ttl >= 30 ) {
+                metadata.put( PROPERTY_TTL, ttl );
+            }
+        }
+        else{
+            metadata.put( PROPERTY_TTL, Integer.valueOf(-1) );
+        }
+
+        properties.put(PROPERTY_METADATA,metadata);
 
         A entity = EntityFactory.newEntity( itemId, eType, entityClass );
         entity.addProperties( properties );

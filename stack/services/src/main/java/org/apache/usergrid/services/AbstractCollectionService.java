@@ -17,26 +17,11 @@
 package org.apache.usergrid.services;
 
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.shiro.subject.Subject;
-
-import org.apache.usergrid.persistence.Entity;
-import org.apache.usergrid.persistence.EntityRef;
-import org.apache.usergrid.persistence.Query;
-import org.apache.usergrid.persistence.Results;
-import org.apache.usergrid.persistence.Schema;
-import org.apache.usergrid.persistence.SimpleEntityRef;
+import org.apache.usergrid.persistence.*;
+import org.apache.usergrid.persistence.Query.Level;
 import org.apache.usergrid.persistence.exceptions.EntityNotFoundException;
 import org.apache.usergrid.persistence.exceptions.UnexpectedEntityTypeException;
-import org.apache.usergrid.persistence.Query.Level;
 import org.apache.usergrid.security.shiro.principals.AdminUserPrincipal;
 import org.apache.usergrid.security.shiro.principals.ApplicationPrincipal;
 import org.apache.usergrid.security.shiro.principals.PrincipalIdentifier;
@@ -44,6 +29,10 @@ import org.apache.usergrid.security.shiro.utils.SubjectUtils;
 import org.apache.usergrid.services.ServiceResults.Type;
 import org.apache.usergrid.services.exceptions.ForbiddenServiceOperationException;
 import org.apache.usergrid.services.exceptions.ServiceResourceNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.*;
 
 import static org.apache.usergrid.utils.ClassUtils.cast;
 
@@ -90,6 +79,12 @@ public class AbstractCollectionService extends AbstractService {
             entity = importEntity( request, entity );
         }
         return entity;
+    }
+
+    //todo: added this to resolve the merge conflicts.
+    @Override
+    public Entity updateEntity(ServiceRequest request, EntityRef ref, ServicePayload payload) throws Exception {
+        return null;
     }
 
 
@@ -262,7 +257,7 @@ public class AbstractCollectionService extends AbstractService {
 
         if ( item != null ) {
             validateEntityType( item, id );
-            updateEntity( context, item, context.getPayload() );
+            updateEntity( context, item, context.getPayload(), context.metadataRequestQueryParams );
             item = importEntity( context, item );
         }
         else {
@@ -292,7 +287,7 @@ public class AbstractCollectionService extends AbstractService {
                     name ) ) {
                 properties.put( "name", name );
             }
-            entity = em.create( getEntityType(), properties );
+            entity = em.create( getEntityType(), properties);
         }
         else {
             entity = importEntity( context, entity );
@@ -400,7 +395,7 @@ public class AbstractCollectionService extends AbstractService {
 
                 try {
                     item = em.createItemInCollection( context.getOwner(), context.getCollectionName(), getEntityType(),
-                            p );
+                            p,context.metadataRequestQueryParams);
                 }
                 catch ( Exception e ) {
                     // TODO should we not log this as error?
@@ -425,7 +420,7 @@ public class AbstractCollectionService extends AbstractService {
         }
 
         Entity item = em.createItemInCollection( context.getOwner(), context.getCollectionName(), getEntityType(),
-                context.getProperties() );
+                context.getProperties(), context.metadataRequestQueryParams);
 
         item = importEntity( context, item );
 

@@ -17,20 +17,6 @@
 package org.apache.usergrid.persistence;
 
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.UUID;
-
-import org.junit.Ignore;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.usergrid.AbstractCoreIT;
 import org.apache.usergrid.corepersistence.util.CpNamingUtils;
 import org.apache.usergrid.persistence.Query.Level;
@@ -38,11 +24,15 @@ import org.apache.usergrid.persistence.entities.Group;
 import org.apache.usergrid.persistence.entities.User;
 import org.apache.usergrid.persistence.model.util.UUIDGenerator;
 import org.apache.usergrid.utils.UUIDUtils;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import java.util.*;
+import java.util.Map.Entry;
+
+import static org.junit.Assert.*;
 
 
 public class EntityManagerIT extends AbstractCoreIT {
@@ -546,7 +536,7 @@ public class EntityManagerIT extends AbstractCoreIT {
         Map<String, Object> device = new LinkedHashMap<String, Object>();
         device.put( "name", "device1" );
 
-        Entity createdDevice = em.createItemInCollection( createdUser, "devices", "device", device );
+        Entity createdDevice = em.createItemInCollection( createdUser, "devices", "device", device, null );
 
         app.refreshIndex();
 

@@ -17,21 +17,20 @@
 package org.apache.usergrid.persistence;
 
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.UUID;
-
+import org.apache.usergrid.AbstractCoreIT;
+import org.apache.usergrid.persistence.Query.Level;
+import org.apache.usergrid.persistence.hector.CountingMutator;
+import org.apache.usergrid.persistence.model.util.UUIDGenerator;
+import org.apache.usergrid.utils.UUIDUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.usergrid.AbstractCoreIT;
-import org.apache.usergrid.persistence.hector.CountingMutator;
-import org.apache.usergrid.persistence.Query.Level;
-import org.apache.usergrid.persistence.model.util.UUIDGenerator;
-import org.apache.usergrid.utils.UUIDUtils;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 
@@ -112,7 +111,7 @@ public class CountingMutatorIT extends AbstractCoreIT {
         //now update the props on the entity to update the connections
 
         properties.put( "email", "test2@foo.bar" );
-        em.updateProperties( returned, properties );
+        em.updateProperties( returned, properties, null);
 
     }
 }

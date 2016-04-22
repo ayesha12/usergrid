@@ -17,21 +17,8 @@
 package org.apache.usergrid.services;
 
 
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.apache.usergrid.persistence.ConnectionRef;
-import org.apache.usergrid.persistence.Entity;
-import org.apache.usergrid.persistence.EntityRef;
-import org.apache.usergrid.persistence.Query;
+import org.apache.usergrid.persistence.*;
 import org.apache.usergrid.persistence.Query.Level;
-import org.apache.usergrid.persistence.Results;
-import org.apache.usergrid.persistence.Schema;
-import org.apache.usergrid.persistence.SimpleEntityRef;
 import org.apache.usergrid.persistence.index.query.Identifier;
 import org.apache.usergrid.services.ServiceParameter.IdParameter;
 import org.apache.usergrid.services.ServiceParameter.NameParameter;
@@ -40,8 +27,15 @@ import org.apache.usergrid.services.ServiceResults.Type;
 import org.apache.usergrid.services.exceptions.ServiceResourceNotFoundException;
 import org.apache.usergrid.services.exceptions.UnsupportedServiceOperationException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.schedulers.Schedulers;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 import static org.apache.usergrid.services.ServiceParameter.filter;
 import static org.apache.usergrid.services.ServiceParameter.firstParameterIsName;
@@ -67,6 +61,12 @@ public class AbstractConnectionsService extends AbstractService {
     }
 
 
+    //todo : added this to resolve the merge conflicts.
+    @Override
+    public Entity updateEntity(ServiceRequest request, EntityRef ref, ServicePayload payload) throws Exception {
+        return null;
+    }
+
     /**
      * Create context from parameter queue. Returns context containing a query object that represents the parameters in
      * the queue.
@@ -78,7 +78,8 @@ public class AbstractConnectionsService extends AbstractService {
      */
     @Override
     public ServiceContext getContext( ServiceAction action, ServiceRequest request, ServiceResults previousResults,
-                                      ServicePayload payload ) throws Exception {
+                                      ServicePayload payload,
+                                      Map<String, Object> metadataRequestQueryParams ) throws Exception {
 
         EntityRef owner = request.getOwner();
         String collectionName = "application".equals( owner.getType() ) ? pluralize( getServiceInfo().getItemType() ) :
@@ -118,11 +119,11 @@ public class AbstractConnectionsService extends AbstractService {
             String s = first_parameter.getName();
             if ( hasServiceMetadata( s ) ) {
                 return new ServiceContext( this, action, request, previousResults, owner, collectionName, parameters,
-                        payload ).withServiceMetadata( s );
+                        payload, metadataRequestQueryParams ).withServiceMetadata( s );
             }
             else if ( hasServiceCommand( s ) ) {
                 return new ServiceContext( this, action, request, previousResults, owner, collectionName, parameters,
-                        payload ).withServiceCommand( s );
+                        payload, metadataRequestQueryParams ).withServiceCommand( s );
             }
             else if ( "any".equals( s ) ) {
                 // do nothing, placeholder
@@ -140,11 +141,11 @@ public class AbstractConnectionsService extends AbstractService {
                     s = first_parameter.getName();
                     if ( hasServiceMetadata( s ) ) {
                         return new ServiceContext( this, action, request, previousResults, owner, collectionName,
-                                parameters, payload ).withServiceMetadata( s );
+                                parameters, payload, metadataRequestQueryParams ).withServiceMetadata( s );
                     }
                     else if ( hasServiceCommand( s ) ) {
                         return new ServiceContext( this, action, request, previousResults, owner, collectionName,
-                                parameters, payload ).withServiceCommand( s );
+                                parameters, payload, metadataRequestQueryParams ).withServiceCommand( s );
                     }
                     else {
                         name = s;
@@ -166,7 +167,7 @@ public class AbstractConnectionsService extends AbstractService {
         }
 
         return new ServiceContext( this, action, request, previousResults, owner, collectionName, query, parameters,
-                payload );
+                payload, metadataRequestQueryParams );
     }
 
 
@@ -378,7 +379,7 @@ public class AbstractConnectionsService extends AbstractService {
                 }
             }
             else {
-                entity = em.create( query.getEntityType(), context.getProperties() );
+                entity = em.create( query.getEntityType(), context.getProperties());
             }
             entity = importEntity( context, entity );
 
@@ -414,7 +415,7 @@ public class AbstractConnectionsService extends AbstractService {
 
         Entity item = em.get( id );
         if ( item != null ) {
-            updateEntity( context, item, context.getPayload() );
+            updateEntity( context, item, context.getPayload(), context.metadataRequestQueryParams );
             item = importEntity( context, item );
         }
         else {

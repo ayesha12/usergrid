@@ -32,7 +32,6 @@ import org.apache.usergrid.rest.ApiResponse;
 import org.apache.usergrid.rest.RootResource;
 import org.apache.usergrid.rest.applications.assets.AssetsResource;
 import org.apache.usergrid.rest.security.annotations.CheckPermissionsForPath;
-import org.apache.usergrid.rest.security.annotations.RequireApplicationAccess;
 import org.apache.usergrid.security.oauth.AccessInfo;
 import org.apache.usergrid.services.*;
 import org.apache.usergrid.services.assets.data.AssetUtils;
@@ -41,6 +40,7 @@ import org.apache.usergrid.services.assets.data.BinaryStore;
 import org.apache.usergrid.services.assets.data.LocalFileBinaryStore;
 import org.apache.usergrid.services.exceptions.AwsPropertiesNotFoundException;
 import org.apache.usergrid.utils.JsonUtils;
+import org.apache.usergrid.utils.ListUtils;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.BodyPartEntity;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
@@ -70,9 +70,10 @@ public class ServiceResource extends AbstractContextResource {
 
     protected static final Logger logger = LoggerFactory.getLogger( ServiceResource.class );
     private static final String FILE_FIELD_NAME = "file";
+    private static final String STRING_TTL_QUERYPARAM = "ttl";
 
 
-   // @Autowired
+    // @Autowired
     private BinaryStore binaryStore;
 
     @Autowired
@@ -262,7 +263,7 @@ public class ServiceResource extends AbstractContextResource {
         addQueryParams( getServiceParameters(), ui );
 
         ServiceRequest r = services.newRequest( action, tree, getServiceParameters(), payload,
-            returnInboundConnections, returnOutboundConnections );
+            returnInboundConnections, returnOutboundConnections,getMetadataRequestQueryParams(ui) );
 
         response.setServiceRequest( r );
 
@@ -316,7 +317,7 @@ public class ServiceResource extends AbstractContextResource {
         addQueryParams( getServiceParameters(), ui );
 
         ServiceRequest r = services.newRequest( action, tree, getServiceParameters(), payload,
-            returnInboundConnections, returnOutboundConnections );
+            returnInboundConnections, returnOutboundConnections,getMetadataRequestQueryParams(ui) );
 
         response.setServiceRequest( r );
 
@@ -406,7 +407,7 @@ public class ServiceResource extends AbstractContextResource {
         }
         addQueryParams( getServiceParameters(), ui );
         ServiceRequest r = services.newRequest( action, tree, getServiceParameters(), payload,
-            returnInboundConnections, returnOutboundConnections );
+            returnInboundConnections, returnOutboundConnections, getMetadataRequestQueryParams(ui));
         response.setServiceRequest( r );
         ServiceResults results = r.execute();
         if ( results != null ) {
@@ -436,6 +437,16 @@ public class ServiceResource extends AbstractContextResource {
         httpServletRequest.setAttribute( "applicationId", services.getApplicationId() );
 
         return results;
+    }
+
+    private Map<String, Object> getMetadataRequestQueryParams(UriInfo ui) throws Exception {
+        Map<String,Object> metadataQueryParams = new HashMap<String,Object>();
+
+        if(ui.getQueryParameters().get(STRING_TTL_QUERYPARAM) != null) {
+            metadataQueryParams.put(STRING_TTL_QUERYPARAM, ListUtils.firstInteger(ui.getQueryParameters().get(STRING_TTL_QUERYPARAM)));
+        }
+
+        return metadataQueryParams;
     }
 
 

@@ -17,22 +17,15 @@
 package org.apache.usergrid.persistence;
 
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
+import org.apache.usergrid.AbstractCoreIT;
+import org.apache.usergrid.utils.MapUtils;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.usergrid.AbstractCoreIT;
-import org.apache.usergrid.utils.MapUtils;
+import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 
 public class GeoIT extends AbstractCoreIT {
@@ -152,7 +145,7 @@ public class GeoIT extends AbstractCoreIT {
         //3. Remove the entity's location
         properties.remove("location");
         user.getDynamicProperties().remove("location");
-        em.updateProperties(user, properties);
+        em.updateProperties(user, properties, null);
         em.update(user);
         app.refreshIndex();
 

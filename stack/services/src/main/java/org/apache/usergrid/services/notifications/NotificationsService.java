@@ -17,46 +17,31 @@
 package org.apache.usergrid.services.notifications;
 
 
-import java.util.*;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.Timer;
+import com.google.inject.Injector;
 import org.apache.usergrid.mq.Message;
-import org.apache.usergrid.persistence.Entity;
-import org.apache.usergrid.persistence.EntityManagerFactory;
-import org.apache.usergrid.persistence.EntityRef;
-import org.apache.usergrid.persistence.SimpleEntityRef;
+import org.apache.usergrid.persistence.*;
 import org.apache.usergrid.persistence.core.metrics.MetricsFactory;
 import org.apache.usergrid.persistence.entities.Notification;
 import org.apache.usergrid.persistence.entities.Notifier;
 import org.apache.usergrid.persistence.entities.Receipt;
 import org.apache.usergrid.persistence.exceptions.RequiredPropertyNotFoundException;
 import org.apache.usergrid.persistence.index.query.Identifier;
-import org.apache.usergrid.persistence.Query;
 import org.apache.usergrid.persistence.queue.QueueManager;
 import org.apache.usergrid.persistence.queue.QueueManagerFactory;
 import org.apache.usergrid.persistence.queue.QueueScope;
 import org.apache.usergrid.persistence.queue.impl.QueueScopeImpl;
-import org.apache.usergrid.services.AbstractCollectionService;
-import org.apache.usergrid.services.ServiceAction;
-import org.apache.usergrid.services.ServiceContext;
-import org.apache.usergrid.services.ServiceInfo;
-import org.apache.usergrid.services.ServiceManagerFactory;
-import org.apache.usergrid.services.ServiceParameter;
-import org.apache.usergrid.services.ServicePayload;
-import org.apache.usergrid.services.ServiceRequest;
-import org.apache.usergrid.services.ServiceResults;
+import org.apache.usergrid.services.*;
 import org.apache.usergrid.services.exceptions.ForbiddenServiceOperationException;
 import org.apache.usergrid.services.notifications.impl.ApplicationQueueManagerImpl;
-
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.Timer;
-import com.google.inject.Injector;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
+
+import java.util.*;
 
 import static org.apache.usergrid.utils.InflectionUtils.pluralize;
 
@@ -118,9 +103,9 @@ public class NotificationsService extends AbstractCollectionService {
     @Override
     public ServiceContext getContext(ServiceAction action,
             ServiceRequest request, ServiceResults previousResults,
-            ServicePayload payload) throws Exception {
+            ServicePayload payload, Map<String, Object> metadataRequestQueryParams) throws Exception {
 
-        ServiceContext context = super.getContext(action, request, previousResults, payload);
+        ServiceContext context = super.getContext(action, request, previousResults, payload, metadataRequestQueryParams);
 
         if (action == ServiceAction.POST) {
             context.setQuery(null); // we don't use this, and it must be null to
@@ -212,7 +197,7 @@ public class NotificationsService extends AbstractCollectionService {
 
     @Override
     public Entity updateEntity(ServiceRequest request, EntityRef ref,
-            ServicePayload payload) throws Exception {
+            ServicePayload payload, Map<String, Object> metadataRequestQueryParams) throws Exception {
 
         validate(ref, payload);
 
@@ -234,13 +219,13 @@ public class NotificationsService extends AbstractCollectionService {
         } else if (notification.getStarted() != null) {
             if (payload.getProperty("canceled") != Boolean.TRUE) {
                 throw new ForbiddenServiceOperationException(request,
-                        "Notification has started. You may only set canceled.");
+                    "Notification has started. You may only set canceled.");
             }
             payload.getProperties().clear();
             payload.setProperty("canceled", Boolean.TRUE);
         }
 
-        Entity response = super.updateEntity(request, ref, payload);
+        Entity response = super.updateEntity(request, ref, payload, metadataRequestQueryParams);
 
         Long deliver = (Long) payload.getProperty("deliver");
         if (deliver != null) {

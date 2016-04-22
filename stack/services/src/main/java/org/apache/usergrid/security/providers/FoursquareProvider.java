@@ -155,7 +155,7 @@ public class FoursquareProvider extends AbstractProvider {
                     properties.put( "foursquare", fq_user );
                     properties.put( "picture", "https://is0.4sqi.net/userpix_thumbs" + fq_user_picture );
                     properties.put( "location", location );
-                    entityManager.updateProperties( user, properties );
+                    entityManager.updateProperties( user, properties, null);
 
                     user.setProperty( "foursquare", fq_user );
                     user.setProperty( "picture", "https://is0.4sqi.net/userpix_thumbs" + fq_user_picture );

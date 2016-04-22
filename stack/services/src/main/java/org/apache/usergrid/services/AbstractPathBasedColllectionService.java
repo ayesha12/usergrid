@@ -17,13 +17,6 @@
 package org.apache.usergrid.services;
 
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.usergrid.persistence.EntityRef;
 import org.apache.usergrid.persistence.Query;
 import org.apache.usergrid.persistence.Schema;
@@ -31,6 +24,14 @@ import org.apache.usergrid.services.ServiceParameter.IdParameter;
 import org.apache.usergrid.services.ServiceParameter.NameParameter;
 import org.apache.usergrid.services.ServiceParameter.QueryParameter;
 import org.apache.usergrid.services.exceptions.ServiceInvocationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import static org.apache.usergrid.services.ServiceParameter.filter;
 import static org.apache.usergrid.services.ServiceParameter.mergeQueries;
 import static org.apache.usergrid.utils.InflectionUtils.pluralize;
@@ -50,7 +51,7 @@ public class AbstractPathBasedColllectionService extends AbstractCollectionServi
 
     @Override
     public ServiceContext getContext( ServiceAction action, ServiceRequest request, ServiceResults previousResults,
-                                      ServicePayload payload ) throws Exception {
+                                      ServicePayload payload, Map<String, Object> metadataRequestQueryParams ) throws Exception {
 
         EntityRef owner = request.getOwner();
         String collectionName = "application".equals( owner.getType() ) ? pluralize( getServiceInfo().getItemType() ) :
@@ -66,11 +67,11 @@ public class AbstractPathBasedColllectionService extends AbstractCollectionServi
 
                 if ( hasServiceMetadata( first_parameter.getName() ) ) {
                     return new ServiceContext( this, action, request, previousResults, owner, collectionName,
-                            parameters, payload ).withServiceMetadata( first_parameter.getName() );
+                            parameters, payload, metadataRequestQueryParams ).withServiceMetadata( first_parameter.getName() );
                 }
                 else if ( hasServiceCommand( first_parameter.getName() ) ) {
                     return new ServiceContext( this, action, request, previousResults, owner, collectionName,
-                            parameters, payload ).withServiceCommand( first_parameter.getName() );
+                            parameters, payload, metadataRequestQueryParams ).withServiceCommand( first_parameter.getName() );
                 }
 
                 List<String> aliases = new ArrayList<String>();
@@ -132,20 +133,20 @@ public class AbstractPathBasedColllectionService extends AbstractCollectionServi
         if ( first_parameter instanceof IdParameter ) {
             UUID id = first_parameter.getId();
             return new ServiceContext( this, action, request, previousResults, owner, collectionName,
-                    Query.fromUUID( id ), parameters, payload );
+                    Query.fromUUID( id ), parameters, payload, metadataRequestQueryParams );
         }
         else if ( first_parameter instanceof NameParameter ) {
             String name = first_parameter.getName();
             return new ServiceContext( this, action, request, previousResults, owner, collectionName,
-                    Query.fromIdentifier( name ), parameters, payload );
+                    Query.fromIdentifier( name ), parameters, payload, metadataRequestQueryParams );
         }
         else if ( query != null ) {
             return new ServiceContext( this, action, request, previousResults, owner, collectionName, query, parameters,
-                    payload );
+                    payload, metadataRequestQueryParams );
         }
         else if ( first_parameter == null ) {
             return new ServiceContext( this, action, request, previousResults, owner, collectionName, null, null,
-                    payload );
+                    payload, metadataRequestQueryParams );
         }
 
         throw new ServiceInvocationException( request, "No parameter found" );
