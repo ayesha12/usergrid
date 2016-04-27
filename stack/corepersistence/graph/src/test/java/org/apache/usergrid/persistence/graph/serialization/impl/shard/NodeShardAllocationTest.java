@@ -19,17 +19,9 @@
 package org.apache.usergrid.persistence.graph.serialization.impl.shard;
 
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-
+import com.google.common.base.Optional;
+import com.netflix.astyanax.MutationBatch;
+import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 import org.apache.usergrid.persistence.core.consistency.TimeService;
 import org.apache.usergrid.persistence.core.scope.ApplicationScope;
 import org.apache.usergrid.persistence.core.util.IdGenerator;
@@ -41,16 +33,14 @@ import org.apache.usergrid.persistence.graph.impl.SimpleMarkedEdge;
 import org.apache.usergrid.persistence.graph.serialization.impl.shard.impl.NodeShardAllocationImpl;
 import org.apache.usergrid.persistence.model.entity.Id;
 import org.apache.usergrid.persistence.model.util.UUIDGenerator;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
-import com.google.common.base.Optional;
-import com.netflix.astyanax.MutationBatch;
-import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
+import java.util.*;
 
 import static junit.framework.TestCase.assertTrue;
-import static org.apache.usergrid.persistence.core.util.IdGenerator.createId;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.mock;
@@ -263,8 +253,8 @@ public class NodeShardAllocationTest {
          * Just use 2 edges.  It means that we won't generate a boatload of data and kill our test. We just want
          * to check that the one we want to return is correct
          */
-        SimpleMarkedEdge skipped = new SimpleMarkedEdge( nodeId, type, IdGenerator.createId( subType ), 10000, false );
-        SimpleMarkedEdge keep = new SimpleMarkedEdge( nodeId, type, IdGenerator.createId( subType ), 20000, false );
+        SimpleMarkedEdge skipped = new SimpleMarkedEdge( nodeId, type, IdGenerator.createId( subType ), 10000, false, 10000-1 );
+        SimpleMarkedEdge keep = new SimpleMarkedEdge( nodeId, type, IdGenerator.createId( subType ), 20000, false, 20000-1 );
 
         //allocate some extra to ensure we seek the right value
         List<MarkedEdge> edges = new ArrayList( numToIterate + 100 );
@@ -363,9 +353,9 @@ public class NodeShardAllocationTest {
         final long shardCount = graphFig.getShardSize();
 
 
-        final SimpleMarkedEdge skippedEdge = new SimpleMarkedEdge( nodeId, type, IdGenerator.createId( "subType" ), 10000l, false );
+        final SimpleMarkedEdge skippedEdge = new SimpleMarkedEdge( nodeId, type, IdGenerator.createId( "subType" ), 10000l, false,10000l-1l );
         final SimpleMarkedEdge returnedEdge =
-                new SimpleMarkedEdge( nodeId, type, IdGenerator.createId( "subType" ), 10005l, false );
+                new SimpleMarkedEdge( nodeId, type, IdGenerator.createId( "subType" ), 10005l, false, 10005l-1L  );
 
         List<MarkedEdge> iteratedEdges = new ArrayList<>( ( int ) shardCount );
 
@@ -461,7 +451,7 @@ public class NodeShardAllocationTest {
 
 
         final SimpleMarkedEdge returnedEdge =
-                new SimpleMarkedEdge( nodeId, type, IdGenerator.createId( "subType" ), 10005l, false );
+                new SimpleMarkedEdge( nodeId, type, IdGenerator.createId( "subType" ), 10005l, false, 10005l-1l);
 
         final Iterator<MarkedEdge> edgeIterator = Collections.singleton( ( MarkedEdge ) returnedEdge ).iterator();
 

@@ -20,12 +20,11 @@
 package org.apache.usergrid.persistence.graph;
 
 
-import java.io.Serializable;
-
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.apache.usergrid.persistence.graph.impl.SimpleEdge;
 import org.apache.usergrid.persistence.model.entity.Id;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import java.io.Serializable;
 
 
 /**
@@ -57,4 +56,6 @@ public interface Edge extends Serializable {
      * Get the version (as a type 1 time uuid) of this edge
      */
     long getTimestamp();
+
+    long getEdgeExpiration();
 }

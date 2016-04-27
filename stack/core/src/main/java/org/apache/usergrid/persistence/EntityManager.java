@@ -406,8 +406,7 @@ public interface EntityManager {
      * @param properties The properties for the item
      */
     public Entity createItemInCollection(EntityRef entityRef, String collectionName, String itemType,
-                                         Map<String, Object> properties,
-                                         Map<String,Object> metadataQueryParamProperties) throws Exception;
+                                         Map<String, Object> properties) throws Exception;
 
     /**
      * Removes an entity to the specified collection belonging to the specified entity.

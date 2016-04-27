@@ -34,6 +34,7 @@ public class DirectedEdge {
     public final Id id;
 
 
+
     public DirectedEdge( final Id id, final long timestamp ) {
         this.timestamp = timestamp;
         this.id = id;

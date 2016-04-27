@@ -18,11 +18,11 @@
 package org.apache.usergrid.persistence.collection.mvcc.stage.write;
 
 
-import java.util.UUID;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.google.common.base.Preconditions;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import com.netflix.astyanax.MutationBatch;
+import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 import org.apache.usergrid.persistence.collection.MvccEntity;
 import org.apache.usergrid.persistence.collection.MvccLogEntry;
 import org.apache.usergrid.persistence.collection.exception.WriteCommitException;
@@ -41,14 +41,11 @@ import org.apache.usergrid.persistence.model.entity.Entity;
 import org.apache.usergrid.persistence.model.entity.Id;
 import org.apache.usergrid.persistence.model.field.Field;
 import org.apache.usergrid.persistence.model.util.EntityUtils;
-
-import com.google.common.base.Preconditions;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import com.netflix.astyanax.MutationBatch;
-import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rx.functions.Func1;
+
+import java.util.UUID;
 
 
 /**
@@ -117,7 +114,9 @@ public class WriteCommit implements Func1<CollectionIoEvent<MvccEntity>, Collect
                 UniqueValue written  = new UniqueValueImpl( field,
                     entityId,version);
 
-                MutationBatch mb = uniqueValueStrat.write(applicationScope,  written );
+            int uniqueValueTTL = (int)(mvccEntity.getEntityExpiration() - System.currentTimeMillis()) / 1000;
+
+            MutationBatch mb = uniqueValueStrat.write(applicationScope,  written, uniqueValueTTL );
 
                 logger.debug("Finalizing {} unique value {}", field.getName(), field.getValue().toString());
 

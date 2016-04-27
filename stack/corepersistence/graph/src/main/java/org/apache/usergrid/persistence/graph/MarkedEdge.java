@@ -50,5 +50,8 @@ public interface MarkedEdge extends Edge{
      */
     boolean isTargetNodeDeleted();
 
+    long edgeExpiresIn();
+
+
 
 }

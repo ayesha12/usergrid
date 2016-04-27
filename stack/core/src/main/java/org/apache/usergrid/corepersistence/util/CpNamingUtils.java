@@ -19,8 +19,7 @@ package org.apache.usergrid.corepersistence.util;
  */
 
 
-import java.util.UUID;
-
+import com.google.common.base.Optional;
 import org.apache.usergrid.persistence.core.scope.ApplicationScope;
 import org.apache.usergrid.persistence.core.scope.ApplicationScopeImpl;
 import org.apache.usergrid.persistence.entities.Application;
@@ -42,7 +41,7 @@ import org.apache.usergrid.persistence.model.entity.Id;
 import org.apache.usergrid.persistence.model.entity.SimpleId;
 import org.apache.usergrid.persistence.model.util.UUIDGenerator;
 
-import com.google.common.base.Optional;
+import java.util.UUID;
 
 
 /**
@@ -177,12 +176,12 @@ public class CpNamingUtils {
     /**
      * TODO move sourceId to ApplicationScope
      */
-    public static Edge createCollectionEdge( final Id sourceId, final String collectionName, final Id entityId ) {
+    public static Edge createCollectionEdge( final Id sourceId, final String collectionName, final Id entityId, final long edge_expiration ) {
         final String edgeType = CpNamingUtils.getEdgeTypeFromCollectionName( collectionName );
 
 
         // create graph edge connection from head entity to member entity
-        return new SimpleEdge( sourceId, edgeType, entityId, createGraphOperationTimestamp() );
+        return new SimpleEdge( sourceId, edgeType, entityId, createGraphOperationTimestamp(), edge_expiration );
     }
 
 
@@ -199,11 +198,11 @@ public class CpNamingUtils {
      * Create a new connection edge from the source node with the given connection type and target id
      */
     public static Edge createConnectionEdge( final Id sourceEntityId, final String connectionType,
-                                             final Id targetEntityId ) {
+                                             final Id targetEntityId, final long edge_expires_in ) {
         final String edgeType = getEdgeTypeFromConnectionType( connectionType );
 
         // create graph edge connection from head entity to member entity
-        return new SimpleEdge( sourceEntityId, edgeType, targetEntityId, createGraphOperationTimestamp() );
+        return new SimpleEdge( sourceEntityId, edgeType, targetEntityId, createGraphOperationTimestamp(),edge_expires_in );
     }
 
 

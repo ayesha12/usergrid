@@ -20,13 +20,10 @@
 package org.apache.usergrid.persistence.graph.serialization.impl;
 
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.UUID;
-
-import javax.inject.Inject;
-
 import com.google.common.base.Optional;
+import com.google.inject.Singleton;
+import com.netflix.astyanax.Keyspace;
+import com.netflix.astyanax.MutationBatch;
 import org.apache.usergrid.persistence.core.astyanax.CassandraConfig;
 import org.apache.usergrid.persistence.core.consistency.TimeService;
 import org.apache.usergrid.persistence.core.scope.ApplicationScope;
@@ -36,20 +33,15 @@ import org.apache.usergrid.persistence.graph.impl.SimpleSearchByEdge;
 import org.apache.usergrid.persistence.graph.impl.SimpleSearchByEdgeType;
 import org.apache.usergrid.persistence.graph.impl.SimpleSearchByIdType;
 import org.apache.usergrid.persistence.graph.serialization.EdgeSerialization;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.DirectedEdgeMeta;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.EdgeColumnFamilies;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.EdgeShardStrategy;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.Shard;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.ShardEntryGroup;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.ShardGroupDeletion;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.ShardedEdgeSerialization;
+import org.apache.usergrid.persistence.graph.serialization.impl.shard.*;
 import org.apache.usergrid.persistence.graph.serialization.impl.shard.impl.ShardGroupColumnIterator;
 import org.apache.usergrid.persistence.graph.serialization.util.GraphValidation;
 import org.apache.usergrid.persistence.model.entity.Id;
 
-import com.google.inject.Singleton;
-import com.netflix.astyanax.Keyspace;
-import com.netflix.astyanax.MutationBatch;
+import javax.inject.Inject;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.UUID;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -112,6 +104,7 @@ public class EdgeSerializationImpl implements EdgeSerialization {
         final Id targetNode = markedEdge.getTargetNode();
         final String edgeType = markedEdge.getType();
         final long edgeTimestamp = markedEdge.getTimestamp();
+        final long edge_expires_in = markedEdge.getEdgeExpiration();
 
         /**
          * Source write

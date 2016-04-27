@@ -20,20 +20,12 @@
 package org.apache.usergrid.corepersistence.index;
 
 
-import java.util.List;
-import java.util.UUID;
-
-import org.apache.usergrid.persistence.EntityManagerFactory;
-import org.apache.usergrid.persistence.graph.MarkedEdge;
-import org.apache.usergrid.persistence.index.*;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
+import com.google.inject.Inject;
+import net.jcip.annotations.NotThreadSafe;
 import org.apache.usergrid.corepersistence.TestIndexModule;
 import org.apache.usergrid.corepersistence.asyncevents.AsyncEventService;
 import org.apache.usergrid.corepersistence.util.CpNamingUtils;
+import org.apache.usergrid.persistence.EntityManagerFactory;
 import org.apache.usergrid.persistence.collection.EntityCollectionManager;
 import org.apache.usergrid.persistence.collection.EntityCollectionManagerFactory;
 import org.apache.usergrid.persistence.core.guice.MigrationManagerRule;
@@ -43,18 +35,22 @@ import org.apache.usergrid.persistence.core.test.UseModules;
 import org.apache.usergrid.persistence.graph.Edge;
 import org.apache.usergrid.persistence.graph.GraphManager;
 import org.apache.usergrid.persistence.graph.GraphManagerFactory;
+import org.apache.usergrid.persistence.graph.MarkedEdge;
+import org.apache.usergrid.persistence.index.*;
 import org.apache.usergrid.persistence.index.impl.EsRunner;
 import org.apache.usergrid.persistence.model.entity.Entity;
 import org.apache.usergrid.persistence.model.entity.Id;
 import org.apache.usergrid.persistence.model.entity.SimpleId;
 import org.apache.usergrid.persistence.model.field.StringField;
 import org.apache.usergrid.persistence.model.util.UUIDGenerator;
-
-import com.google.inject.Inject;
-
-import net.jcip.annotations.NotThreadSafe;
-
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import rx.Observable;
+
+import java.util.List;
+import java.util.UUID;
 
 import static org.apache.usergrid.persistence.core.util.IdGenerator.createId;
 import static org.junit.Assert.assertEquals;
@@ -126,7 +122,7 @@ public abstract class AsyncIndexServiceTest {
 
         //create our collection edge
         final Edge collectionEdge =
-            CpNamingUtils.createCollectionEdge( applicationScope.getApplication(), "things", testEntity.getId() );
+            CpNamingUtils.createCollectionEdge( applicationScope.getApplication(), "things", testEntity.getId(), -1L );
         graphManager.writeEdge( collectionEdge ).toBlocking().last();
 
 
@@ -137,7 +133,7 @@ public abstract class AsyncIndexServiceTest {
 
         final List<MarkedEdge> connectionSearchEdges = Observable.range( 0, 500 ).flatMap(integer -> {
             final Id connectingId = createId("connecting");
-            final Edge edge = CpNamingUtils.createConnectionEdge(connectingId, "likes", testEntity.getId());
+            final Edge edge = CpNamingUtils.createConnectionEdge(connectingId, "likes", testEntity.getId(), -1L);
 
             return graphManager.writeEdge( edge );
         }).toList().toBlocking().last();

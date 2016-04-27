@@ -22,20 +22,16 @@ package org.apache.usergrid.corepersistence.pipeline.cursor;
 
 
 
-import org.junit.Test;
-
+import com.google.common.base.Optional;
 import org.apache.usergrid.corepersistence.pipeline.read.EdgePath;
 import org.apache.usergrid.corepersistence.pipeline.read.search.ElasticsearchCursorSerializer;
 import org.apache.usergrid.corepersistence.pipeline.read.traverse.EdgeCursorSerializer;
-import org.apache.usergrid.persistence.graph.Edge;
 import org.apache.usergrid.persistence.graph.MarkedEdge;
-import org.apache.usergrid.persistence.graph.impl.SimpleEdge;
 import org.apache.usergrid.persistence.graph.impl.SimpleMarkedEdge;
-
-import com.google.common.base.Optional;
+import org.junit.Test;
 
 import static org.apache.usergrid.persistence.core.util.IdGenerator.createId;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 
 public class CursorTest {
@@ -44,10 +40,10 @@ public class CursorTest {
     public void testCursors(){
          //test encoding edge
 
-        final MarkedEdge edge1 = new SimpleMarkedEdge( createId("source1"), "edgeType1",  createId("target1"), 100, false, false, false  );
+        final MarkedEdge edge1 = new SimpleMarkedEdge( createId("source1"), "edgeType1",  createId("target1"), 100, false, false, false, -1L  );
 
 
-        final MarkedEdge edge2 = new SimpleMarkedEdge( createId("source2"), "edgeType2",  createId("target2"), 110, false, false, false  );
+        final MarkedEdge edge2 = new SimpleMarkedEdge( createId("source2"), "edgeType2",  createId("target2"), 110, false, false, false, -1L  );
 
 
 

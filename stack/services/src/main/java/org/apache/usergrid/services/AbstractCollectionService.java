@@ -394,8 +394,9 @@ public class AbstractCollectionService extends AbstractService {
                 Entity item = null;
 
                 try {
+                    p.putAll(context.metadataRequestQueryParams);
                     item = em.createItemInCollection( context.getOwner(), context.getCollectionName(), getEntityType(),
-                            p,context.metadataRequestQueryParams);
+                            p);
                 }
                 catch ( Exception e ) {
                     // TODO should we not log this as error?
@@ -419,10 +420,14 @@ public class AbstractCollectionService extends AbstractService {
             return new ServiceResults( this, context, Type.COLLECTION, Results.fromEntities( entities ), null, null );
         }
 
+        //Adding ttl to the context properties.
+        context.getProperties().putAll(context.metadataRequestQueryParams);
+
         Entity item = em.createItemInCollection( context.getOwner(), context.getCollectionName(), getEntityType(),
-                context.getProperties(), context.metadataRequestQueryParams);
+            context.getProperties());
 
         item = importEntity( context, item );
+//        item.getDynamicProperties().remove("entity_expiration"); //todo : is this the right way to delete?
 
         return new ServiceResults( this, context, Type.COLLECTION, Results.fromEntity( item ), null, null );
     }

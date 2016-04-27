@@ -365,7 +365,7 @@ public class CpRelationManager implements RelationManager {
 
 
         // create graph edge connection from head entity to member entity
-        final Edge edge = createCollectionEdge( cpHeadEntity.getId(), collectionName, memberEntity.getId() );
+        final Edge edge = createCollectionEdge( cpHeadEntity.getId(), collectionName, memberEntity.getId(),(long) memberEntity.getField("entity_expiration").getValue() );
         final String linkedCollection = collection.getLinkedCollection();
 
         GraphManager gm = managerCache.getGraphManager( applicationScope );
@@ -376,7 +376,7 @@ public class CpRelationManager implements RelationManager {
             }
         } ).filter( writtenEdge -> linkedCollection != null ).flatMap( writtenEdge -> {
             final String pluralType = InflectionUtils.pluralize( cpHeadEntity.getId().getType() );
-            final Edge reverseEdge = createCollectionEdge( memberEntity.getId(), pluralType, cpHeadEntity.getId() );
+            final Edge reverseEdge = createCollectionEdge( memberEntity.getId(), pluralType, cpHeadEntity.getId() , (long) memberEntity.getField("entity_expiration").getValue() );
 
             //reverse
             return gm.writeEdge( reverseEdge ).doOnNext( reverseEdgeWritten -> {
@@ -407,7 +407,7 @@ public class CpRelationManager implements RelationManager {
 
     @Override
     public Entity createItemInCollection(String collectionName, String itemType,
-                                         Map<String, Object> properties, Map<String, Object> metadataQueryParamProperties) throws Exception {
+                                         Map<String, Object> properties) throws Exception {
 
 
         if ( headEntity.getUuid().equals( applicationId ) ) {
@@ -423,8 +423,8 @@ public class CpRelationManager implements RelationManager {
                 return em.createRole( ( String ) properties.get( PROPERTY_NAME ),
                     ( String ) properties.get( PROPERTY_TITLE ), inactivity );
             }
-            return em.newCreate( itemType, properties, metadataQueryParamProperties);
-//            return em.create( itemType, properties);
+//            return em.newCreate( itemType, properties, metadataQueryParamProperties);
+            return em.create( itemType, properties);
         }
 
         else if ( headEntity.getType().equals( Group.ENTITY_TYPE ) && ( collectionName.equals( COLLECTION_ROLES ) ) ) {
@@ -448,7 +448,7 @@ public class CpRelationManager implements RelationManager {
 
             if ( collection != null && collection.getLinkedCollection() != null ) {
                 Id itemEntityId = new SimpleId( itemEntity.getUuid(), itemEntity.getType() );
-                final Edge edge = createCollectionEdge( cpHeadEntity.getId(), collectionName, itemEntityId );
+                final Edge edge = createCollectionEdge( cpHeadEntity.getId(), collectionName, itemEntityId , (long) itemEntity.getDynamicProperties().get("entity_expiration"));
 
                 GraphManager gm = managerCache.getGraphManager( applicationScope );
                 gm.writeEdge( edge );
@@ -656,7 +656,7 @@ public class CpRelationManager implements RelationManager {
             ( ( CpEntityManager ) em ).load( entityId );
 
         // create graph edge connection from head entity to member entity
-        final Edge edge = createConnectionEdge( cpHeadEntity.getId(), connectionType, targetEntity.getId() );
+        final Edge edge = createConnectionEdge( cpHeadEntity.getId(), connectionType, targetEntity.getId(), -1L );
 
         final GraphManager gm = managerCache.getGraphManager( applicationScope );
 

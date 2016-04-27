@@ -372,7 +372,9 @@ public abstract class AbstractService implements Service {
             String path = request.getPath() + "/" + entity.getUuid();
             Map<String, Object> metadata = new LinkedHashMap<String, Object>();
             metadata.put("path", path);
+            metadata.put("entity_expiration",entity.getDynamicProperties().get("entity_expiration"));
 
+            entity.getDynamicProperties().remove("entity_expiration"); //todo : right way to delete it ?
             if (defaultEntityMetadata != null) {
                 metadata.putAll(defaultEntityMetadata);
             }

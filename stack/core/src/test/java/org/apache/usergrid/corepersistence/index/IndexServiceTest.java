@@ -20,18 +20,7 @@
 package org.apache.usergrid.corepersistence.index;
 
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-
-import org.apache.usergrid.persistence.graph.MarkedEdge;
-import org.apache.usergrid.persistence.index.impl.IndexProducer;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
+import com.google.inject.Inject;
 import org.apache.usergrid.corepersistence.TestIndexModule;
 import org.apache.usergrid.corepersistence.util.CpNamingUtils;
 import org.apache.usergrid.persistence.collection.EntityCollectionManager;
@@ -42,32 +31,31 @@ import org.apache.usergrid.persistence.core.test.UseModules;
 import org.apache.usergrid.persistence.graph.Edge;
 import org.apache.usergrid.persistence.graph.GraphManager;
 import org.apache.usergrid.persistence.graph.GraphManagerFactory;
-import org.apache.usergrid.persistence.index.EntityIndex;
-import org.apache.usergrid.persistence.index.CandidateResults;
-import org.apache.usergrid.persistence.index.EntityIndexFactory;
-import org.apache.usergrid.persistence.index.IndexFig;
-import org.apache.usergrid.persistence.index.SearchEdge;
-import org.apache.usergrid.persistence.index.SearchTypes;
+import org.apache.usergrid.persistence.graph.MarkedEdge;
+import org.apache.usergrid.persistence.index.*;
 import org.apache.usergrid.persistence.index.impl.EsRunner;
-import org.apache.usergrid.persistence.index.impl.IndexOperationMessage;
 import org.apache.usergrid.persistence.index.impl.IndexOperation;
+import org.apache.usergrid.persistence.index.impl.IndexOperationMessage;
+import org.apache.usergrid.persistence.index.impl.IndexProducer;
 import org.apache.usergrid.persistence.model.entity.Entity;
 import org.apache.usergrid.persistence.model.entity.Id;
 import org.apache.usergrid.persistence.model.entity.SimpleId;
 import org.apache.usergrid.persistence.model.field.StringField;
 import org.apache.usergrid.persistence.model.util.UUIDGenerator;
-
-import com.google.inject.Inject;
-
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import rx.Observable;
 import rx.schedulers.Schedulers;
+
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 import static org.apache.usergrid.corepersistence.util.CpNamingUtils.createCollectionEdge;
 import static org.apache.usergrid.corepersistence.util.CpNamingUtils.getApplicationScope;
 import static org.apache.usergrid.persistence.core.util.IdGenerator.createId;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 
 @RunWith( EsRunner.class )
@@ -114,7 +102,7 @@ public class IndexServiceTest {
         final Entity entity = new Entity( createId( "test" ), UUIDGenerator.newTimeUUID() );
         entity.setField( new StringField( "string", "foo" ) );
 
-        final Edge collectionEdge = createCollectionEdge( applicationScope.getApplication(), "tests", entity.getId() );
+        final Edge collectionEdge = createCollectionEdge( applicationScope.getApplication(), "tests", entity.getId(), -1L );
 
         //write the edge
         graphManager.writeEdge( collectionEdge ).toBlocking().last();
@@ -161,13 +149,13 @@ public class IndexServiceTest {
 
         //create our collection edge
         final Edge collectionEdge =
-            CpNamingUtils.createCollectionEdge( applicationScope.getApplication(), "things", testEntity.getId() );
+            CpNamingUtils.createCollectionEdge( applicationScope.getApplication(), "things", testEntity.getId(), -1L );
         graphManager.writeEdge( collectionEdge ).toBlocking().last();
 
 
 
         final Id connectingId = createId( "connecting" );
-        final Edge edge = CpNamingUtils.createConnectionEdge( connectingId, "likes", testEntity.getId() );
+        final Edge edge = CpNamingUtils.createConnectionEdge( connectingId, "likes", testEntity.getId(), -1L );
 
 
         final Edge connectionSearch = graphManager.writeEdge( edge ).toBlocking().last();
@@ -234,7 +222,7 @@ public class IndexServiceTest {
 
         //create our collection edge
         final Edge collectionEdge =
-            CpNamingUtils.createCollectionEdge( applicationScope.getApplication(), "things", testEntity.getId() );
+            CpNamingUtils.createCollectionEdge( applicationScope.getApplication(), "things", testEntity.getId(), -1L );
         graphManager.writeEdge( collectionEdge ).toBlocking().last();
 
 
@@ -247,7 +235,7 @@ public class IndexServiceTest {
 
         final List<MarkedEdge> connectionSearchEdges = Observable.range( 0, edgeCount ).flatMap( integer -> {
             final Id connectingId = createId( "connecting" );
-            final Edge edge = CpNamingUtils.createConnectionEdge( connectingId, "likes", testEntity.getId() );
+            final Edge edge = CpNamingUtils.createConnectionEdge( connectingId, "likes", testEntity.getId(), -1L );
 
             return graphManager.writeEdge( edge ).subscribeOn( Schedulers.io() );
         }).toList().toBlocking().last();
@@ -440,7 +428,7 @@ public class IndexServiceTest {
 
         //create our connection edge.
         final Id connectingId = createId( "connecting" );
-        final Edge connectionEdge = CpNamingUtils.createConnectionEdge( connectingId, "likes", testEntity.getId() );
+        final Edge connectionEdge = CpNamingUtils.createConnectionEdge( connectingId, "likes", testEntity.getId(), -1L );
 
         final Edge connectionSearch = graphManager.writeEdge( connectionEdge ).toBlocking().last();
 
@@ -480,7 +468,7 @@ public class IndexServiceTest {
         //create our collection edge
         final Edge collectionEdge =
             CpNamingUtils.createCollectionEdge( applicationScope.getApplication(), testEntity.getId().getType(),
-                testEntity.getId() );
+                testEntity.getId(), -1L );
 
         graphManager.writeEdge( collectionEdge ).toBlocking().last();
         return collectionEdge;
@@ -494,7 +482,7 @@ public class IndexServiceTest {
 
             //create our connection edge.
             final Id connectingId = createId( "connecting" );
-            final Edge connectionEdge = CpNamingUtils.createConnectionEdge( connectingId, "likes", testEntity.getId() );
+            final Edge connectionEdge = CpNamingUtils.createConnectionEdge( connectingId, "likes", testEntity.getId(), -1L );
 
             return graphManager.writeEdge( connectionEdge ).subscribeOn( Schedulers.io() );
         }, 20).toList().toBlocking().last();

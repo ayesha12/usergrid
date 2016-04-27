@@ -98,6 +98,7 @@ public class CpEntityManager implements EntityManager {
     public static final String APPLICATION_COLLECTION = "application.collection.";
     public static final String APPLICATION_ENTITIES = "application.entities";
     public static final long ONE_COUNT = 1L;
+    private static final String ENTITY_EXPIRATION = "entity_expiration";
 
     private final UUID applicationId;
     private final EntityManagerFig entityManagerFig;
@@ -1509,10 +1510,9 @@ public class CpEntityManager implements EntityManager {
 
     @Override
     public Entity createItemInCollection(EntityRef entityRef, String collectionName,
-                                         String itemType, Map<String, Object> props,
-                                         Map<String,Object> metadataQueryParamProperties) throws Exception {
+                                         String itemType, Map<String, Object> props) throws Exception {
 
-        return getRelationManager( entityRef ).createItemInCollection( collectionName, itemType, props, metadataQueryParamProperties);
+        return getRelationManager( entityRef ).createItemInCollection( collectionName, itemType, props);
     }
 
 
@@ -2743,23 +2743,22 @@ public class CpEntityManager implements EntityManager {
         }
 
         Map<String, Object> metadata = new LinkedHashMap<String, Object>();
+        Long entityExpriation = getLong(properties.get(PROPERTY_CREATED));
 
-        //todo : required? or will 'properties.containsKey( PROPERTY_METADATA)' always return null ?
-        if ( properties.containsKey( PROPERTY_METADATA) ) {
-            metadata = (Map<String, Object>) properties.get(PROPERTY_METADATA);
-        }
-
-        if(metadataQueryParamProperties.containsKey( PROPERTY_TTL)){
-            Integer ttl = getInt( metadataQueryParamProperties.get( PROPERTY_TTL ) );
+        if ( properties.containsKey( PROPERTY_TTL) ) {
+            Integer ttl = getInt( properties.get( PROPERTY_TTL ) );
             if ( ttl >= 30 ) {
-                metadata.put( PROPERTY_TTL, ttl );
+                properties.put(ENTITY_EXPIRATION , entityExpriation + (long) (ttl * 1000) );
             }
+            else{
+                properties.put(ENTITY_EXPIRATION , entityExpriation - 1L );
+            }
+            properties.remove("ttl");
         }
         else{
-            metadata.put( PROPERTY_TTL, Integer.valueOf(-1) );
+            properties.put(ENTITY_EXPIRATION , entityExpriation - 1L );
         }
 
-        properties.put(PROPERTY_METADATA,metadata);
 
         A entity = EntityFactory.newEntity( itemId, eType, entityClass );
         entity.addProperties( properties );

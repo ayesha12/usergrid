@@ -22,26 +22,21 @@
 package org.apache.usergrid.persistence.graph.serialization.impl;
 
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.UUID;
-
+import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
+import com.google.common.hash.Funnel;
+import com.google.common.hash.PrimitiveSink;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import com.netflix.astyanax.Keyspace;
+import com.netflix.astyanax.MutationBatch;
+import com.netflix.astyanax.model.CompositeBuilder;
+import com.netflix.astyanax.model.CompositeParser;
+import com.netflix.astyanax.serializers.StringSerializer;
+import com.netflix.astyanax.util.RangeBuilder;
 import org.apache.cassandra.db.marshal.BytesType;
 import org.apache.cassandra.db.marshal.UTF8Type;
-
-import org.apache.usergrid.persistence.core.astyanax.BucketScopedRowKey;
-import org.apache.usergrid.persistence.core.astyanax.BucketScopedRowKeySerializer;
-import org.apache.usergrid.persistence.core.astyanax.CassandraConfig;
-import org.apache.usergrid.persistence.core.astyanax.ColumnSearch;
-import org.apache.usergrid.persistence.core.astyanax.CompositeFieldSerializer;
-import org.apache.usergrid.persistence.core.astyanax.IdRowCompositeSerializer;
-import org.apache.usergrid.persistence.core.astyanax.MultiRowColumnIterator;
-import org.apache.usergrid.persistence.core.astyanax.MultiTenantColumnFamily;
-import org.apache.usergrid.persistence.core.astyanax.MultiTenantColumnFamilyDefinition;
-import org.apache.usergrid.persistence.core.astyanax.StringColumnParser;
+import org.apache.usergrid.persistence.core.astyanax.*;
 import org.apache.usergrid.persistence.core.migration.schema.Migration;
 import org.apache.usergrid.persistence.core.scope.ApplicationScope;
 import org.apache.usergrid.persistence.core.shard.ExpandingShardLocator;
@@ -55,18 +50,7 @@ import org.apache.usergrid.persistence.graph.serialization.EdgeMetadataSerializa
 import org.apache.usergrid.persistence.graph.serialization.util.GraphValidation;
 import org.apache.usergrid.persistence.model.entity.Id;
 
-import com.google.common.base.Optional;
-import com.google.common.base.Preconditions;
-import com.google.common.hash.Funnel;
-import com.google.common.hash.PrimitiveSink;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import com.netflix.astyanax.Keyspace;
-import com.netflix.astyanax.MutationBatch;
-import com.netflix.astyanax.model.CompositeBuilder;
-import com.netflix.astyanax.model.CompositeParser;
-import com.netflix.astyanax.serializers.StringSerializer;
-import com.netflix.astyanax.util.RangeBuilder;
+import java.util.*;
 
 
 /**
@@ -208,6 +192,7 @@ public class EdgeMetadataSerializationV2Impl implements EdgeMetadataSerializatio
         final Id target = edge.getTargetNode();
         final String edgeType = edge.getType();
         final long timestamp = edge.getTimestamp();
+        final long edge_expires_in = edge.getEdgeExpiration();
 
         final MutationBatch batch = keyspace.prepareMutationBatch().withConsistencyLevel( cassandraConfig.getWriteCL() )
                                             .withTimestamp( timestamp );
@@ -219,7 +204,10 @@ public class EdgeMetadataSerializationV2Impl implements EdgeMetadataSerializatio
 
         final BucketScopedRowKey<Id> sourceKey = BucketScopedRowKey.fromKey( scopeId, source, sourceKeyBucket );
 
-        batch.withRow( CF_SOURCE_EDGE_TYPES, sourceKey ).putColumn( edgeType, HOLDER );
+        int edge_ttl =  (int) (edge_expires_in - System.currentTimeMillis()) /1000 ;
+        Preconditions.checkArgument( edge_ttl > 0, "timeToLive must be greater than 0 is required" );
+
+        batch.withRow( CF_SOURCE_EDGE_TYPES, sourceKey ).putColumn( edgeType, HOLDER, edge_ttl );
 
 
         //write source->target edge type and id type to meta data
@@ -230,14 +218,14 @@ public class EdgeMetadataSerializationV2Impl implements EdgeMetadataSerializatio
         final BucketScopedRowKey<EdgeIdTypeKey> sourceTypeKey =
                 BucketScopedRowKey.fromKey( scopeId, sourceTargetTypeKey, sourceTargetTypeBucket );
 
-        batch.withRow( CF_SOURCE_EDGE_ID_TYPES, sourceTypeKey ).putColumn( target.getType(), HOLDER );
+        batch.withRow( CF_SOURCE_EDGE_ID_TYPES, sourceTypeKey ).putColumn( target.getType(), HOLDER, edge_ttl );
 
 
         final int targetKeyBucket = idExpandingShardLocator.getCurrentBucket( target );
 
         final BucketScopedRowKey<Id> targetKey = BucketScopedRowKey.fromKey( scopeId, target, targetKeyBucket );
 
-        batch.withRow( CF_TARGET_EDGE_TYPES, targetKey ).putColumn( edgeType, HOLDER );
+        batch.withRow( CF_TARGET_EDGE_TYPES, targetKey ).putColumn( edgeType, HOLDER, edge_ttl);
 
 
         //write target<--source edge type and id type to meta data
@@ -249,7 +237,7 @@ public class EdgeMetadataSerializationV2Impl implements EdgeMetadataSerializatio
         final BucketScopedRowKey<EdgeIdTypeKey> targetTypeKey =
                 BucketScopedRowKey.fromKey( scopeId, targetSourceTypeKey, targetSourceTypeKeyBucket );
 
-        batch.withRow( CF_TARGET_EDGE_ID_TYPES, targetTypeKey ).putColumn( source.getType(), HOLDER );
+        batch.withRow( CF_TARGET_EDGE_ID_TYPES, targetTypeKey ).putColumn( source.getType(), HOLDER, edge_ttl );
 
 
         return batch;

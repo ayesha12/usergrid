@@ -17,26 +17,18 @@
 package org.apache.usergrid.persistence;
 
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.UUID;
-
-import javax.xml.bind.annotation.XmlRootElement;
-
-import org.apache.usergrid.corepersistence.util.CpEntityMapUtils;
-import org.apache.usergrid.persistence.annotations.EntityProperty;
-import org.apache.usergrid.persistence.model.entity.EntityToMapConverter;
-import org.apache.usergrid.persistence.model.entity.Id;
-import org.apache.usergrid.persistence.model.entity.SimpleId;
-
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.apache.usergrid.corepersistence.util.CpEntityMapUtils;
+import org.apache.usergrid.persistence.annotations.EntityProperty;
+import org.apache.usergrid.persistence.model.entity.Id;
+import org.apache.usergrid.persistence.model.entity.SimpleId;
+
+import javax.xml.bind.annotation.XmlRootElement;
+import java.util.*;
+import java.util.Map.Entry;
 
 import static org.apache.usergrid.persistence.Schema.PROPERTY_NAME;
 
@@ -65,7 +57,6 @@ public abstract class AbstractEntity implements Entity {
 
     protected Map<String, Set<Object>> dynamic_sets = new TreeMap<String, Set<Object>>( String.CASE_INSENSITIVE_ORDER );
     protected long size;
-
 
     @Override
     @EntityProperty(required = true, mutable = false, basic = true, indexed = false)

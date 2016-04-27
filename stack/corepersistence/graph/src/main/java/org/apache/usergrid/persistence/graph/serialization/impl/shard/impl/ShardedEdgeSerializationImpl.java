@@ -21,55 +21,38 @@
 package org.apache.usergrid.persistence.graph.serialization.impl.shard.impl;
 
 
-import java.nio.ByteBuffer;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.UUID;
-
-import javax.annotation.Nullable;
-import javax.inject.Inject;
-
+import com.google.common.base.Function;
 import com.google.common.base.Optional;
+import com.google.inject.Singleton;
+import com.netflix.astyanax.Keyspace;
+import com.netflix.astyanax.MutationBatch;
+import com.netflix.astyanax.Serializer;
+import com.netflix.astyanax.util.RangeBuilder;
 import org.apache.usergrid.persistence.core.astyanax.CassandraConfig;
 import org.apache.usergrid.persistence.core.astyanax.MultiTenantColumnFamily;
 import org.apache.usergrid.persistence.core.astyanax.ScopedRowKey;
 import org.apache.usergrid.persistence.core.consistency.TimeService;
 import org.apache.usergrid.persistence.core.scope.ApplicationScope;
 import org.apache.usergrid.persistence.core.util.ValidationUtils;
-import org.apache.usergrid.persistence.graph.Edge;
-import org.apache.usergrid.persistence.graph.GraphFig;
-import org.apache.usergrid.persistence.graph.MarkedEdge;
-import org.apache.usergrid.persistence.graph.SearchByEdge;
-import org.apache.usergrid.persistence.graph.SearchByEdgeType;
-import org.apache.usergrid.persistence.graph.SearchByIdType;
+import org.apache.usergrid.persistence.graph.*;
 import org.apache.usergrid.persistence.graph.impl.SimpleMarkedEdge;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.DirectedEdge;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.DirectedEdgeMeta;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.EdgeColumnFamilies;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.EdgeRowKey;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.EdgeShardStrategy;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.RowKey;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.RowKeyType;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.Shard;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.ShardedEdgeSerialization;
+import org.apache.usergrid.persistence.graph.serialization.impl.shard.*;
 import org.apache.usergrid.persistence.graph.serialization.impl.shard.impl.comparators.DescendingTimestampComparator;
 import org.apache.usergrid.persistence.graph.serialization.impl.shard.impl.comparators.OrderedComparator;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.impl.comparators
-    .SourceDirectedEdgeDescendingComparator;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.impl.comparators
-    .TargetDirectedEdgeDescendingComparator;
+import org.apache.usergrid.persistence.graph.serialization.impl.shard.impl.comparators.SourceDirectedEdgeDescendingComparator;
+import org.apache.usergrid.persistence.graph.serialization.impl.shard.impl.comparators.TargetDirectedEdgeDescendingComparator;
 import org.apache.usergrid.persistence.graph.serialization.impl.shard.impl.serialize.EdgeSerializer;
 import org.apache.usergrid.persistence.graph.serialization.util.GraphValidation;
 import org.apache.usergrid.persistence.model.entity.Id;
-
-import com.google.common.base.Function;
-import com.google.inject.Singleton;
-import com.netflix.astyanax.Keyspace;
-import com.netflix.astyanax.MutationBatch;
-import com.netflix.astyanax.Serializer;
-import com.netflix.astyanax.util.RangeBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import javax.inject.Inject;
+import java.nio.ByteBuffer;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.UUID;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -127,7 +110,7 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
                             final ApplicationScope scope, final RowKey rowKey, final DirectedEdge edge,
                             final Shard shard, final boolean isDeleted ) {
 
-                batch.withRow( columnFamily, ScopedRowKey.fromKey( scope.getApplication(), rowKey ) ).putColumn( edge, isDeleted );
+                batch.withRow( columnFamily, ScopedRowKey.fromKey( scope.getApplication(), rowKey ) ).putColumn( edge, isDeleted, 120 );
             }
         }.createBatch( scope, shards, timestamp );
     }
@@ -153,7 +136,7 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
                             final Shard shard, final boolean isDeleted ) {
 
 
-                batch.withRow( columnFamily, ScopedRowKey.fromKey( scope.getApplication(), rowKey ) ).putColumn( edge, isDeleted );
+                batch.withRow( columnFamily, ScopedRowKey.fromKey( scope.getApplication(), rowKey ) ).putColumn( edge, isDeleted, 120 );
             }
         }.createBatch( scope, shards, timestamp );
     }
@@ -176,7 +159,7 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
                             final ApplicationScope scope, final RowKey rowKey, final DirectedEdge edge,
                             final Shard shard, final boolean isDeleted ) {
 
-                batch.withRow( columnFamily, ScopedRowKey.fromKey( scope.getApplication(), rowKey ) ).putColumn( edge, isDeleted );
+                batch.withRow( columnFamily, ScopedRowKey.fromKey( scope.getApplication(), rowKey ) ).putColumn( edge, isDeleted, 120 );
 
             }
         }.createBatch( scope, shards, timestamp );
@@ -203,7 +186,7 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
                             final Shard shard, final boolean isDeleted ) {
 
                 batch.withRow( columnFamilies.getTargetNodeSourceTypeCfName(), ScopedRowKey.fromKey( scope.getApplication(), rowKey ) )
-                     .putColumn( edge, isDeleted );
+                     .putColumn( edge, isDeleted, 120 );
             }
         }.createBatch( scope, shards, timestamp );
     }
@@ -391,7 +374,7 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
 
                     @Override
                     protected MarkedEdge createEdge( final Long column, final boolean marked ) {
-                        return new SimpleMarkedEdge( sourceId, type, targetId, column.longValue(), marked );
+                        return new SimpleMarkedEdge( sourceId, type, targetId, column.longValue(), marked, -1L );
                     }
 
 
@@ -464,7 +447,7 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
 
                     @Override
                     protected MarkedEdge createEdge( final DirectedEdge edge, final boolean marked ) {
-                        return new SimpleMarkedEdge( sourceId, type, edge.id, edge.timestamp, marked );
+                        return new SimpleMarkedEdge( sourceId, type, edge.id, edge.timestamp, marked, -1L );
                     }
                 };
 
@@ -530,7 +513,7 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
 
                     @Override
                     protected MarkedEdge createEdge( final DirectedEdge edge, final boolean marked ) {
-                        return new SimpleMarkedEdge( targetId, type, edge.id, edge.timestamp, marked );
+                        return new SimpleMarkedEdge( targetId, type, edge.id, edge.timestamp, marked, -1L );
                     }
                 };
 
@@ -591,7 +574,7 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
 
                     @Override
                     protected MarkedEdge createEdge( final DirectedEdge edge, final boolean marked ) {
-                        return new SimpleMarkedEdge( edge.id, type, targetId, edge.timestamp, marked );
+                        return new SimpleMarkedEdge( edge.id, type, targetId, edge.timestamp, marked, edge.timestamp -1L );
                     }
                 };
 
@@ -655,7 +638,7 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
 
                     @Override
                     protected MarkedEdge createEdge( final DirectedEdge edge, final boolean marked ) {
-                        return new SimpleMarkedEdge( edge.id, type, targetId, edge.timestamp, marked );
+                        return new SimpleMarkedEdge( edge.id, type, targetId, edge.timestamp, marked, -1L );
                     }
                 };
 
@@ -1027,7 +1010,7 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
             }
 
             return new SimpleMarkedEdge( input.getSourceNode(), input.getType(), input.getTargetNode(),
-                    input.getTimestamp(), false );
+                    input.getTimestamp(), false, input.getTimestamp() -1L );
         }
     };
 }

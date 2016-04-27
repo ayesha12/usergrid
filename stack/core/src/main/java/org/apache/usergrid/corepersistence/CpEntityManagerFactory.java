@@ -401,7 +401,7 @@ public class CpEntityManagerFactory implements EntityManagerFactory, Application
         final Id managementAppId = CpNamingUtils.getManagementApplicationId();
         final EntityIndex aei = getManagementIndex();
         final GraphManager managementGraphManager = managerCache.getGraphManager(managementAppScope);
-        final Edge createEdge = CpNamingUtils.createCollectionEdge(managementAppId, createCollectionName, createApplicationId);
+        final Edge createEdge = CpNamingUtils.createCollectionEdge(managementAppId, createCollectionName, createApplicationId, -1L);
 
         final Observable createNodeGraph = managementGraphManager.writeEdge(createEdge);
 

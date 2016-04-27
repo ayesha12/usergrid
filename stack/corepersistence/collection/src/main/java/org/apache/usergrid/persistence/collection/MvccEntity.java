@@ -75,5 +75,11 @@ public interface MvccEntity extends EntityVersion{
      */
     long getSize();
 
+    /**
+     * get expiration timstamp of the entity.
+     * @return
+     */
+    long getEntityExpiration();
+
     void setSize(long size);
 }

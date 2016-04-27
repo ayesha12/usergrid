@@ -19,14 +19,13 @@
 package org.apache.usergrid.persistence.collection.mvcc.entity.impl;
 
 
-import java.util.UUID;
-
+import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 import org.apache.usergrid.persistence.collection.MvccEntity;
 import org.apache.usergrid.persistence.model.entity.Entity;
 import org.apache.usergrid.persistence.model.entity.Id;
 
-import com.google.common.base.Optional;
-import com.google.common.base.Preconditions;
+import java.util.UUID;
 
 
 /**
@@ -39,6 +38,7 @@ public class MvccEntityImpl implements MvccEntity {
     private final Optional<Entity> entity;
     private final Status status;
     private long size;
+    private long entity_expries_in;
 
 
     public MvccEntityImpl( final Id entityId, final UUID version, final Status status, final Entity entity ) {
@@ -62,6 +62,14 @@ public class MvccEntityImpl implements MvccEntity {
         this.entity = entity;
         this.status = status;
         this.size = size;
+        if(entity.isPresent()) {
+            if (entity.get().getField("entity_expiration") != null) {
+                this.entity_expries_in = (long) (entity.get().getField("entity_expiration").getValue());
+            } else {
+                this.entity_expries_in = -1L;
+            }
+        }
+
     }
 
 
@@ -99,6 +107,11 @@ public class MvccEntityImpl implements MvccEntity {
         if(this.entity.isPresent()){
             this.entity.get().setSize(size);
         }
+    }
+
+    @Override
+    public long getEntityExpiration(){
+        return entity_expries_in;
     }
 
     @Override

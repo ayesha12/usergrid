@@ -45,6 +45,7 @@ public class ServiceContext {
     String collectionName;
     String serviceCommand;
     Map<String, Object> metadataRequestQueryParams;
+    Map<String,Object> contextProperties;
 
 
     public ServiceContext() {

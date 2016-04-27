@@ -22,16 +22,14 @@
 package org.apache.usergrid.persistence.graph.serialization.impl.shard.impl.comparators;
 
 
-import java.util.UUID;
-
-import org.junit.Test;
-
 import org.apache.usergrid.persistence.core.util.IdGenerator;
 import org.apache.usergrid.persistence.graph.impl.SimpleMarkedEdge;
 import org.apache.usergrid.persistence.model.entity.Id;
 import org.apache.usergrid.persistence.model.util.UUIDGenerator;
+import org.junit.Test;
 
-import static org.apache.usergrid.persistence.core.util.IdGenerator.createId;
+import java.util.UUID;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -49,8 +47,8 @@ public class SourceDirectedEdgeDescendingComparatorTest {
         final String type = "type";
         final long timestamp = 10000;
 
-        final SimpleMarkedEdge markedEdge1 = new SimpleMarkedEdge( sourceId, type, targetId, timestamp, true );
-        final SimpleMarkedEdge markedEdge2 = new SimpleMarkedEdge( sourceId, type, targetId, timestamp, true );
+        final SimpleMarkedEdge markedEdge1 = new SimpleMarkedEdge( sourceId, type, targetId, timestamp, true, timestamp -1L );
+        final SimpleMarkedEdge markedEdge2 = new SimpleMarkedEdge( sourceId, type, targetId, timestamp, true, timestamp -1L );
 
 
         int compare = comp.compare( markedEdge1, markedEdge2 );
@@ -71,8 +69,8 @@ public class SourceDirectedEdgeDescendingComparatorTest {
         final String type = "type";
         final long timestamp = 10000;
 
-        final SimpleMarkedEdge markedEdge1 = new SimpleMarkedEdge( sourceId, type, targetId, timestamp, true );
-        final SimpleMarkedEdge markedEdge2 = new SimpleMarkedEdge( sourceId, type, targetId, timestamp + 1, true );
+        final SimpleMarkedEdge markedEdge1 = new SimpleMarkedEdge( sourceId, type, targetId, timestamp, true, timestamp -1L );
+        final SimpleMarkedEdge markedEdge2 = new SimpleMarkedEdge( sourceId, type, targetId, timestamp + 1, true, timestamp -1L );
 
 
         //marked edge 1 is less than timestamp, it should be considered "greater"
@@ -95,8 +93,8 @@ public class SourceDirectedEdgeDescendingComparatorTest {
         final String type = "type";
         final long timestamp = 10000;
 
-        final SimpleMarkedEdge markedEdge1 = new SimpleMarkedEdge( sourceId1, type, targetId, timestamp, true );
-        final SimpleMarkedEdge markedEdge2 = new SimpleMarkedEdge( sourceId2, type, targetId, timestamp, true );
+        final SimpleMarkedEdge markedEdge1 = new SimpleMarkedEdge( sourceId1, type, targetId, timestamp, true, timestamp -1L );
+        final SimpleMarkedEdge markedEdge2 = new SimpleMarkedEdge( sourceId2, type, targetId, timestamp, true, timestamp -1L);
 
 
         //marked edge 1 uuid is a is less than target uuid timestamp, it should be considered "greater"
@@ -121,8 +119,8 @@ public class SourceDirectedEdgeDescendingComparatorTest {
         final String type = "type";
         final long timestamp = 10000;
 
-        final SimpleMarkedEdge markedEdge1 = new SimpleMarkedEdge( sourceId2, type, targetId, timestamp, true );
-        final SimpleMarkedEdge markedEdge2 = new SimpleMarkedEdge( sourceId1, type, targetId, timestamp, true );
+        final SimpleMarkedEdge markedEdge1 = new SimpleMarkedEdge( sourceId2, type, targetId, timestamp, true, timestamp -1L );
+        final SimpleMarkedEdge markedEdge2 = new SimpleMarkedEdge( sourceId1, type, targetId, timestamp, true, timestamp -1L );
 
 
         //marked edge 1 is less than timestamp, it should be considered "greater"

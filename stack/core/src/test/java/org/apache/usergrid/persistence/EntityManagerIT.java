@@ -536,7 +536,7 @@ public class EntityManagerIT extends AbstractCoreIT {
         Map<String, Object> device = new LinkedHashMap<String, Object>();
         device.put( "name", "device1" );
 
-        Entity createdDevice = em.createItemInCollection( createdUser, "devices", "device", device, null );
+        Entity createdDevice = em.createItemInCollection( createdUser, "devices", "device", device );
 
         app.refreshIndex();
 

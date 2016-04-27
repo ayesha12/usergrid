@@ -37,6 +37,7 @@ public class SimpleMarkedEdge extends SimpleEdge implements MarkedEdge {
     private boolean isDeleted;
     private boolean isSourceNodeDeleted;
     private boolean isTargetNodeDeleted;
+    private long edge_expires_in;
 
 
     /**
@@ -47,24 +48,25 @@ public class SimpleMarkedEdge extends SimpleEdge implements MarkedEdge {
 
 
     public SimpleMarkedEdge( final Id sourceNode, final String type, final Id targetNode, final long timestamp,
-                             final boolean isDeleted ) {
+                             final boolean isDeleted, final long edge_expires_in ) {
 
-        this( sourceNode, type, targetNode, timestamp, isDeleted, false, false );
+        this( sourceNode, type, targetNode, timestamp, isDeleted, false, false, edge_expires_in);
     }
 
 
     public SimpleMarkedEdge( final Id sourceNode, final String type, final Id targetNode, final long timestamp,
                              final boolean isDeleted, final boolean isSourceNodeDeleted,
-                             final boolean isTargetNodeDeleted ) {
-        super( sourceNode, type, targetNode, timestamp );
+                             final boolean isTargetNodeDeleted, final long edge_expires_in ) {
+        super( sourceNode, type, targetNode, timestamp, edge_expires_in ); //todo : check the edge_expiration.
         this.isDeleted = isDeleted;
         this.isSourceNodeDeleted = isSourceNodeDeleted;
         this.isTargetNodeDeleted = isTargetNodeDeleted;
+        this.edge_expires_in = edge_expires_in;
     }
 
 
     public SimpleMarkedEdge( final Edge edge, final boolean isDeleted ) {
-        this( edge.getSourceNode(), edge.getType(), edge.getTargetNode(), edge.getTimestamp(), isDeleted );
+        this( edge.getSourceNode(), edge.getType(), edge.getTargetNode(), edge.getTimestamp(), isDeleted, edge.getEdgeExpiration() );
     }
 
 
@@ -88,6 +90,11 @@ public class SimpleMarkedEdge extends SimpleEdge implements MarkedEdge {
         return isTargetNodeDeleted;
     }
 
+    @Override
+    @JsonIgnore
+    public long edgeExpiresIn(){
+        return edge_expires_in;
+    }
 
     @Override
     public boolean equals( final Object o ) {
@@ -117,6 +124,7 @@ public class SimpleMarkedEdge extends SimpleEdge implements MarkedEdge {
         result = 31 * result + ( isDeleted ? 1 : 0 );
         result = 31 * result + ( isSourceNodeDeleted ? 1 : 0 );
         result = 31 * result + ( isTargetNodeDeleted ? 1 : 0 );
+        //// TODO: 4/25/16 : should we add edge_expires_in?
         return result;
     }
 
@@ -127,6 +135,7 @@ public class SimpleMarkedEdge extends SimpleEdge implements MarkedEdge {
             "deleted=" + isDeleted +
             ", isSourceNodeDeleted=" + isSourceNodeDeleted +
             ", isTargetNodeDeleted=" + isTargetNodeDeleted +
+            ", edgeExpiresIn=" + edge_expires_in +
             "} " + super.toString();
     }
 }
