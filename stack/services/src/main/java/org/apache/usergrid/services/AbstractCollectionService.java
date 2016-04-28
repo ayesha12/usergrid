@@ -427,7 +427,7 @@ public class AbstractCollectionService extends AbstractService {
             context.getProperties());
 
         item = importEntity( context, item );
-//        item.getDynamicProperties().remove("entity_expiration"); //todo : is this the right way to delete?
+        item.getDynamicProperties().remove("entity_expiration"); //todo : is this the right way to delete?
 
         return new ServiceResults( this, context, Type.COLLECTION, Results.fromEntity( item ), null, null );
     }

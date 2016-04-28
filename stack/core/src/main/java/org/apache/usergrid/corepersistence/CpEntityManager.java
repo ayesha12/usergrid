@@ -1082,20 +1082,12 @@ public class CpEntityManager implements EntityManager {
 
         properties.put(PROPERTY_MODIFIED, UUIDUtils.getTimestampInMillis(UUIDUtils.newTimeUUID()));
 
-        Map<String, Object> metadata = new LinkedHashMap<String, Object>();
-        if ( entity.getProperties().get("metadata") !=null ) {
-            metadata = (Map<String, Object>) entity.getProperties().get("metadata");
+        if(entity.getMetadata("entity_expiration") != null) {
+            properties.put("entity_expiration", entity.getMetadata("entity_expiration"));
         }
 
-        if(metadataRequestQueryParams.containsKey( PROPERTY_TTL)){
-            Integer ttl = getInt( metadataRequestQueryParams.get( PROPERTY_TTL ) );
-            if ( ttl >= 30 ) {
-                metadata.put( PROPERTY_TTL, ttl );
-            }
-            else{
-                metadata.put( PROPERTY_TTL, Integer.valueOf(-1) );
-            }
-        }
+        Preconditions.checkArgument( !metadataRequestQueryParams.containsKey( PROPERTY_TTL) , "timeToLive cannot be called on update entity." );
+
 
         for ( String propertyName : properties.keySet() ) {
             Object propertyValue = properties.get( propertyName );
@@ -2747,16 +2739,12 @@ public class CpEntityManager implements EntityManager {
 
         if ( properties.containsKey( PROPERTY_TTL) ) {
             Integer ttl = getInt( properties.get( PROPERTY_TTL ) );
-            if ( ttl >= 30 ) {
-                properties.put(ENTITY_EXPIRATION , entityExpriation + (long) (ttl * 1000) );
-            }
-            else{
-                properties.put(ENTITY_EXPIRATION , entityExpriation - 1L );
-            }
+            Preconditions.checkArgument( ttl > 60, "timeToLive for an entity must be greater than 0 is required" );
+            properties.put(ENTITY_EXPIRATION , entityExpriation + (long) (ttl * 1000) );
             properties.remove("ttl");
         }
         else{
-            properties.put(ENTITY_EXPIRATION , entityExpriation - 1L );
+            properties.put(ENTITY_EXPIRATION , -1L );
         }
 
 

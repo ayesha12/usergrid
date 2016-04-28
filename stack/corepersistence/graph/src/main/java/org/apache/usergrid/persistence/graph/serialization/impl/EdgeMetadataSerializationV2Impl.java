@@ -193,6 +193,7 @@ public class EdgeMetadataSerializationV2Impl implements EdgeMetadataSerializatio
         final String edgeType = edge.getType();
         final long timestamp = edge.getTimestamp();
         final long edge_expires_in = edge.getEdgeExpiration();
+        int edge_ttl = -1;
 
         final MutationBatch batch = keyspace.prepareMutationBatch().withConsistencyLevel( cassandraConfig.getWriteCL() )
                                             .withTimestamp( timestamp );
@@ -204,8 +205,12 @@ public class EdgeMetadataSerializationV2Impl implements EdgeMetadataSerializatio
 
         final BucketScopedRowKey<Id> sourceKey = BucketScopedRowKey.fromKey( scopeId, source, sourceKeyBucket );
 
-        int edge_ttl =  (int) (edge_expires_in - System.currentTimeMillis()) /1000 ;
-        Preconditions.checkArgument( edge_ttl > 0, "timeToLive must be greater than 0 is required" );
+        if(edge_expires_in != -1L){
+            edge_ttl = (int) (edge_expires_in - System.currentTimeMillis()) / 1000;
+            Preconditions.checkArgument( edge_ttl > 0 , "timeToLive must be greater than 0 is required" );
+        }
+
+//        Preconditions.checkArgument( edge_ttl > 0 || edge_ttl == -1 , "timeToLive must be greater than 0 is required" );
 
         batch.withRow( CF_SOURCE_EDGE_TYPES, sourceKey ).putColumn( edgeType, HOLDER, edge_ttl );
 

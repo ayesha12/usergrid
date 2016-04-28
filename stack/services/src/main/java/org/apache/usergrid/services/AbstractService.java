@@ -372,9 +372,8 @@ public abstract class AbstractService implements Service {
             String path = request.getPath() + "/" + entity.getUuid();
             Map<String, Object> metadata = new LinkedHashMap<String, Object>();
             metadata.put("path", path);
-            metadata.put("entity_expiration",entity.getDynamicProperties().get("entity_expiration"));
+            metadata.put("entity_expiration", entity.getDynamicProperties().get("entity_expiration"));
 
-            entity.getDynamicProperties().remove("entity_expiration"); //todo : right way to delete it ?
             if (defaultEntityMetadata != null) {
                 metadata.putAll(defaultEntityMetadata);
             }
@@ -548,6 +547,7 @@ public abstract class AbstractService implements Service {
             Entity entity = ( Entity ) ref;
             em.updateProperties( entity, payload.getProperties(), metadataRequestQueryParams );
             entity.addProperties( payload.getProperties() );
+            entity.getDynamicProperties().remove("entity_expiration");
             return entity;
         }
         logger.error("Attempted update of entity reference rather than full entity, currently unsupported");

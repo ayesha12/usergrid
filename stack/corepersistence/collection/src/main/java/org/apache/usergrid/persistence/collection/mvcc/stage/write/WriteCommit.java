@@ -111,11 +111,13 @@ public class WriteCommit implements Func1<CollectionIoEvent<MvccEntity>, Collect
         // re-write the unique values but this time with no TTL
         for ( Field field : EntityUtils.getUniqueFields(mvccEntity.getEntity().get()) ) {
 
-                UniqueValue written  = new UniqueValueImpl( field,
+            int uniqueValueTTL = -1;
+            UniqueValue written  = new UniqueValueImpl( field,
                     entityId,version);
 
-            int uniqueValueTTL = (int)(mvccEntity.getEntityExpiration() - System.currentTimeMillis()) / 1000;
-
+            if(mvccEntity.getEntityExpiration() != -1L) {
+                uniqueValueTTL = (int) (mvccEntity.getEntityExpiration() - System.currentTimeMillis()) / 1000;
+            }
             MutationBatch mb = uniqueValueStrat.write(applicationScope,  written, uniqueValueTTL );
 
                 logger.debug("Finalizing {} unique value {}", field.getName(), field.getValue().toString());

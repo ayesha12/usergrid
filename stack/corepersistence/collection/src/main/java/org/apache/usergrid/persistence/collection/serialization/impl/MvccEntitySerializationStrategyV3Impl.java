@@ -94,6 +94,7 @@ public class MvccEntitySerializationStrategyV3Impl implements MvccEntitySerializ
 
         final Id entityId = entity.getId();
         final UUID version = entity.getVersion();
+        final long entity_expiration = entity.getEntityExpiration();
 
         Optional<EntityMap> map =  EntityMap.fromEntity(entity.getEntity());
         ByteBuffer byteBuffer = entitySerializer.toByteBuffer(
@@ -101,14 +102,13 @@ public class MvccEntitySerializationStrategyV3Impl implements MvccEntitySerializ
         );
 
         entity.setSize(byteBuffer.array().length);
-
-
-
-        int entity_ttl = (int ) ((Long) map.get().get("entity_expiration") - (Long) map.get().get("created")) / 1000 ;
-
-        Preconditions.checkArgument( entity_ttl > 30, "timeToLive must be greater than 0 is required" );
-
-        return doWrite( applicationScope, entityId, version, colMutation -> colMutation.putColumn( COL_VALUE, byteBuffer, entity_ttl ));
+        if(entity_expiration == -1L){
+            return doWrite( applicationScope, entityId, version, colMutation -> colMutation.putColumn( COL_VALUE, byteBuffer, -1 ));
+        }
+        else{
+            int entity_ttl = (int ) (entity_expiration -  System.currentTimeMillis()) / 1000 ;
+            return doWrite( applicationScope, entityId, version, colMutation -> colMutation.putColumn( COL_VALUE, byteBuffer, entity_ttl ));
+        }
     }
 
 
