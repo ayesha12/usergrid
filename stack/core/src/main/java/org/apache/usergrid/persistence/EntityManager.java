@@ -72,20 +72,6 @@ public interface EntityManager {
      */
     public Entity create(String entityType, Map<String, Object> properties) throws Exception;
 
-    /**
-     * Creates an entity of the specified type attached to the specified application.
-     *
-     * @param entityType the type of the entity to create.
-     * @param properties property values to create in the new entity or null.
-     * @metadataQueryParamProperties metadata properties to add to an entity.
-     ** @return the newly created entity object.
-     */
-    public Entity newCreate(String entityType, Map<String, Object> properties,
-                            Map<String,Object> metadataQueryParamProperties) throws Exception;
-
-    public <A extends Entity> A newCreate( String entityType, Class<A> entityClass, Map<String, Object> properties,
-                                        Map<String,Object> metadataQueryParamProperties)
-        throws Exception;
 
     public <A extends Entity> A create( String entityType, Class<A> entityClass, Map<String, Object> properties)
             throws Exception;

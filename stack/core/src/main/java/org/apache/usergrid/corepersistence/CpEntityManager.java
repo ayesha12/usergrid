@@ -287,58 +287,7 @@ public class CpEntityManager implements EntityManager {
         return e;
     }
 
-    @Override
-    public Entity newCreate(String entityType, Map<String, Object> properties,
-                         Map<String,Object> metadataQueryParamProperties) throws Exception {
-        return newCreate( entityType, null, properties, metadataQueryParamProperties );
-    }
 
-    @Override
-    public <A extends Entity> A newCreate( String entityType, Class<A> entityClass, Map<String, Object> properties,
-                                           Map<String,Object> metadataQueryParamProperties)
-        throws Exception {
-
-        if ( ( entityType != null ) && ( entityType.startsWith( TYPE_ENTITY ) || entityType
-            .startsWith( "entities" ) ) ) {
-            throw new IllegalArgumentException( "Invalid entity type" );
-        }
-        A e = null;
-        try {
-            e = ( A ) newCreate( entityType, ( Class<Entity> ) entityClass, properties, null, metadataQueryParamProperties );
-        }
-        catch ( ClassCastException e1 ) {
-            logger.error( "Unable to create typed entity", e1 );
-        }
-        return e;
-    }
-
-    /**
-     * Creates a new entity.
-     *
-     * @param entityType the entity type
-     * @param entityClass the entity class
-     * @param properties the properties
-     * @param importId an existing external UUID to use as the id for the new entity
-     *
-     * @return new entity
-     *
-     * @throws Exception the exception
-     */
-    @TraceParticipant
-    public <A extends Entity> A newCreate(String entityType, Class<A> entityClass,
-                                       Map<String, Object> properties, UUID importId,
-                                          Map<String,Object> metadataQueryParamProperties) throws Exception {
-
-        Timer.Context timeEntityCassCreation = entCreateBatchTimer.time();
-
-
-        A entity = batchCreate( entityType, entityClass, properties, importId, metadataQueryParamProperties);
-
-        //Adding graphite metrics
-        timeEntityCassCreation.stop();
-
-        return entity;
-    }
 
 
     @Override
