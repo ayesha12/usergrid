@@ -19,14 +19,13 @@
 package org.apache.usergrid.persistence.collection;
 
 
-import java.util.Collection;
-
 import org.apache.usergrid.persistence.core.util.Health;
 import org.apache.usergrid.persistence.model.entity.Entity;
 import org.apache.usergrid.persistence.model.entity.Id;
 import org.apache.usergrid.persistence.model.field.Field;
-
 import rx.Observable;
+
+import java.util.Collection;
 
 
 /**
@@ -43,6 +42,18 @@ public interface EntityCollectionManager {
      * @return the Observable with the updated entity in the body
      */
     Observable<Entity> write( Entity entity );
+
+    //todo: write with ttl for dynamic entities.
+    /**
+     * Write the entity in the entity collection with a TimeToLive.  This is an entire entity, it's contents will
+     * completely overwrite the previous values, if it exists.
+     *
+     * @param entity The entity to update
+     *        ttl TIme To Live of the entity.
+     *
+     * @return the Observable with the updated entity in the body
+     */
+    Observable<Entity> write( Entity entity, int ttl );
 
 
     /**

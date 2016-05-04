@@ -47,7 +47,6 @@ import rx.functions.Func1;
 
 import java.util.UUID;
 
-
 /**
  * This phase should invoke any finalization, and mark the entity as committed in the
  * data store before returning
@@ -110,16 +109,23 @@ public class WriteCommit implements Func1<CollectionIoEvent<MvccEntity>, Collect
 
         // re-write the unique values but this time with no TTL
         for ( Field field : EntityUtils.getUniqueFields(mvccEntity.getEntity().get()) ) {
-
+            MutationBatch mb;
             int uniqueValueTTL = -1;
             UniqueValue written  = new UniqueValueImpl( field,
                     entityId,version);
 
-            if(mvccEntity.getEntityExpiration() != -1L) {
-                uniqueValueTTL = (int) (mvccEntity.getEntityExpiration() - System.currentTimeMillis()) / 1000;
+            if(entity.getField("entity_expiration") != null) {
+                if (mvccEntity.getEntityExpiration() != -1L) {
+                    uniqueValueTTL = (int) (mvccEntity.getEntityExpiration() - System.currentTimeMillis()) / 1000;
+                    mb = uniqueValueStrat.write(applicationScope, written, uniqueValueTTL);
+                }
+                else {
+                    mb = uniqueValueStrat.write(applicationScope, written, -1);
+                }
             }
-            MutationBatch mb = uniqueValueStrat.write(applicationScope,  written, uniqueValueTTL );
-
+            else {
+                mb = uniqueValueStrat.write(applicationScope, written);
+            }
                 logger.debug("Finalizing {} unique value {}", field.getName(), field.getValue().toString());
 
                 // merge into our existing mutation batch

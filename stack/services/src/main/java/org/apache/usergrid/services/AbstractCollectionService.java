@@ -95,6 +95,7 @@ public class AbstractCollectionService extends AbstractService {
             entity = em.get( new SimpleEntityRef( getEntityType(), id) );
 
             entity = importEntity( context, ( Entity ) entity );
+            ((Entity) entity).getDynamicProperties().remove("entity_expiration");
         }
         else {
             entity = em.get( new SimpleEntityRef( getEntityType(), id) );
@@ -421,7 +422,9 @@ public class AbstractCollectionService extends AbstractService {
         }
 
         //Adding ttl to the context properties.
-        context.getProperties().putAll(context.metadataRequestQueryParams);
+        if(context.metadataRequestQueryParams != null) {
+            context.getProperties().putAll(context.metadataRequestQueryParams);
+        }
 
         Entity item = em.createItemInCollection( context.getOwner(), context.getCollectionName(), getEntityType(),
             context.getProperties());

@@ -62,14 +62,12 @@ public class MvccEntityImpl implements MvccEntity {
         this.entity = entity;
         this.status = status;
         this.size = size;
+
         if(entity.isPresent()) {
             if (entity.get().getField("entity_expiration") != null) {
                 this.entity_expries_in = (long) (entity.get().getField("entity_expiration").getValue());
-            } else {
-                this.entity_expries_in = -1L;
             }
         }
-
     }
 
 

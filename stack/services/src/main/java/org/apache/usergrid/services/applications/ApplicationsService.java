@@ -18,10 +18,7 @@ package org.apache.usergrid.services.applications;
 
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.usergrid.persistence.Entity;
-import org.apache.usergrid.persistence.EntityRef;
-import org.apache.usergrid.persistence.Query;
-import org.apache.usergrid.persistence.Results;
+import org.apache.usergrid.persistence.*;
 import org.apache.usergrid.services.AbstractService;
 import org.apache.usergrid.services.ServiceContext;
 import org.apache.usergrid.services.ServiceParameter.QueryParameter;
@@ -133,7 +130,11 @@ public class ApplicationsService extends AbstractService {
 
         Entity entity = em.get( em.getApplicationRef() );
         Results r = Results.fromEntity( entity );
-
+        if(!Schema.getDefaultSchema().getEntityClass( entity.getType() ).equals(DynamicEntity.class)){
+          if(entity.getDynamicProperties().containsKey("entity_expiration")){
+              entity.getDynamicProperties().remove("entity_expiration");
+          }
+        }
         Map<String, Object> collections = em.getApplicationCollectionMetadata();
         // Set<String> collections = em.getApplicationCollections();
         if ( collections.size() > 0 ) {

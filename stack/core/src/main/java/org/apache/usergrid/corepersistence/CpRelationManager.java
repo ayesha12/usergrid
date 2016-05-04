@@ -30,6 +30,7 @@ import org.apache.usergrid.corepersistence.service.ConnectionService;
 import org.apache.usergrid.corepersistence.util.CpEntityMapUtils;
 import org.apache.usergrid.corepersistence.util.CpNamingUtils;
 import org.apache.usergrid.persistence.*;
+import org.apache.usergrid.persistence.Entity;
 import org.apache.usergrid.persistence.Query.Level;
 import org.apache.usergrid.persistence.cassandra.ConnectionRefImpl;
 import org.apache.usergrid.persistence.core.scope.ApplicationScope;
@@ -40,8 +41,7 @@ import org.apache.usergrid.persistence.graph.impl.SimpleSearchByEdge;
 import org.apache.usergrid.persistence.graph.impl.SimpleSearchByEdgeType;
 import org.apache.usergrid.persistence.graph.impl.SimpleSearchEdgeType;
 import org.apache.usergrid.persistence.index.query.Identifier;
-import org.apache.usergrid.persistence.model.entity.Id;
-import org.apache.usergrid.persistence.model.entity.SimpleId;
+import org.apache.usergrid.persistence.model.entity.*;
 import org.apache.usergrid.persistence.schema.CollectionInfo;
 import org.apache.usergrid.utils.InflectionUtils;
 import org.apache.usergrid.utils.MapUtils;
@@ -655,8 +655,9 @@ public class CpRelationManager implements RelationManager {
         final org.apache.usergrid.persistence.model.entity.Entity targetEntity =
             ( ( CpEntityManager ) em ).load( entityId );
 
+       long edgeTTL = getEdgeTTL(cpHeadEntity,targetEntity);
         // create graph edge connection from head entity to member entity
-        final Edge edge = createConnectionEdge( cpHeadEntity.getId(), connectionType, targetEntity.getId(), -1L );
+        final Edge edge = createConnectionEdge( cpHeadEntity.getId(), connectionType, targetEntity.getId(), edgeTTL );
 
         final GraphManager gm = managerCache.getGraphManager( applicationScope );
 
@@ -674,6 +675,33 @@ public class CpRelationManager implements RelationManager {
 
 
         return connection;
+    }
+
+    private long getEdgeTTL(org.apache.usergrid.persistence.model.entity.Entity cpHeadEntity, org.apache.usergrid.persistence.model.entity.Entity targetEntity) {
+        long edgeTTL = -1L;
+        long ttlcpHead = -1L ,ttlTarget = -1L;
+        if(cpHeadEntity.getField("entity_expiration") != null){
+            ttlcpHead = (long) cpHeadEntity.getField("entity_expiration").getValue();
+        }
+
+        if(targetEntity.getField("entity_expiration") != null){
+            ttlTarget = (long) targetEntity.getField("entity_expiration").getValue();
+        }
+
+        if(ttlcpHead == -1L && ttlTarget == -1) {
+            edgeTTL = -1L;
+        }
+        else if(ttlcpHead > 0 && ttlTarget > 0){
+            edgeTTL = ttlcpHead > ttlTarget ? ttlTarget : ttlcpHead;
+        }
+        else if(ttlcpHead == -1L && ttlTarget > 0){
+            edgeTTL =  ttlTarget;
+        }
+        else if(ttlcpHead > 0 && ttlTarget == -1L){
+            edgeTTL =  ttlcpHead;
+        }
+
+            return edgeTTL;
     }
 
 

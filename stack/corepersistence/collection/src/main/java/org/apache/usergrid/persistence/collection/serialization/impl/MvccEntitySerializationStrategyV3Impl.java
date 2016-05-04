@@ -96,6 +96,7 @@ public class MvccEntitySerializationStrategyV3Impl implements MvccEntitySerializ
         final UUID version = entity.getVersion();
         final long entity_expiration = entity.getEntityExpiration();
 
+
         Optional<EntityMap> map =  EntityMap.fromEntity(entity.getEntity());
         ByteBuffer byteBuffer = entitySerializer.toByteBuffer(
             new EntityWrapper(entityId,entity.getVersion(), entity.getStatus(), map.isPresent() ? map.get() : null, 0 )
@@ -103,7 +104,7 @@ public class MvccEntitySerializationStrategyV3Impl implements MvccEntitySerializ
 
         entity.setSize(byteBuffer.array().length);
         if(entity_expiration == -1L){
-            return doWrite( applicationScope, entityId, version, colMutation -> colMutation.putColumn( COL_VALUE, byteBuffer, -1 ));
+            return doWrite( applicationScope, entityId, version, colMutation -> colMutation.putColumn( COL_VALUE, byteBuffer));
         }
         else{
             int entity_ttl = (int ) (entity_expiration -  System.currentTimeMillis()) / 1000 ;

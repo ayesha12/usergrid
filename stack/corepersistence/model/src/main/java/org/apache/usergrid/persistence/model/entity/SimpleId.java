@@ -19,15 +19,13 @@
 package org.apache.usergrid.persistence.model.entity;
 
 
-import java.io.Serializable;
-import java.util.UUID;
-
+import com.fasterxml.uuid.UUIDComparator;
+import com.google.common.base.Preconditions;
 import org.apache.usergrid.persistence.model.util.UUIDGenerator;
 import org.apache.usergrid.persistence.model.util.Verify;
 
-
-import com.fasterxml.uuid.UUIDComparator;
-import com.google.common.base.Preconditions;
+import java.io.Serializable;
+import java.util.UUID;
 
 
 /** @author tnine */

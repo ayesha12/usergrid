@@ -23,10 +23,7 @@ import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
 import org.apache.commons.lang.StringUtils;
 import org.apache.usergrid.management.OrganizationConfig;
 import org.apache.usergrid.management.OrganizationConfigProps;
-import org.apache.usergrid.persistence.Entity;
-import org.apache.usergrid.persistence.EntityManager;
-import org.apache.usergrid.persistence.Query;
-import org.apache.usergrid.persistence.QueryUtils;
+import org.apache.usergrid.persistence.*;
 import org.apache.usergrid.rest.AbstractContextResource;
 import org.apache.usergrid.rest.ApiResponse;
 import org.apache.usergrid.rest.RootResource;
@@ -408,6 +405,16 @@ public class ServiceResource extends AbstractContextResource {
         addQueryParams( getServiceParameters(), ui );
         ServiceRequest r = services.newRequest( action, tree, getServiceParameters(), payload,
             returnInboundConnections, returnOutboundConnections, getMetadataRequestQueryParams(ui));
+
+        Class<Entity> entityClass = ( Class<Entity> ) Schema.getDefaultSchema().getEntityClass( r.getServiceName());
+
+        if(!entityClass.equals(DynamicEntity.class) )
+        {
+            if(ui.getQueryParameters().containsKey("ttl")){
+                throw new IllegalArgumentException("ttl not supported for typed enitties"); //todo : check error message.
+            }
+        }
+
         response.setServiceRequest( r );
         ServiceResults results = r.execute();
         if ( results != null ) {
@@ -575,6 +582,8 @@ public class ServiceResource extends AbstractContextResource {
         response.setParams( ui.getQueryParameters() );
 
         ServicePayload payload = getPayload( json );
+
+//        Class<Entity> entityClass = ( Class<Entity> ) Schema.getDefaultSchema().getEntityClass( entityType );
 
         executeServiceRequest( ui, response, ServiceAction.POST, payload );
 

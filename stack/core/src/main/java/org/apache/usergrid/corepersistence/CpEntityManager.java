@@ -384,6 +384,7 @@ public class CpEntityManager implements EntityManager {
 
         Entity entity = EntityFactory.newEntity( entityRef.getUuid(), entityRef.getType(), clazz );
         entity.setProperties(  cpEntity  );
+
         return entity;
     }
 
@@ -1031,8 +1032,8 @@ public class CpEntityManager implements EntityManager {
 
         properties.put(PROPERTY_MODIFIED, UUIDUtils.getTimestampInMillis(UUIDUtils.newTimeUUID()));
 
-        if(entity.getMetadata("entity_expiration") != null) {
-            properties.put("entity_expiration", entity.getMetadata("entity_expiration"));
+        if(entity.getMetadata(ENTITY_EXPIRATION) != null) {
+            properties.put(ENTITY_EXPIRATION, entity.getMetadata(ENTITY_EXPIRATION));
         }
 
         Preconditions.checkArgument( !metadataRequestQueryParams.containsKey( PROPERTY_TTL) , "timeToLive cannot be called on update entity." );
@@ -2686,14 +2687,15 @@ public class CpEntityManager implements EntityManager {
         Map<String, Object> metadata = new LinkedHashMap<String, Object>();
         Long entityExpriation = getLong(properties.get(PROPERTY_CREATED));
 
-        if ( properties.containsKey( PROPERTY_TTL) ) {
-            Integer ttl = getInt( properties.get( PROPERTY_TTL ) );
-            Preconditions.checkArgument( ttl > 60, "timeToLive for an entity must be greater than 0 is required" );
-            properties.put(ENTITY_EXPIRATION , entityExpriation + (long) (ttl * 1000) );
-            properties.remove("ttl");
-        }
-        else{
-            properties.put(ENTITY_EXPIRATION , -1L );
+        if(entityClass.equals(DynamicEntity.class)) {
+            if (properties.containsKey(PROPERTY_TTL)) {
+                Integer ttl = getInt(properties.get(PROPERTY_TTL));
+                Preconditions.checkArgument(ttl > 60, "timeToLive for an entity must be greater than 0 is required");
+                properties.put(ENTITY_EXPIRATION, entityExpriation + (long) (ttl * 1000));
+                properties.remove("ttl");
+            } else {
+                properties.put(ENTITY_EXPIRATION, -1L);
+            }
         }
 
 
@@ -2743,7 +2745,12 @@ public class CpEntityManager implements EntityManager {
             }
 
             //this does the write so before adding to a collection everything already exists already.
-            cpEntity = ecm.write( cpEntity ).toBlocking().last();
+//            if(entityClass.equals(DynamicEntity.class)){
+//                cpEntity = ecm.write(cpEntity, cpEntity.getField(ENTITY_EXPIRATION));
+//            }
+//            else {
+                cpEntity = ecm.write(cpEntity).toBlocking().last();
+//            }
             entity.setSize(cpEntity.getSize());
 
             if(logger.isTraceEnabled()) {

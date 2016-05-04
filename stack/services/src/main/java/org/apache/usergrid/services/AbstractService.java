@@ -372,8 +372,9 @@ public abstract class AbstractService implements Service {
             String path = request.getPath() + "/" + entity.getUuid();
             Map<String, Object> metadata = new LinkedHashMap<String, Object>();
             metadata.put("path", path);
-            metadata.put("entity_expiration", entity.getDynamicProperties().get("entity_expiration"));
-
+            if(Schema.getDefaultSchema().getEntityClass( entity.getType() ).equals(DynamicEntity.class)) {
+                metadata.put("entity_expiration", entity.getDynamicProperties().get("entity_expiration"));
+            }
             if (defaultEntityMetadata != null) {
                 metadata.putAll(defaultEntityMetadata);
             }
@@ -420,6 +421,7 @@ public abstract class AbstractService implements Service {
             if (metadata.size() > 0) {
                 entity.mergeMetadata(metadata);
             }
+
             return entity;
         }finally {
             getEntityTimer.stop();
@@ -471,6 +473,10 @@ public abstract class AbstractService implements Service {
                 try {
 
                     final Entity imported = importEntity(request, parallelTuple.entity);
+
+                    if(imported.getDynamicProperties().containsKey("entity_expiration")){
+                        imported.getDynamicProperties().remove("entity_expiration");
+                    }
 
                     if (imported != null) {
                         results.setEntity(parallelTuple.index, imported);
