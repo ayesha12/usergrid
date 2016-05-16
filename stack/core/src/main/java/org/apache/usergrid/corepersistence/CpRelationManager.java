@@ -365,7 +365,16 @@ public class CpRelationManager implements RelationManager {
 
 
         // create graph edge connection from head entity to member entity
-        final Edge edge = createCollectionEdge( cpHeadEntity.getId(), collectionName, memberEntity.getId(),(long) memberEntity.getField("entity_expiration").getValue() );
+        final Edge edge;
+        if (memberEntity.getField("entity_expiration") != null) {
+            edge = createCollectionEdge(cpHeadEntity.getId(), collectionName, memberEntity.getId(), (long) memberEntity.getField("entity_expiration").getValue());
+        }
+        else{
+            edge = createCollectionEdge(cpHeadEntity.getId(), collectionName, memberEntity.getId(), -1);
+
+        }
+
+
         final String linkedCollection = collection.getLinkedCollection();
 
         GraphManager gm = managerCache.getGraphManager( applicationScope );
@@ -376,7 +385,14 @@ public class CpRelationManager implements RelationManager {
             }
         } ).filter( writtenEdge -> linkedCollection != null ).flatMap( writtenEdge -> {
             final String pluralType = InflectionUtils.pluralize( cpHeadEntity.getId().getType() );
-            final Edge reverseEdge = createCollectionEdge( memberEntity.getId(), pluralType, cpHeadEntity.getId() , (long) memberEntity.getField("entity_expiration").getValue() );
+            final Edge reverseEdge;
+            if (memberEntity.getField("entity_expiration") != null) {
+                reverseEdge = createCollectionEdge(memberEntity.getId(), pluralType, cpHeadEntity.getId(), (long) memberEntity.getField("entity_expiration").getValue());
+            }
+            else{
+                reverseEdge = createCollectionEdge(memberEntity.getId(), pluralType, cpHeadEntity.getId(), -1);
+
+            }
 
             //reverse
             return gm.writeEdge( reverseEdge ).doOnNext( reverseEdgeWritten -> {

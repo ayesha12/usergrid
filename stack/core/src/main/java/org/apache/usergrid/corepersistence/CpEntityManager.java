@@ -578,6 +578,7 @@ public class CpEntityManager implements EntityManager {
         //If this returns null then nothing was marked null so the entity doesn't exist
         markEntity( entityRef ).toBlocking().lastOrDefault( null );
 
+
         //TODO: figure out how to return async call to service tier? Do I not need to?
         //Step 3
         deleteAsync( entityRef );
@@ -624,6 +625,7 @@ public class CpEntityManager implements EntityManager {
         //delete from our UUID index
         MapManager mm = getMapManagerForTypes();
         mm.delete( entityRef.getUuid().toString() );
+        System.out.println("deleteAsync");
 
     }
 

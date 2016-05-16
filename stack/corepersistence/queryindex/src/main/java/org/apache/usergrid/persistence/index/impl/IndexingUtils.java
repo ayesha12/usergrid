@@ -18,10 +18,7 @@ package org.apache.usergrid.persistence.index.impl;/*
  */
 
 
-import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import com.google.common.base.Preconditions;
 import org.apache.usergrid.persistence.core.scope.ApplicationScope;
 import org.apache.usergrid.persistence.index.CandidateResult;
 import org.apache.usergrid.persistence.index.GeoCandidateResult;
@@ -30,9 +27,11 @@ import org.apache.usergrid.persistence.index.SearchEdge;
 import org.apache.usergrid.persistence.model.entity.Entity;
 import org.apache.usergrid.persistence.model.entity.Id;
 import org.apache.usergrid.persistence.model.entity.SimpleId;
-
-import com.google.common.base.Preconditions;
 import org.elasticsearch.search.SearchHit;
+
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 public class IndexingUtils {
@@ -91,6 +90,8 @@ public class IndexingUtils {
     public static final String ENTITY_VERSION_FIELDNAME = "entityVersion";
 
     public static final String ENTITY_TYPE_FIELDNAME = "entityType";
+
+    public static final String ENTITY_EXPIRATION_TTL = "entity_expiration_ttl";
 
     public static final String EDGE_NODE_ID_FIELDNAME = "nodeId";
 

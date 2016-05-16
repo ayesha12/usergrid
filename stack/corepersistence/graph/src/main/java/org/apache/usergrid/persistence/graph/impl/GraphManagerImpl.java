@@ -237,6 +237,7 @@ public class GraphManagerImpl implements GraphManager {
             }
             try {
                 nodeMutation.execute();
+
             }
             catch ( ConnectionException e ) {
                 throw new RuntimeException( "Unable to execute mutation", e );

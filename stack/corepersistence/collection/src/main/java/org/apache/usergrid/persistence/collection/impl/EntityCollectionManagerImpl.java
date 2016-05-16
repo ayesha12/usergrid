@@ -382,6 +382,7 @@ public class EntityCollectionManagerImpl implements EntityCollectionManager {
                 //TODO: explore making this an Async process
                 //We'll repair it again if we have to
                 deleteBatch.execute();
+                System.out.println("EntityCollectionManagerImpl");
 //                deleteBatch.setConsistencyLevel(Consis)
 
                 return response;

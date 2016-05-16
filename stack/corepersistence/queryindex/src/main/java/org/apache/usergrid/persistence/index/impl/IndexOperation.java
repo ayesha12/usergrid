@@ -20,19 +20,17 @@
 package org.apache.usergrid.persistence.index.impl;
 
 
-import java.util.Map;
-import java.util.Set;
-
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Optional;
 import org.apache.usergrid.persistence.core.scope.ApplicationScope;
 import org.apache.usergrid.persistence.index.IndexEdge;
 import org.apache.usergrid.persistence.model.entity.Entity;
-
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.Client;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Optional;
+import java.util.Map;
+import java.util.Set;
 
 
 /**
@@ -71,8 +69,20 @@ public class IndexOperation implements BatchOperation {
 
 
     public void doOperation( final Client client, final BulkRequestBuilder bulkRequest ) {
-        IndexRequestBuilder builder = client.prepareIndex( writeAlias, IndexingUtils.ES_ENTITY_TYPE, documentId ).setSource( data );
 
+        IndexRequestBuilder builder;
+        if(data.get("entity_expiration_ttl") == null || data.get("entity_expiration_ttl").equals(-1L)) {
+            data.remove("entity_expiration_ttl");
+            builder = client.prepareIndex(writeAlias, IndexingUtils.ES_ENTITY_TYPE, documentId).setSource(data);
+        }
+        else{
+            long ttl_long = Long.parseLong(data.get("entity_expiration_ttl").toString());
+            long currentTime = System.currentTimeMillis();
+            data.remove("entity_expiration_ttl");
+
+            builder = client.prepareIndex(writeAlias, IndexingUtils.ES_ENTITY_TYPE, documentId).setSource(data).setTTL(ttl_long - currentTime);
+
+        }
 
         bulkRequest.add( builder );
     }

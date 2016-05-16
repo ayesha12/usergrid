@@ -17,35 +17,16 @@
 package org.apache.usergrid.persistence.index.impl;
 
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-
+import com.google.common.base.Optional;
 import org.apache.usergrid.persistence.core.scope.ApplicationScope;
 import org.apache.usergrid.persistence.index.IndexEdge;
 import org.apache.usergrid.persistence.model.entity.Entity;
 import org.apache.usergrid.persistence.model.entity.EntityMap;
 import org.apache.usergrid.persistence.model.entity.Id;
 
-import com.google.common.base.Optional;
+import java.util.*;
 
-import static org.apache.usergrid.persistence.index.impl.IndexingUtils.APPLICATION_ID_FIELDNAME;
-import static org.apache.usergrid.persistence.index.impl.IndexingUtils.EDGE_NAME_FIELDNAME;
-import static org.apache.usergrid.persistence.index.impl.IndexingUtils.EDGE_NODE_ID_FIELDNAME;
-import static org.apache.usergrid.persistence.index.impl.IndexingUtils.EDGE_NODE_TYPE_FIELDNAME;
-import static org.apache.usergrid.persistence.index.impl.IndexingUtils.EDGE_SEARCH_FIELDNAME;
-import static org.apache.usergrid.persistence.index.impl.IndexingUtils.EDGE_TIMESTAMP_FIELDNAME;
-import static org.apache.usergrid.persistence.index.impl.IndexingUtils.ENTITY_FIELDS;
-import static org.apache.usergrid.persistence.index.impl.IndexingUtils.ENTITY_ID_FIELDNAME;
-import static org.apache.usergrid.persistence.index.impl.IndexingUtils.ENTITY_SIZE_FIELDNAME;
-import static org.apache.usergrid.persistence.index.impl.IndexingUtils.ENTITY_TYPE_FIELDNAME;
-import static org.apache.usergrid.persistence.index.impl.IndexingUtils.ENTITY_VERSION_FIELDNAME;
-import static org.apache.usergrid.persistence.index.impl.IndexingUtils.applicationId;
-import static org.apache.usergrid.persistence.index.impl.IndexingUtils.entityId;
-import static org.apache.usergrid.persistence.index.impl.IndexingUtils.getType;
-import static org.apache.usergrid.persistence.index.impl.IndexingUtils.nodeId;
+import static org.apache.usergrid.persistence.index.impl.IndexingUtils.*;
 
 
 /**
@@ -87,6 +68,10 @@ public class EntityToMapConverter {
         outputEntity.put( ENTITY_VERSION_FIELDNAME, entity.getVersion() );
 
         outputEntity.put( ENTITY_TYPE_FIELDNAME, getType( applicationScope, entityId));
+
+        if(!entity.getField("entity_expiration").getValue().equals(-1L)){
+            outputEntity.put( ENTITY_EXPIRATION_TTL,  entity.getField("entity_expiration").getValue().toString());
+        }
 
         outputEntity.put( APPLICATION_ID_FIELDNAME, applicationId( applicationScope.getApplication() ) );
 

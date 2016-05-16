@@ -20,29 +20,6 @@
 package org.apache.usergrid.persistence.map.impl;
 
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import org.apache.cassandra.db.marshal.BytesType;
-import org.apache.cassandra.db.marshal.UTF8Type;
-
-import org.apache.usergrid.persistence.core.astyanax.BucketScopedRowKey;
-import org.apache.usergrid.persistence.core.astyanax.BucketScopedRowKeySerializer;
-import org.apache.usergrid.persistence.core.astyanax.CassandraConfig;
-import org.apache.usergrid.persistence.core.astyanax.CompositeFieldSerializer;
-import org.apache.usergrid.persistence.core.astyanax.MultiTenantColumnFamily;
-import org.apache.usergrid.persistence.core.astyanax.MultiTenantColumnFamilyDefinition;
-import org.apache.usergrid.persistence.core.astyanax.ScopedRowKey;
-import org.apache.usergrid.persistence.core.astyanax.ScopedRowKeySerializer;
-import org.apache.usergrid.persistence.core.shard.ExpandingShardLocator;
-import org.apache.usergrid.persistence.core.shard.StringHashUtils;
-import org.apache.usergrid.persistence.map.MapScope;
-
 import com.google.common.base.Preconditions;
 import com.google.common.hash.Funnel;
 import com.google.inject.Inject;
@@ -52,14 +29,17 @@ import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.MutationBatch;
 import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 import com.netflix.astyanax.connectionpool.exceptions.NotFoundException;
-import com.netflix.astyanax.model.Column;
-import com.netflix.astyanax.model.CompositeBuilder;
-import com.netflix.astyanax.model.CompositeParser;
-import com.netflix.astyanax.model.ConsistencyLevel;
-import com.netflix.astyanax.model.Row;
-import com.netflix.astyanax.model.Rows;
+import com.netflix.astyanax.model.*;
 import com.netflix.astyanax.serializers.BooleanSerializer;
 import com.netflix.astyanax.serializers.StringSerializer;
+import org.apache.cassandra.db.marshal.BytesType;
+import org.apache.cassandra.db.marshal.UTF8Type;
+import org.apache.usergrid.persistence.core.astyanax.*;
+import org.apache.usergrid.persistence.core.shard.ExpandingShardLocator;
+import org.apache.usergrid.persistence.core.shard.StringHashUtils;
+import org.apache.usergrid.persistence.map.MapScope;
+
+import java.util.*;
 
 
 @Singleton
@@ -414,6 +394,8 @@ public class MapSerializationImpl implements MapSerialization {
     private void executeBatch( MutationBatch batch ) {
         try {
             batch.execute();
+            System.out.println("mapserializatoinImpl");
+
         }
         catch ( ConnectionException e ) {
             throw new RuntimeException( "Unable to connect to cassandra", e );
