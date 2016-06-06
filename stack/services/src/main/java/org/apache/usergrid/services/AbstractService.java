@@ -17,37 +17,19 @@
 package org.apache.usergrid.services;
 
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
 import com.codahale.metrics.Timer;
-import org.apache.usergrid.persistence.cache.CacheFactory;
-
-import org.apache.usergrid.corepersistence.rx.impl.ResponseImportTasks;
-import org.apache.usergrid.corepersistence.service.ServiceSchedulerFig;
-import org.apache.usergrid.persistence.core.metrics.MetricsFactory;
-import org.apache.usergrid.persistence.core.metrics.ObservableTimer;
-import org.apache.usergrid.security.shiro.utils.LocalShiroCache;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
-
+import com.google.inject.Injector;
+import com.google.inject.Key;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.shiro.subject.Subject;
-
-import org.apache.usergrid.persistence.Entity;
-import org.apache.usergrid.persistence.EntityManager;
-import org.apache.usergrid.persistence.EntityRef;
-import org.apache.usergrid.persistence.Query;
-import org.apache.usergrid.persistence.Results;
-import org.apache.usergrid.persistence.Schema;
+import org.apache.usergrid.corepersistence.rx.impl.ResponseImportTasks;
+import org.apache.usergrid.corepersistence.service.ServiceSchedulerFig;
+import org.apache.usergrid.persistence.*;
+import org.apache.usergrid.persistence.cache.CacheFactory;
+import org.apache.usergrid.persistence.core.metrics.MetricsFactory;
+import org.apache.usergrid.persistence.core.metrics.ObservableTimer;
 import org.apache.usergrid.persistence.core.rx.RxTaskScheduler;
+import org.apache.usergrid.security.shiro.utils.LocalShiroCache;
 import org.apache.usergrid.security.shiro.utils.SubjectUtils;
 import org.apache.usergrid.services.ServiceParameter.IdParameter;
 import org.apache.usergrid.services.ServiceParameter.NameParameter;
@@ -56,14 +38,14 @@ import org.apache.usergrid.services.ServiceResults.Type;
 import org.apache.usergrid.services.exceptions.ServiceInvocationException;
 import org.apache.usergrid.services.exceptions.ServiceResourceNotFoundException;
 import org.apache.usergrid.services.exceptions.UnsupportedServiceOperationException;
-import org.apache.usergrid.services.generic.RootCollectionService;
-
-import com.google.inject.Injector;
-import com.google.inject.Key;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
 import rx.Observable;
 import rx.Scheduler;
 import rx.Subscriber;
+
+import java.util.*;
 
 import static org.apache.usergrid.security.shiro.utils.SubjectUtils.getPermissionFromPath;
 import static org.apache.usergrid.services.ServiceParameter.filter;
@@ -390,7 +372,9 @@ public abstract class AbstractService implements Service {
             String path = request.getPath() + "/" + entity.getUuid();
             Map<String, Object> metadata = new LinkedHashMap<String, Object>();
             metadata.put("path", path);
-
+            if(Schema.getDefaultSchema().getEntityClass( entity.getType() ).equals(DynamicEntity.class)) {
+                metadata.put("entity_expiration", entity.getDynamicProperties().get("entity_expiration"));
+            }
             if (defaultEntityMetadata != null) {
                 metadata.putAll(defaultEntityMetadata);
             }
@@ -437,6 +421,7 @@ public abstract class AbstractService implements Service {
             if (metadata.size() > 0) {
                 entity.mergeMetadata(metadata);
             }
+
             return entity;
         }finally {
             getEntityTimer.stop();
@@ -488,6 +473,10 @@ public abstract class AbstractService implements Service {
                 try {
 
                     final Entity imported = importEntity(request, parallelTuple.entity);
+
+                    if(imported.getDynamicProperties().containsKey("entity_expiration")){
+                        imported.getDynamicProperties().remove("entity_expiration");
+                    }
 
                     if (imported != null) {
                         results.setEntity(parallelTuple.index, imported);
@@ -542,26 +531,29 @@ public abstract class AbstractService implements Service {
     }
 
 
-    public Entity updateEntity( ServiceContext context, EntityRef ref, ServicePayload payload ) throws Exception {
-        return updateEntity( context.getRequest(), ref, payload );
+    public Entity updateEntity(ServiceContext context, EntityRef ref, ServicePayload payload,
+                               Map<String, Object> metadataRequestQueryParams) throws Exception {
+        return updateEntity( context.getRequest(), ref, payload, metadataRequestQueryParams );
     }
 
 
     public Entity updateEntity( ServiceContext context, EntityRef ref ) throws Exception {
-        return updateEntity( context.getRequest(), ref, context.getPayload() );
+        return updateEntity( context.getRequest(), ref, context.getPayload(), context.metadataRequestQueryParams );
     }
 
 
     @Override
-    public Entity updateEntity( ServiceRequest request, EntityRef ref, ServicePayload payload ) throws Exception {
+    public Entity updateEntity( ServiceRequest request, EntityRef ref, ServicePayload payload,
+                                Map<String, Object> metadataRequestQueryParams ) throws Exception {
         if ( !isRootService() ) {
-            return sm.updateEntity( request, ref, payload );
+            return sm.updateEntity( request, ref, payload, metadataRequestQueryParams );
         }
 
         if ( ref instanceof Entity ) {
             Entity entity = ( Entity ) ref;
-            em.updateProperties( entity, payload.getProperties() );
+            em.updateProperties( entity, payload.getProperties(), metadataRequestQueryParams );
             entity.addProperties( payload.getProperties() );
+            entity.getDynamicProperties().remove("entity_expiration");
             return entity;
         }
         logger.error("Attempted update of entity reference rather than full entity, currently unsupported");
@@ -569,22 +561,24 @@ public abstract class AbstractService implements Service {
     }
 
 
-    public void updateEntities( ServiceContext context, Results results, ServicePayload payload ) throws Exception {
-        updateEntities( context.getRequest(), results, payload );
+    public void updateEntities( ServiceContext context, Results results, ServicePayload payload,
+                                Map<String, Object> metadataRequestQueryParams ) throws Exception {
+        updateEntities( context.getRequest(), results, payload, metadataRequestQueryParams );
     }
 
 
     public void updateEntities( ServiceContext context, Results results ) throws Exception {
-        updateEntities( context.getRequest(), results, context.getPayload() );
+        updateEntities( context.getRequest(), results, context.getPayload(), context.metadataRequestQueryParams );
     }
 
 
-    public void updateEntities( ServiceRequest request, Results results, ServicePayload payload ) throws Exception {
+    public void updateEntities( ServiceRequest request, Results results, ServicePayload payload,
+                                Map<String, Object> metadataRequestQueryParams ) throws Exception {
 
         List<Entity> entities = results.getEntities();
         if ( entities != null ) {
             for ( Entity entity : entities ) {
-                updateEntity( request, entity, payload );
+                updateEntity( request, entity, payload, metadataRequestQueryParams );
             }
         }
     }
@@ -646,9 +640,9 @@ public abstract class AbstractService implements Service {
 
     @Override
     public ServiceResults invoke( ServiceAction action, ServiceRequest request, ServiceResults previousResults,
-                                  ServicePayload payload ) throws Exception {
+                                  ServicePayload payload, Map<String, Object> metadataRequestQueryParams ) throws Exception {
 
-        ServiceContext context = getContext(action, request, previousResults, payload);
+        ServiceContext context = getContext(action, request, previousResults, payload, metadataRequestQueryParams);
 
         return invoke( context );
     }
@@ -661,11 +655,11 @@ public abstract class AbstractService implements Service {
 
     @Override
     public ServiceContext getContext( ServiceAction action, ServiceRequest request, ServiceResults previousResults,
-                                      ServicePayload payload ) throws Exception {
+                                      ServicePayload payload, Map<String, Object> metadataRequestQueryParams ) throws Exception {
 
         EntityRef owner = request.getOwner();
         String collectionName =
-                "application".equals( owner.getType() ) ? pluralize( info.getItemType() ) : info.getCollectionName();
+            "application".equals( owner.getType() ) ? pluralize( info.getItemType() ) : info.getCollectionName();
         List<ServiceParameter> parameters = filter(request.getParameters(), replaceParameters);
 
         ServiceParameter first_parameter = null;
@@ -677,11 +671,11 @@ public abstract class AbstractService implements Service {
         if ( first_parameter instanceof NameParameter ) {
             if ( hasServiceMetadata( first_parameter.getName() ) ) {
                 return new ServiceContext( this, action, request, previousResults, owner, collectionName, parameters,
-                        payload ).withServiceMetadata( first_parameter.getName() );
+                    payload, metadataRequestQueryParams ).withServiceMetadata( first_parameter.getName() );
             }
             else if ( hasServiceCommand( first_parameter.getName() ) ) {
                 return new ServiceContext( this, action, request, previousResults, owner, collectionName, parameters,
-                        payload ).withServiceCommand( first_parameter.getName() );
+                    payload, metadataRequestQueryParams ).withServiceCommand( first_parameter.getName() );
             }
         }
 
@@ -694,20 +688,20 @@ public abstract class AbstractService implements Service {
         if ( first_parameter instanceof IdParameter ) {
             UUID id = first_parameter.getId();
             return new ServiceContext( this, action, request, previousResults, owner, collectionName,
-                    Query.fromUUID( id ), parameters, payload );
+                Query.fromUUID( id ), parameters, payload, metadataRequestQueryParams );
         }
         else if ( first_parameter instanceof NameParameter ) {
             String name = first_parameter.getName();
             return new ServiceContext( this, action, request, previousResults, owner, collectionName,
-                    Query.fromIdentifier( name ), parameters, payload );
+                Query.fromIdentifier( name ), parameters, payload, metadataRequestQueryParams );
         }
         else if ( query != null ) {
             return new ServiceContext( this, action, request, previousResults, owner, collectionName, query, parameters,
-                    payload );
+                payload, metadataRequestQueryParams );
         }
         else if ( first_parameter == null ) {
             return new ServiceContext( this, action, request, previousResults, owner, collectionName, null, null,
-                    payload );
+                payload, metadataRequestQueryParams );
         }
 
         return null;
@@ -998,13 +992,13 @@ public abstract class AbstractService implements Service {
 
 
     public ServiceResults putServiceCommand( ServiceContext context, String command, ServicePayload payload )
-            throws Exception {
+        throws Exception {
         throw new UnsupportedServiceOperationException( context );
     }
 
 
     public ServiceResults postServiceCommand( ServiceContext context, String command, ServicePayload payload )
-            throws Exception {
+        throws Exception {
         throw new UnsupportedServiceOperationException( context );
     }
 
@@ -1125,14 +1119,14 @@ public abstract class AbstractService implements Service {
 
     public ServiceResults putEntityDictionary( ServiceContext context, List<EntityRef> refs,
                                                EntityDictionaryEntry dictionary, ServicePayload payload )
-            throws Exception {
+        throws Exception {
         throw new UnsupportedServiceOperationException( context );
     }
 
 
     public ServiceResults postEntityDictionary( ServiceContext context, List<EntityRef> refs,
                                                 EntityDictionaryEntry dictionary, ServicePayload payload )
-            throws Exception {
+        throws Exception {
         throw new UnsupportedServiceOperationException( context );
     }
 
@@ -1176,7 +1170,7 @@ public abstract class AbstractService implements Service {
 
 
     public ServiceResults handleEntityCommand( ServiceContext context, ServiceResults results, String command )
-            throws Exception {
+        throws Exception {
         if ( command != null ) {
             if ( results.size() == 1 ) {
                 results = handleEntityCommand( context, results.getRef(), command );
@@ -1190,7 +1184,7 @@ public abstract class AbstractService implements Service {
 
 
     public ServiceResults handleEntityCommand( ServiceContext context, EntityRef ref, String command )
-            throws Exception {
+        throws Exception {
         if ( ref == null ) {
             throw new UnsupportedServiceOperationException( context );
         }
@@ -1201,7 +1195,7 @@ public abstract class AbstractService implements Service {
 
 
     public ServiceResults handleEntityCommand( ServiceContext context, List<EntityRef> refs, String command )
-            throws Exception {
+        throws Exception {
         if ( ( refs == null ) || ( refs.size() == 0 ) ) {
             throw new UnsupportedServiceOperationException( context );
         }
@@ -1227,7 +1221,7 @@ public abstract class AbstractService implements Service {
 
 
     public ServiceResults getEntityCommand( ServiceContext context, List<EntityRef> refs, String command )
-            throws Exception {
+        throws Exception {
 
         throw new UnsupportedServiceOperationException( context );
     }
@@ -1246,13 +1240,13 @@ public abstract class AbstractService implements Service {
 
 
     public ServiceResults deleteEntityCommand( ServiceContext context, List<EntityRef> refs, String command )
-            throws Exception {
+        throws Exception {
         throw new UnsupportedServiceOperationException( context );
     }
 
 
     public ServiceResults headEntityCommand( ServiceContext context, List<EntityRef> refs, String command )
-            throws Exception {
+        throws Exception {
         throw new UnsupportedServiceOperationException( context );
     }
 
@@ -1313,13 +1307,13 @@ public abstract class AbstractService implements Service {
 
 
     public ServiceResults putServiceMetadata( ServiceContext context, String metadataType, ServicePayload payload )
-            throws Exception {
+        throws Exception {
         throw new UnsupportedServiceOperationException( context );
     }
 
 
     public ServiceResults postServiceMetadata( ServiceContext context, String metadataType, ServicePayload payload )
-            throws Exception {
+        throws Exception {
         throw new UnsupportedServiceOperationException( context );
     }
 
@@ -1371,7 +1365,7 @@ public abstract class AbstractService implements Service {
         }
 
         String perm = getPermissionFromPath( em.getApplicationRef().getUuid(), context.getAction().toString().toLowerCase(),
-                        path );
+            path );
         boolean permitted = currentUser.isPermitted( perm );
 
         if ( logger.isDebugEnabled() ) {
@@ -1389,8 +1383,8 @@ public abstract class AbstractService implements Service {
 
 
     private static final String PATH_MSG =
-            "---- Checked permissions for path --------------------------------------------\n" + "Requested path: {} \n"
-                    + "Requested action: {} \n" + "Requested permission: {} \n" + "Permitted: {} \n";
+        "---- Checked permissions for path --------------------------------------------\n" + "Requested path: {} \n"
+            + "Requested action: {} \n" + "Requested permission: {} \n" + "Permitted: {} \n";
 
 
     /** Purpose is to enable entity dictionary entries to have name not equal to path segment. */

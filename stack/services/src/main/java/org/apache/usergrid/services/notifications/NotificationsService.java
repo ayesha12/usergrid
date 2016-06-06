@@ -17,39 +17,31 @@
 package org.apache.usergrid.services.notifications;
 
 
-import java.util.*;
-
-import org.apache.usergrid.persistence.collection.EntityCollectionManagerFactory;
-import org.apache.usergrid.services.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.Timer;
+import com.google.inject.Injector;
 import org.apache.usergrid.mq.Message;
-import org.apache.usergrid.persistence.Entity;
-import org.apache.usergrid.persistence.EntityManagerFactory;
-import org.apache.usergrid.persistence.EntityRef;
-import org.apache.usergrid.persistence.SimpleEntityRef;
+import org.apache.usergrid.persistence.*;
 import org.apache.usergrid.persistence.core.metrics.MetricsFactory;
 import org.apache.usergrid.persistence.entities.Notification;
 import org.apache.usergrid.persistence.entities.Notifier;
 import org.apache.usergrid.persistence.entities.Receipt;
 import org.apache.usergrid.persistence.exceptions.RequiredPropertyNotFoundException;
 import org.apache.usergrid.persistence.index.query.Identifier;
-import org.apache.usergrid.persistence.Query;
 import org.apache.usergrid.persistence.queue.QueueManager;
 import org.apache.usergrid.persistence.queue.QueueManagerFactory;
 import org.apache.usergrid.persistence.queue.QueueScope;
 import org.apache.usergrid.persistence.queue.impl.QueueScopeImpl;
+import org.apache.usergrid.services.*;
 import org.apache.usergrid.services.exceptions.ForbiddenServiceOperationException;
 import org.apache.usergrid.services.notifications.impl.ApplicationQueueManagerImpl;
-
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.Timer;
-import com.google.inject.Injector;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
+
+import java.util.*;
 
 import static org.apache.usergrid.utils.InflectionUtils.pluralize;
 
@@ -68,16 +60,15 @@ public class NotificationsService extends AbstractCollectionService {
 
     static {
         Message.MESSAGE_PROPERTIES.put(
-                MESSAGE_PROPERTY_DEVICE_UUID, UUID.class);
+            MESSAGE_PROPERTY_DEVICE_UUID, UUID.class);
     }
 
-//not really a queue manager at all
+    //not really a queue manager at all
     private ApplicationQueueManager notificationQueueManager;
     private long gracePeriod;
     private ServiceManagerFactory smf;
     private EntityManagerFactory emf;
     private QueueManagerFactory queueManagerFactory;
-    private ApplicationQueueManagerCache applicationQueueManagerCache;
 
     public NotificationsService() {
         if (logger.isTraceEnabled()) {
@@ -100,10 +91,7 @@ public class NotificationsService extends AbstractCollectionService {
         QueueScope queueScope = new QueueScopeImpl( name, QueueScope.RegionImplementation.LOCAL);
         queueManagerFactory = getApplicationContext().getBean( Injector.class ).getInstance(QueueManagerFactory.class);
         QueueManager queueManager = queueManagerFactory.getQueueManager(queueScope);
-        applicationQueueManagerCache = getApplicationContext().getBean(Injector.class).getInstance(ApplicationQueueManagerCache.class);
-        notificationQueueManager = applicationQueueManagerCache
-            .getApplicationQueueManager(em,queueManager, jobScheduler, metricsService ,props);
-
+        notificationQueueManager = new ApplicationQueueManagerImpl(jobScheduler,em,queueManager,metricsService,props);
         gracePeriod = JobScheduler.SCHEDULER_GRACE_PERIOD;
     }
 
@@ -114,14 +102,14 @@ public class NotificationsService extends AbstractCollectionService {
 
     @Override
     public ServiceContext getContext(ServiceAction action,
-            ServiceRequest request, ServiceResults previousResults,
-            ServicePayload payload) throws Exception {
+                                     ServiceRequest request, ServiceResults previousResults,
+                                     ServicePayload payload, Map<String, Object> metadataRequestQueryParams) throws Exception {
 
-        ServiceContext context = super.getContext(action, request, previousResults, payload);
+        ServiceContext context = super.getContext(action, request, previousResults, payload, metadataRequestQueryParams);
 
         if (action == ServiceAction.POST) {
             context.setQuery(null); // we don't use this, and it must be null to
-                                    // force the correct execution path
+            // force the correct execution path
         }
         return context;
     }
@@ -134,28 +122,11 @@ public class NotificationsService extends AbstractCollectionService {
         Timer.Context timer = postTimer.time();
         postMeter.mark();
         try {
-
             validate(null, context.getPayload());
-
-            // perform some input validates on useGraph payload property vs. ql= path query
-            final List<ServiceParameter> parameters = context.getRequest().getOriginalParameters();
-            for (ServiceParameter parameter : parameters){
-                if( parameter instanceof ServiceParameter.QueryParameter
-                    && context.getProperties().get("useGraph") != null
-                      && context.getProperties().get("useGraph").equals(true)){
-
-                    throw new IllegalArgumentException("Query ql parameter cannot be used with useGraph:true property value");
-                }
-            }
-
-            Notification.PathTokens pathTokens = getPathTokens(parameters);
-
-            // set defaults
-            context.getProperties().put("filters", context.getProperties().getOrDefault("filters", new HashMap<>()));
-            context.getProperties().put("useGraph", context.getProperties().getOrDefault("useGraph", false));
+            Notification.PathTokens pathTokens = getPathTokens(context.getRequest().getOriginalParameters());
+            // default saving of receipts
             context.getProperties().put("saveReceipts", context.getProperties().getOrDefault("saveReceipts", true));
             context.getProperties().put("processingFinished", 0L); // defaulting processing finished to 0
-            context.getProperties().put("deviceProcessedCount", 0); // defaulting processing finished to 0
             context.getProperties().put("state", Notification.State.CREATED);
             context.getProperties().put("pathQuery", pathTokens);
             context.setOwner(sm.getApplication());
@@ -183,7 +154,7 @@ public class NotificationsService extends AbstractCollectionService {
             // future: somehow return 202?
             return results;
         }catch (Exception e){
-            logger.error(e.getMessage());
+            logger.error("serialization failed",e);
             throw e;
         }finally {
             timer.stop();
@@ -226,14 +197,14 @@ public class NotificationsService extends AbstractCollectionService {
 
     @Override
     public Entity updateEntity(ServiceRequest request, EntityRef ref,
-            ServicePayload payload) throws Exception {
+                               ServicePayload payload, Map<String, Object> metadataRequestQueryParams) throws Exception {
 
         validate(ref, payload);
 
         Notification notification = em.get(ref, Notification.class);
 
         if ("restart".equals(payload.getProperty("restart"))) { // for emergency
-                                                                // use only
+            // use only
             payload.getProperties().clear();
             payload.setProperty("restart", "");
             payload.setProperty("errorMessage", "");
@@ -242,19 +213,19 @@ public class NotificationsService extends AbstractCollectionService {
             // once finished, immutable
         } else if (notification.getFinished() != null) {
             throw new ForbiddenServiceOperationException(request,
-                    "Notification immutable once sent.");
+                "Notification immutable once sent.");
 
             // once started, only cancel is allowed
         } else if (notification.getStarted() != null) {
             if (payload.getProperty("canceled") != Boolean.TRUE) {
                 throw new ForbiddenServiceOperationException(request,
-                        "Notification has started. You may only set canceled.");
+                    "Notification has started. You may only set canceled.");
             }
             payload.getProperties().clear();
             payload.setProperty("canceled", Boolean.TRUE);
         }
 
-        Entity response = super.updateEntity(request, ref, payload);
+        Entity response = super.updateEntity(request, ref, payload, metadataRequestQueryParams);
 
         Long deliver = (Long) payload.getProperty("deliver");
         if (deliver != null) {
@@ -275,16 +246,16 @@ public class NotificationsService extends AbstractCollectionService {
 
     // validate payloads
     private void validate(EntityRef ref, ServicePayload servicePayload)
-            throws Exception {
+        throws Exception {
         Object obj_payloads = servicePayload.getProperty("payloads");
         if (obj_payloads == null && ref == null) {
             throw new RequiredPropertyNotFoundException("notification",
-                    "payloads");
+                "payloads");
         }
         if (obj_payloads != null) {
             if (!(obj_payloads instanceof Map)) {
                 throw new IllegalArgumentException(
-                        "payloads must be a JSON Map");
+                    "payloads must be a JSON Map");
             }
             final Map<String, Object> payloads = (Map<String, Object>) obj_payloads;
             final Map<Object, Notifier> notifierMap = getNotifierMap(payloads);
@@ -295,7 +266,7 @@ public class NotificationsService extends AbstractCollectionService {
                     Notifier notifier = notifierMap.get(notifierId);
                     if (notifier == null) {
                         throw new IllegalArgumentException("notifier \""
-                                + notifierId + "\" not found");
+                            + notifierId + "\" not found");
                     }
                     ProviderAdapter providerAdapter = ProviderAdapterFactory.getProviderAdapter(notifier, em);
                     Object payload = entry.getValue();
@@ -330,12 +301,12 @@ public class NotificationsService extends AbstractCollectionService {
         String jobQueueName = getJobQueueName(notification);
         Message message = new Message();
         message.setObjectProperty(MESSAGE_PROPERTY_DEVICE_UUID,
-                device.getUuid());
+            device.getUuid());
         sm.getQueueManager().postToQueue(jobQueueName, message);
     }
 
     public Notification getSourceNotification(EntityRef receipt)
-            throws Exception {
+        throws Exception {
         Receipt r = em.get(receipt.getUuid(), Receipt.class);
         return em.get(r.getNotificationUUID(), Notification.class);
     }
@@ -343,9 +314,9 @@ public class NotificationsService extends AbstractCollectionService {
 
     /* create a map of Notifier UUIDs and/or names to Notifiers */
     protected Map<Object, Notifier> getNotifierMap(Map payloads)
-            throws Exception {
+        throws Exception {
         Map<Object, Notifier> notifiers = new HashMap<Object, Notifier>(
-                payloads.size() * 2);
+            payloads.size() * 2);
         for (Object id : payloads.keySet()) {
             Identifier identifier = Identifier.from(id);
             Notifier notifier;

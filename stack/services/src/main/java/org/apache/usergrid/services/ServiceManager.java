@@ -17,32 +17,29 @@
 package org.apache.usergrid.services;
 
 
-import java.lang.reflect.Modifier;
-import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import org.apache.commons.lang.StringUtils;
 import org.apache.usergrid.batch.service.SchedulerService;
 import org.apache.usergrid.locking.LockManager;
 import org.apache.usergrid.mq.QueueManager;
 import org.apache.usergrid.persistence.Entity;
 import org.apache.usergrid.persistence.EntityManager;
 import org.apache.usergrid.persistence.EntityRef;
-import org.apache.usergrid.persistence.cassandra.CassandraService;
 import org.apache.usergrid.persistence.entities.Application;
 import org.apache.usergrid.services.ServiceParameter.IdParameter;
 import org.apache.usergrid.services.applications.ApplicationsService;
 import org.apache.usergrid.services.exceptions.UndefinedServiceEntityTypeException;
 import org.apache.usergrid.utils.ListUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
 
-import org.apache.commons.lang.StringUtils;
-
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import java.lang.reflect.Modifier;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import static org.apache.usergrid.persistence.SimpleEntityRef.ref;
 import static org.apache.usergrid.utils.InflectionUtils.pluralize;
@@ -82,7 +79,7 @@ public class ServiceManager {
 
     // search for commercial packages first for SaaS version
     public static String[] package_prefixes = {
-            OSS_PACKAGE_PREFIX
+        OSS_PACKAGE_PREFIX
     };
 
 
@@ -190,10 +187,11 @@ public class ServiceManager {
     }
 
 
-    public Entity updateEntity( ServiceRequest request, EntityRef ref, ServicePayload payload ) throws Exception {
+    public Entity updateEntity( ServiceRequest request, EntityRef ref, ServicePayload payload,
+                                Map<String, Object> metadataRequestQueryParams) throws Exception {
         Service service = getEntityService( ref.getType() );
         if ( service != null ) {
-            return service.updateEntity( request, ref, payload );
+            return service.updateEntity( request, ref, payload, metadataRequestQueryParams );
         }
         return null;
     }
@@ -243,12 +241,12 @@ public class ServiceManager {
 
 
     private static LoadingCache<ServiceInfo, Class<Service>> serviceClassCache =
-            CacheBuilder.newBuilder().maximumSize( 100 ).expireAfterAccess( 5, TimeUnit.MINUTES )
-                        .build( new CacheLoader<ServiceInfo, Class<Service>>() {
-                            public Class<Service> load( ServiceInfo key ) { // no checked exception
-                                return findClass( key );
-                            }
-                        } );
+        CacheBuilder.newBuilder().maximumSize( 100 ).expireAfterAccess( 5, TimeUnit.MINUTES )
+            .build( new CacheLoader<ServiceInfo, Class<Service>>() {
+                public Class<Service> load( ServiceInfo key ) { // no checked exception
+                    return findClass( key );
+                }
+            } );
 
 
     /** For the service info find the class that this maps */
@@ -350,19 +348,19 @@ public class ServiceManager {
 
 
     public ServiceRequest newRequest( ServiceAction action, List<ServiceParameter> parameters ) throws Exception {
-        return newRequest( action, false, parameters, null, true, true );
+        return newRequest( action, false, parameters, null, true, true, null );
     }
 
 
     public ServiceRequest newRequest( ServiceAction action, List<ServiceParameter> parameters, ServicePayload payload )
-            throws Exception {
-        return newRequest( action, false, parameters, payload, true, true );
+        throws Exception {
+        return newRequest( action, false, parameters, payload, true, true, null );
     }
 
 
     private ServiceRequest getApplicationRequest( ServiceAction action, boolean returnsTree,
                                                   List<ServiceParameter> parameters, ServicePayload payload )
-            throws Exception {
+        throws Exception {
 
         String serviceName = pluralize( Application.ENTITY_TYPE );
         ListUtils.requeue( parameters, new IdParameter( applicationId ) );
@@ -375,12 +373,13 @@ public class ServiceManager {
 
     public ServiceRequest newRequest( ServiceAction action, boolean returnsTree, List<ServiceParameter> parameters,
                                       ServicePayload payload, boolean returnsInboundConnections,
-                                      boolean returnsOutboundConnections ) throws Exception {
+                                      boolean returnsOutboundConnections,
+                                      Map<String,Object> metadataRequestQueryParams ) throws Exception {
 
         if ( em != null ) {
             if ( action != null ) {
                 em.incrementAggregateCounters( null, null, null,
-                        APPLICATION_REQUESTS_PER.concat( action.toString().toLowerCase() ), 1 );
+                    APPLICATION_REQUESTS_PER.concat( action.toString().toLowerCase() ), 1 );
             }
         }
 
@@ -399,19 +398,19 @@ public class ServiceManager {
 
         // special-case for Notifications. todo: generalize
         if ( action == ServiceAction.POST &&
-                ServiceParameter.lastParameterIsName( parameters ) &&
-                "notifications".equals( parameters.get( parameters.size() - 1 ).getName() ) ) {
+            ServiceParameter.lastParameterIsName( parameters ) &&
+            "notifications".equals( parameters.get( parameters.size() - 1 ).getName() ) ) {
             return new ServiceRequest( this, action, "notifications", parameters, payload, returnsTree );
         }
 
         String serviceName = pluralize( ServiceParameter.dequeueParameter( parameters ).getName() );
         return new ServiceRequest( this, action, serviceName, parameters, payload, returnsTree,
-            returnsInboundConnections, returnsOutboundConnections );
+            returnsInboundConnections, returnsOutboundConnections, metadataRequestQueryParams );
     }
 
     public ServiceRequest newRequest( ServiceAction action, boolean returnsTree, List<ServiceParameter> parameters,
                                       ServicePayload payload ) throws Exception {
-        return newRequest( action, returnsTree, parameters, payload, true, true );
+        return newRequest( action, returnsTree, parameters, payload, true, true, null );
     }
 
     public void notifyExecutionEventListeners( ServiceAction action, ServiceRequest request, ServiceResults results,

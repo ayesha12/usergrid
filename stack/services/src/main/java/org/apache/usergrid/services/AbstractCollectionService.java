@@ -17,26 +17,11 @@
 package org.apache.usergrid.services;
 
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.shiro.subject.Subject;
-
-import org.apache.usergrid.persistence.Entity;
-import org.apache.usergrid.persistence.EntityRef;
-import org.apache.usergrid.persistence.Query;
-import org.apache.usergrid.persistence.Results;
-import org.apache.usergrid.persistence.Schema;
-import org.apache.usergrid.persistence.SimpleEntityRef;
+import org.apache.usergrid.persistence.*;
+import org.apache.usergrid.persistence.Query.Level;
 import org.apache.usergrid.persistence.exceptions.EntityNotFoundException;
 import org.apache.usergrid.persistence.exceptions.UnexpectedEntityTypeException;
-import org.apache.usergrid.persistence.Query.Level;
 import org.apache.usergrid.security.shiro.principals.AdminUserPrincipal;
 import org.apache.usergrid.security.shiro.principals.ApplicationPrincipal;
 import org.apache.usergrid.security.shiro.principals.PrincipalIdentifier;
@@ -44,6 +29,10 @@ import org.apache.usergrid.security.shiro.utils.SubjectUtils;
 import org.apache.usergrid.services.ServiceResults.Type;
 import org.apache.usergrid.services.exceptions.ForbiddenServiceOperationException;
 import org.apache.usergrid.services.exceptions.ServiceResourceNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.*;
 
 import static org.apache.usergrid.utils.ClassUtils.cast;
 
@@ -92,6 +81,12 @@ public class AbstractCollectionService extends AbstractService {
         return entity;
     }
 
+    //todo: added this to resolve the merge conflicts.
+    @Override
+    public Entity updateEntity(ServiceRequest request, EntityRef ref, ServicePayload payload) throws Exception {
+        return null;
+    }
+
 
     private EntityRef loadFromId( ServiceContext context, UUID id ) throws Exception {
         EntityRef entity = null;
@@ -100,6 +95,7 @@ public class AbstractCollectionService extends AbstractService {
             entity = em.get( new SimpleEntityRef( getEntityType(), id) );
 
             entity = importEntity( context, ( Entity ) entity );
+            ((Entity) entity).getDynamicProperties().remove("entity_expiration");
         }
         else {
             entity = em.get( new SimpleEntityRef( getEntityType(), id) );
@@ -119,7 +115,7 @@ public class AbstractCollectionService extends AbstractService {
 
 
     private ServiceResults getItemById( ServiceContext context, UUID id, boolean skipPermissionCheck )
-            throws Exception {
+        throws Exception {
 
         EntityRef entity = loadFromId( context, id );
 
@@ -133,7 +129,7 @@ public class AbstractCollectionService extends AbstractService {
         // in the path, don't return it
         if ( !em.isCollectionMember( context.getOwner(), context.getCollectionName(), entity ) ) {
             logger.info( "Someone tried to GET entity {} they don't own. Entity id {} with owner {}",
-                    getEntityType(), id, context.getOwner()
+                getEntityType(), id, context.getOwner()
             );
             throw new ServiceResourceNotFoundException( context );
         }
@@ -262,7 +258,7 @@ public class AbstractCollectionService extends AbstractService {
 
         if ( item != null ) {
             validateEntityType( item, id );
-            updateEntity( context, item, context.getPayload() );
+            updateEntity( context, item, context.getPayload(), context.metadataRequestQueryParams );
             item = importEntity( context, item );
         }
         else {
@@ -281,7 +277,7 @@ public class AbstractCollectionService extends AbstractService {
             return getItemByName( context, name );
         }
 
-       // EntityRef ref = em.getAlias( getEntityType(), name );
+        // EntityRef ref = em.getAlias( getEntityType(), name );
         Entity entity = em.getUniqueEntityFromAlias( getEntityType(), name );
         if ( entity == null ) {
             // null entity ref means we tried to put a non-existing entity
@@ -289,10 +285,10 @@ public class AbstractCollectionService extends AbstractService {
             checkPermissionsForCollection(context);
             Map<String, Object> properties = context.getPayload().getProperties();
             if ( !properties.containsKey( "name" ) || !( ( String ) properties.get( "name" ) ).trim().equalsIgnoreCase(
-                    name ) ) {
+                name ) ) {
                 properties.put( "name", name );
             }
-            entity = em.create( getEntityType(), properties );
+            entity = em.create( getEntityType(), properties);
         }
         else {
             entity = importEntity( context, entity );
@@ -386,7 +382,7 @@ public class AbstractCollectionService extends AbstractService {
 
             if (logger.isTraceEnabled()) {
                 logger.trace("Attempting to batch create {} entities in collection {}",
-                        batch.size(), context.getCollectionName());
+                    batch.size(), context.getCollectionName());
             }
 
             int i = 1;
@@ -399,8 +395,9 @@ public class AbstractCollectionService extends AbstractService {
                 Entity item = null;
 
                 try {
+                    p.putAll(context.metadataRequestQueryParams);
                     item = em.createItemInCollection( context.getOwner(), context.getCollectionName(), getEntityType(),
-                            p );
+                        p);
                 }
                 catch ( Exception e ) {
                     // TODO should we not log this as error?
@@ -424,10 +421,16 @@ public class AbstractCollectionService extends AbstractService {
             return new ServiceResults( this, context, Type.COLLECTION, Results.fromEntities( entities ), null, null );
         }
 
+        //Adding ttl to the context properties.
+        if(context.metadataRequestQueryParams != null) {
+            context.getProperties().putAll(context.metadataRequestQueryParams);
+        }
+
         Entity item = em.createItemInCollection( context.getOwner(), context.getCollectionName(), getEntityType(),
-                context.getProperties() );
+            context.getProperties());
 
         item = importEntity( context, item );
+        item.getDynamicProperties().remove("entity_expiration"); //todo : is this the right way to delete?
 
         return new ServiceResults( this, context, Type.COLLECTION, Results.fromEntity( item ), null, null );
     }
@@ -588,9 +591,9 @@ public class AbstractCollectionService extends AbstractService {
             Set<String> indexes = cast( em.getCollectionIndexes( context.getOwner(), context.getCollectionName() ) );
 
             return new ServiceResults( this,
-                    context.getRequest().withPath( context.getRequest().getPath() + "/indexes" ),
-                    context.getPreviousResults(), context.getChildPath(), Type.GENERIC, Results.fromData( indexes ),
-                    null, null );
+                context.getRequest().withPath( context.getRequest().getPath() + "/indexes" ),
+                context.getPreviousResults(), context.getChildPath(), Type.GENERIC, Results.fromData( indexes ),
+                null, null );
         }
         return null;
     }
@@ -599,8 +602,8 @@ public class AbstractCollectionService extends AbstractService {
     private void validateEntityType( EntityRef item, UUID id ) throws UnexpectedEntityTypeException {
         if ( !getEntityType().equalsIgnoreCase( item.getType() ) ) {
             throw new UnexpectedEntityTypeException(
-                    "Entity " + id + " is not the expected type, expected " + getEntityType() + ", found " + item
-                            .getType() );
+                "Entity " + id + " is not the expected type, expected " + getEntityType() + ", found " + item
+                    .getType() );
         }
     }
 }

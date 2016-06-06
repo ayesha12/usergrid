@@ -19,17 +19,9 @@
 package org.apache.usergrid.persistence.graph.serialization.impl.shard;
 
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-
+import com.google.common.base.Optional;
+import com.netflix.astyanax.MutationBatch;
+import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 import org.apache.usergrid.persistence.core.consistency.TimeService;
 import org.apache.usergrid.persistence.core.scope.ApplicationScope;
 import org.apache.usergrid.persistence.core.util.IdGenerator;
@@ -41,16 +33,14 @@ import org.apache.usergrid.persistence.graph.impl.SimpleMarkedEdge;
 import org.apache.usergrid.persistence.graph.serialization.impl.shard.impl.NodeShardAllocationImpl;
 import org.apache.usergrid.persistence.model.entity.Id;
 import org.apache.usergrid.persistence.model.util.UUIDGenerator;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
-import com.google.common.base.Optional;
-import com.netflix.astyanax.MutationBatch;
-import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
+import java.util.*;
 
 import static junit.framework.TestCase.assertTrue;
-import static org.apache.usergrid.persistence.core.util.IdGenerator.createId;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.mock;
@@ -105,8 +95,8 @@ public class NodeShardAllocationTest {
 
 
         NodeShardAllocation approximation =
-                new NodeShardAllocationImpl( edgeShardSerialization, edgeColumnFamilies, shardedEdgeSerialization,
-                         timeService, graphFig, shardGroupCompaction, nodeShardCache );
+            new NodeShardAllocationImpl( edgeShardSerialization, edgeColumnFamilies, shardedEdgeSerialization,
+                timeService, graphFig, shardGroupCompaction, nodeShardCache );
 
 
         final long timeservicetime = System.currentTimeMillis();
@@ -138,8 +128,8 @@ public class NodeShardAllocationTest {
 
 
         NodeShardAllocation approximation =
-                new NodeShardAllocationImpl( edgeShardSerialization, edgeColumnFamilies, shardedEdgeSerialization,
-                      timeService, graphFig, shardGroupCompaction, nodeShardCache);
+            new NodeShardAllocationImpl( edgeShardSerialization, edgeColumnFamilies, shardedEdgeSerialization,
+                timeService, graphFig, shardGroupCompaction, nodeShardCache);
 
         final Id nodeId = IdGenerator.createId( "test" );
         final String type = "type";
@@ -181,8 +171,8 @@ public class NodeShardAllocationTest {
 
 
         NodeShardAllocation approximation =
-                new NodeShardAllocationImpl( edgeShardSerialization, edgeColumnFamilies, shardedEdgeSerialization,
-                        timeService, graphFig, shardGroupCompaction, nodeShardCache );
+            new NodeShardAllocationImpl( edgeShardSerialization, edgeColumnFamilies, shardedEdgeSerialization,
+                timeService, graphFig, shardGroupCompaction, nodeShardCache );
 
         final Id nodeId = IdGenerator.createId( "test" );
         final String type = "type";
@@ -228,8 +218,8 @@ public class NodeShardAllocationTest {
 
 
         NodeShardAllocation approximation =
-                new NodeShardAllocationImpl( edgeShardSerialization, edgeColumnFamilies, shardedEdgeSerialization,
-                        timeService, graphFig, shardGroupCompaction, nodeShardCache );
+            new NodeShardAllocationImpl( edgeShardSerialization, edgeColumnFamilies, shardedEdgeSerialization,
+                timeService, graphFig, shardGroupCompaction, nodeShardCache );
 
         final Id nodeId = IdGenerator.createId( "test" );
         final String type = "type";
@@ -263,8 +253,8 @@ public class NodeShardAllocationTest {
          * Just use 2 edges.  It means that we won't generate a boatload of data and kill our test. We just want
          * to check that the one we want to return is correct
          */
-        SimpleMarkedEdge skipped = new SimpleMarkedEdge( nodeId, type, IdGenerator.createId( subType ), 10000, false );
-        SimpleMarkedEdge keep = new SimpleMarkedEdge( nodeId, type, IdGenerator.createId( subType ), 20000, false );
+        SimpleMarkedEdge skipped = new SimpleMarkedEdge( nodeId, type, IdGenerator.createId( subType ), 10000, false, 10000-1 );
+        SimpleMarkedEdge keep = new SimpleMarkedEdge( nodeId, type, IdGenerator.createId( subType ), 20000, false, 20000-1 );
 
         //allocate some extra to ensure we seek the right value
         List<MarkedEdge> edges = new ArrayList( numToIterate + 100 );
@@ -289,8 +279,8 @@ public class NodeShardAllocationTest {
 
         //mock up returning the value
         when( shardedEdgeSerialization
-                .getEdgesFromSourceByTargetType( same( edgeColumnFamilies ), same( scope ), any( SearchByIdType.class ),
-                        any( Collection.class ) ) ).thenReturn( edgeIterator );
+            .getEdgesFromSourceByTargetType( same( edgeColumnFamilies ), same( scope ), any( SearchByIdType.class ),
+                any( Collection.class ) ) ).thenReturn( edgeIterator );
 
 
         /**
@@ -301,7 +291,7 @@ public class NodeShardAllocationTest {
 
         //mock up our mutation
         when( edgeShardSerialization.writeShardMeta( same( scope ), shardValue.capture(), same( targetEdgeMeta ) ) )
-                .thenReturn( mock( MutationBatch.class ) );
+            .thenReturn( mock( MutationBatch.class ) );
 
 
         final boolean result = approximation.auditShard( scope, shardEntryGroup, targetEdgeMeta );
@@ -341,8 +331,8 @@ public class NodeShardAllocationTest {
 
 
         NodeShardAllocation approximation =
-                new NodeShardAllocationImpl( edgeShardSerialization, edgeColumnFamilies, shardedEdgeSerialization,
-                         timeService, graphFig, shardGroupCompaction, nodeShardCache );
+            new NodeShardAllocationImpl( edgeShardSerialization, edgeColumnFamilies, shardedEdgeSerialization,
+                timeService, graphFig, shardGroupCompaction, nodeShardCache );
 
         final Id nodeId = IdGenerator.createId( "test" );
         final String type = "type";
@@ -363,9 +353,9 @@ public class NodeShardAllocationTest {
         final long shardCount = graphFig.getShardSize();
 
 
-        final SimpleMarkedEdge skippedEdge = new SimpleMarkedEdge( nodeId, type, IdGenerator.createId( "subType" ), 10000l, false );
+        final SimpleMarkedEdge skippedEdge = new SimpleMarkedEdge( nodeId, type, IdGenerator.createId( "subType" ), 10000l, false,10000l-1l );
         final SimpleMarkedEdge returnedEdge =
-                new SimpleMarkedEdge( nodeId, type, IdGenerator.createId( "subType" ), 10005l, false );
+            new SimpleMarkedEdge( nodeId, type, IdGenerator.createId( "subType" ), 10005l, false, 10005l-1L  );
 
         List<MarkedEdge> iteratedEdges = new ArrayList<>( ( int ) shardCount );
 
@@ -380,15 +370,15 @@ public class NodeShardAllocationTest {
 
         //mock up our mutation
         when( edgeShardSerialization.writeShardMeta( same( scope ), shardValue.capture(), same( targetEdgeMeta ) ) )
-                .thenReturn( mock( MutationBatch.class ) );
+            .thenReturn( mock( MutationBatch.class ) );
 
 
         final Iterator<MarkedEdge> edgeIterator = iteratedEdges.iterator();
 
         //mock up returning the value
         when( shardedEdgeSerialization
-                .getEdgesFromSourceByTargetType( same( edgeColumnFamilies ), same( scope ), any( SearchByIdType.class ),
-                        any( Collection.class ) ) ).thenReturn( edgeIterator );
+            .getEdgesFromSourceByTargetType( same( edgeColumnFamilies ), same( scope ), any( SearchByIdType.class ),
+                any( Collection.class ) ) ).thenReturn( edgeIterator );
 
 
         final boolean result = approximation.auditShard( scope, shardEntryGroup, targetEdgeMeta );
@@ -430,8 +420,8 @@ public class NodeShardAllocationTest {
 
 
         NodeShardAllocation approximation =
-                new NodeShardAllocationImpl( edgeShardSerialization, edgeColumnFamilies, shardedEdgeSerialization,
-                       timeService, graphFig, shardGroupCompaction, nodeShardCache );
+            new NodeShardAllocationImpl( edgeShardSerialization, edgeColumnFamilies, shardedEdgeSerialization,
+                timeService, graphFig, shardGroupCompaction, nodeShardCache );
 
         final Id nodeId = IdGenerator.createId( "test" );
         final String type = "type";
@@ -457,18 +447,18 @@ public class NodeShardAllocationTest {
 
         //mock up our mutation
         when( edgeShardSerialization.writeShardMeta( same( scope ), shardValue.capture(), same( targetEdgeMeta ) ) )
-                .thenReturn( mock( MutationBatch.class ) );
+            .thenReturn( mock( MutationBatch.class ) );
 
 
         final SimpleMarkedEdge returnedEdge =
-                new SimpleMarkedEdge( nodeId, type, IdGenerator.createId( "subType" ), 10005l, false );
+            new SimpleMarkedEdge( nodeId, type, IdGenerator.createId( "subType" ), 10005l, false, 10005l-1l);
 
         final Iterator<MarkedEdge> edgeIterator = Collections.singleton( ( MarkedEdge ) returnedEdge ).iterator();
 
         //mock up returning the value
         when( shardedEdgeSerialization
-                .getEdgesFromSourceByTargetType( same( edgeColumnFamilies ), same( scope ), any( SearchByIdType.class ),
-                        any( Collection.class ) ) ).thenReturn( edgeIterator );
+            .getEdgesFromSourceByTargetType( same( edgeColumnFamilies ), same( scope ), any( SearchByIdType.class ),
+                any( Collection.class ) ) ).thenReturn( edgeIterator );
 
 
         final boolean result = approximation.auditShard( scope, shardEntryGroup, targetEdgeMeta );
@@ -497,8 +487,8 @@ public class NodeShardAllocationTest {
 
 
         NodeShardAllocation approximation =
-                new NodeShardAllocationImpl( edgeShardSerialization, edgeColumnFamilies, shardedEdgeSerialization,
-                         timeService, graphFig, shardGroupCompaction, nodeShardCache );
+            new NodeShardAllocationImpl( edgeShardSerialization, edgeColumnFamilies, shardedEdgeSerialization,
+                timeService, graphFig, shardGroupCompaction, nodeShardCache );
 
         final Id nodeId = IdGenerator.createId( "test" );
         final String type = "type";
@@ -550,8 +540,8 @@ public class NodeShardAllocationTest {
          * Mock up returning a min shard
          */
         when( edgeShardSerialization
-                .getShardMetaData( same( scope ), any( Optional.class ), same( directedEdgeMeta ) ) ).thenReturn(
-                Arrays.asList( futureShard3, futureShard2, futureShard1, compactedShard, minShard ).iterator() );
+            .getShardMetaData( same( scope ), any( Optional.class ), same( directedEdgeMeta ) ) ).thenReturn(
+            Arrays.asList( futureShard3, futureShard2, futureShard1, compactedShard, minShard ).iterator() );
 
 
         ArgumentCaptor<Shard> newLongValue = ArgumentCaptor.forClass( Shard.class );
@@ -559,12 +549,12 @@ public class NodeShardAllocationTest {
 
         //mock up our mutation
         when( edgeShardSerialization
-                .removeShardMeta( same( scope ), newLongValue.capture(), same( directedEdgeMeta ) ) )
-                .thenReturn( mock( MutationBatch.class ) );
+            .removeShardMeta( same( scope ), newLongValue.capture(), same( directedEdgeMeta ) ) )
+            .thenReturn( mock( MutationBatch.class ) );
 
 
         final Iterator<ShardEntryGroup> result =
-                approximation.getShards( scope, Optional.<Shard>absent(), directedEdgeMeta );
+            approximation.getShards( scope, Optional.<Shard>absent(), directedEdgeMeta );
 
 
         assertTrue( "Shards present", result.hasNext() );
@@ -637,8 +627,8 @@ public class NodeShardAllocationTest {
 
 
         NodeShardAllocation approximation =
-                new NodeShardAllocationImpl( edgeShardSerialization, edgeColumnFamilies, shardedEdgeSerialization,
-                       timeService, graphFig, shardGroupCompaction, nodeShardCache );
+            new NodeShardAllocationImpl( edgeShardSerialization, edgeColumnFamilies, shardedEdgeSerialization,
+                timeService, graphFig, shardGroupCompaction, nodeShardCache );
 
         final Id nodeId = IdGenerator.createId( "test" );
         final String type = "type";
@@ -651,19 +641,19 @@ public class NodeShardAllocationTest {
          * Mock up returning an empty iterator, our audit shouldn't create a new shard
          */
         when( edgeShardSerialization
-                .getShardMetaData( same( scope ), any( Optional.class ), same( directedEdgeMeta ) ) )
-                .thenReturn( Collections.<Shard>emptyList().iterator() );
+            .getShardMetaData( same( scope ), any( Optional.class ), same( directedEdgeMeta ) ) )
+            .thenReturn( Collections.<Shard>emptyList().iterator() );
 
 
         ArgumentCaptor<Shard> shardArgumentCaptor = ArgumentCaptor.forClass( Shard.class );
 
         when( edgeShardSerialization
-                .writeShardMeta( same( scope ), shardArgumentCaptor.capture(), same( directedEdgeMeta ) ) )
-                .thenReturn( batch );
+            .writeShardMeta( same( scope ), shardArgumentCaptor.capture(), same( directedEdgeMeta ) ) )
+            .thenReturn( batch );
 
 
         final Iterator<ShardEntryGroup> result =
-                approximation.getShards( scope, Optional.<Shard>absent(), directedEdgeMeta );
+            approximation.getShards( scope, Optional.<Shard>absent(), directedEdgeMeta );
 
 
         ShardEntryGroup shardEntryGroup = result.next();
@@ -731,8 +721,8 @@ public class NodeShardAllocationTest {
 
 
         NodeShardAllocation approximation =
-                new NodeShardAllocationImpl( edgeShardSerialization, edgeColumnFamilies, shardedEdgeSerialization,
-                      timeService, graphFig, shardGroupCompaction, nodeShardCache );
+            new NodeShardAllocationImpl( edgeShardSerialization, edgeColumnFamilies, shardedEdgeSerialization,
+                timeService, graphFig, shardGroupCompaction, nodeShardCache );
 
 
         /**

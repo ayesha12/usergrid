@@ -16,49 +16,32 @@
 package org.apache.usergrid.corepersistence;
 
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
-import org.apache.usergrid.corepersistence.index.IndexLocationStrategyFactory;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.fasterxml.uuid.UUIDComparator;
+import com.google.inject.Injector;
+import net.jcip.annotations.NotThreadSafe;
 import org.apache.commons.lang3.RandomStringUtils;
-
 import org.apache.usergrid.AbstractCoreIT;
 import org.apache.usergrid.cassandra.SpringResource;
+import org.apache.usergrid.corepersistence.index.IndexLocationStrategyFactory;
 import org.apache.usergrid.corepersistence.util.CpNamingUtils;
-import org.apache.usergrid.persistence.Entity;
-import org.apache.usergrid.persistence.EntityManager;
-import org.apache.usergrid.persistence.EntityRef;
-import org.apache.usergrid.persistence.Results;
+import org.apache.usergrid.persistence.*;
 import org.apache.usergrid.persistence.collection.EntityCollectionManager;
 import org.apache.usergrid.persistence.collection.EntityCollectionManagerFactory;
 import org.apache.usergrid.persistence.core.scope.ApplicationScope;
 import org.apache.usergrid.persistence.core.scope.ApplicationScopeImpl;
-import org.apache.usergrid.persistence.index.EntityIndex;
-import org.apache.usergrid.persistence.index.CandidateResults;
-import org.apache.usergrid.persistence.index.EntityIndexFactory;
-import org.apache.usergrid.persistence.index.SearchEdge;
-import org.apache.usergrid.persistence.index.SearchTypes;
-import org.apache.usergrid.persistence.Query;
+import org.apache.usergrid.persistence.index.*;
 import org.apache.usergrid.persistence.model.entity.Id;
 import org.apache.usergrid.persistence.model.entity.SimpleId;
+import org.junit.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.fasterxml.uuid.UUIDComparator;
-import com.google.inject.Injector;
-
-import net.jcip.annotations.NotThreadSafe;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static org.apache.usergrid.persistence.Schema.TYPE_APPLICATION;
 import static org.apache.usergrid.persistence.core.util.IdGenerator.createId;
@@ -115,7 +98,7 @@ public class StaleIndexCleanupTest extends AbstractCoreIT {
 
         em.updateProperties(thing, new HashMap<String, Object>() {{
             put("stuff", "widget");
-        }});
+        }},null);
         app.refreshIndex();
         Thread.sleep(1000);
 
@@ -224,11 +207,11 @@ public class StaleIndexCleanupTest extends AbstractCoreIT {
             //trigger the repair
             results = queryCollectionEm("things", "select *");
             results.getEntities().stream().forEach(entity -> {
-               try {
-                   em.delete(entity);
-               }catch (Exception e){
-                   //
-               }
+                try {
+                    em.delete(entity);
+                }catch (Exception e){
+                    //
+                }
             });
             //refresh the app index
             app.refreshIndex();
@@ -305,7 +288,7 @@ public class StaleIndexCleanupTest extends AbstractCoreIT {
 
 
     /**
-    /**
+     /**
      * Go around EntityManager and get directly from Core Persistence.
      */
     private org.apache.usergrid.persistence.model.entity.Entity getCpEntity( EntityRef eref ) {
@@ -319,7 +302,7 @@ public class StaleIndexCleanupTest extends AbstractCoreIT {
         EntityCollectionManager ecm = ecmf.createCollectionManager( new ApplicationScopeImpl( new SimpleId(em.getApplicationId(),  "application" ) ) );
 
         return ecm.load( new SimpleId( eref.getUuid(), eref.getType() ) )
-                .toBlocking().lastOrDefault( null );
+            .toBlocking().lastOrDefault( null );
     }
 
 
@@ -328,7 +311,7 @@ public class StaleIndexCleanupTest extends AbstractCoreIT {
      * Results may include stale index entries.
      */
     private CandidateResults queryCollectionCp(
-            final String collName, final String type, final String query ) {
+        final String collName, final String type, final String query ) {
 
         EntityManager em = app.getEntityManager();
 
@@ -348,16 +331,16 @@ public class StaleIndexCleanupTest extends AbstractCoreIT {
     }
 
     /**
-        * Go around EntityManager and execute query directly against Core Persistence.
-        * Results may include stale index entries.
-        */
-       private Results queryCollectionEm( final String collName,  final String query ) throws Exception {
+     * Go around EntityManager and execute query directly against Core Persistence.
+     * Results may include stale index entries.
+     */
+    private Results queryCollectionEm( final String collName,  final String query ) throws Exception {
 
-           EntityManager em = app.getEntityManager();
+        EntityManager em = app.getEntityManager();
 
 
-           final Results results = em.searchCollection( em.getApplicationRef(), collName, Query.fromQL( query ).withLimit( 10000 ) );
+        final Results results = em.searchCollection( em.getApplicationRef(), collName, Query.fromQL( query ).withLimit( 10000 ) );
 
-           return results;
-       }
+        return results;
+    }
 }

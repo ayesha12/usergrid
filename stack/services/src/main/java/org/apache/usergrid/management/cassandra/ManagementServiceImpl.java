@@ -173,37 +173,6 @@ public class ManagementServiceImpl implements ManagementService {
     protected LocalShiroCache localShiroCache;
 
 
-    private LoadingCache<UUID, OrganizationConfig> orgConfigByAppCache = CacheBuilder.newBuilder().maximumSize( 1000 )
-        .expireAfterWrite( Long.valueOf( System.getProperty(ORG_CONFIG_CACHE_PROP, "30000") ) , TimeUnit.MILLISECONDS)
-        .build( new CacheLoader<UUID, OrganizationConfig>() {
-            public OrganizationConfig load( UUID applicationInfoId ) {
-
-                try {
-
-                    if (applicationInfoId != null && applicationInfoId != CpNamingUtils.MANAGEMENT_APPLICATION_ID) {
-
-                        final EntityManager em = emf.getEntityManager(smf.getManagementAppId());
-
-                        Results r = em.getSourceEntities(
-                            new SimpleEntityRef(CpNamingUtils.APPLICATION_INFO, applicationInfoId),
-                            ORG_APP_RELATIONSHIP, Group.ENTITY_TYPE, Level.ALL_PROPERTIES);
-
-                        Group org = (Group) r.getEntity();
-                        if (org != null) {
-                            Map<Object, Object> entityProperties = em.getDictionaryAsMap(org, ORGANIZATION_CONFIG_DICTIONARY);
-                            return new OrganizationConfig(orgConfigProperties, org.getUuid(), org.getPath(), entityProperties, false);
-                        }
-                    }
-
-                    return new OrganizationConfig(orgConfigProperties);
-
-                } catch (Exception e) {
-                    return new OrganizationConfig(orgConfigProperties);
-                }
-            }}
-        );
-
-
 
     /** Must be constructed with a CassandraClientPool. */
     public ManagementServiceImpl(Injector injector) {
@@ -273,7 +242,7 @@ public class ManagementServiceImpl implements ManagementService {
         }
 
         return (adminSystemEmail != null && !adminSystemEmail.isEmpty()) ?
-                adminSystemEmail : getDefaultAdminSystemEmail();
+            adminSystemEmail : getDefaultAdminSystemEmail();
     }
 
     private String getAdminSystemEmailForOrganization(UUID organizationId) {
@@ -297,7 +266,7 @@ public class ManagementServiceImpl implements ManagementService {
         return properties.properties;
     }
 
-   @Autowired
+    @Autowired
     public void setTokenService( TokenService tokens ) {
         this.tokens = tokens;
     }
@@ -329,7 +298,7 @@ public class ManagementServiceImpl implements ManagementService {
             String test_admin_password = properties.getProperty( PROPERTIES_TEST_ACCOUNT_ADMIN_USER_PASSWORD );
 
             if ( anyNull( test_app_name, test_organization_name, test_admin_username, test_admin_name, test_admin_email,
-                    test_admin_password ) ) {
+                test_admin_password ) ) {
                 logger.warn( "Missing values for test app, check properties.  Skipping test app setup..." );
                 return;
             }
@@ -338,8 +307,8 @@ public class ManagementServiceImpl implements ManagementService {
 
             if ( organization == null ) {
                 OrganizationOwnerInfo created =
-                        createOwnerAndOrganization( test_organization_name, test_admin_username, test_admin_name,
-                                test_admin_email, test_admin_password, true, false );
+                    createOwnerAndOrganization( test_organization_name, test_admin_username, test_admin_name,
+                        test_admin_email, test_admin_password, true, false );
                 organization = created.getOrganization();
             }
 
@@ -384,7 +353,7 @@ public class ManagementServiceImpl implements ManagementService {
             UserInfo user = this.getAdminUserByUsername( superuser_username );
             if ( user == null ) {
                 createAdminUser( null, superuser_username, "Super User", superuser_email, superuser_password,
-                        superuser_enabled, !superuser_enabled );
+                    superuser_enabled, !superuser_enabled );
             }
             else {
                 this.setAdminUserPassword( user.getUuid(), superuser_password );
@@ -471,7 +440,7 @@ public class ManagementServiceImpl implements ManagementService {
 
     @Override
     public ServiceResults getOrganizationActivityForAdminUser( OrganizationInfo organization, UserInfo user )
-            throws Exception {
+        throws Exception {
         ServiceManager sm = smf.getServiceManager( smf.getManagementAppId() );
         return sm.newRequest( ServiceAction.GET, parameters( Schema.COLLECTION_GROUPS, organization.getUuid(),
             "users", user.getUuid(), "feed" ) ).execute();
@@ -497,7 +466,7 @@ public class ManagementServiceImpl implements ManagementService {
         // if we are active and enabled, skip the send email step
 
         return createOwnerAndOrganization( organizationName, username, name, email, password, activated, disabled, null,
-                null );
+            null );
     }
 
 
@@ -509,7 +478,7 @@ public class ManagementServiceImpl implements ManagementService {
             logger.trace("createOwnerAndOrganization(2)");
         }
         return createOwnerAndOrganization( organizationName, username, name, email, password,
-                activated, disabled, null, null );
+            activated, disabled, null, null );
     }
 
 
@@ -518,7 +487,7 @@ public class ManagementServiceImpl implements ManagementService {
                                                              String email, String password, boolean activated,
                                                              boolean disabled, Map<String, Object> userProperties,
                                                              Map<String, Object> organizationProperties )
-            throws Exception {
+        throws Exception {
 
         logger.info("createOwnerAndOrganization: {} {}", organizationName, email);
 
@@ -615,20 +584,20 @@ public class ManagementServiceImpl implements ManagementService {
 //        em.addToCollection( new SimpleEntityRef( User.ENTITY_TYPE, user.getUuid() ), Schema.COLLECTION_GROUPS, organizationEntity );
 
         writeUserToken( smf.getManagementAppId(), organizationEntity, encryptionService
-                .plainTextCredentials( generateOAuthSecretKey( AuthPrincipalType.ORGANIZATION ), user.getUuid(),
-                        smf.getManagementAppId() ) );
+            .plainTextCredentials( generateOAuthSecretKey( AuthPrincipalType.ORGANIZATION ), user.getUuid(),
+                smf.getManagementAppId() ) );
 
         OrganizationInfo organization =
-                new OrganizationInfo( organizationEntity.getUuid(), organizationName, properties );
+            new OrganizationInfo( organizationEntity.getUuid(), organizationName, properties );
         updateOrganization( organization );
 
         if ( orgUuid == null ) { // no import ID specified, so do the activation email flow stuff
 
             logger.info( "createOrganizationInternal: {}", organizationName );
             postOrganizationActivity( organization.getUuid(), user, "create", organizationEntity, "Organization",
-                    organization.getName(),
-                    "<a href=\"mailto:" + user.getEmail() + "\">" + user.getName() + " (" + user.getEmail()
-                            + ")</a> created a new organization account named " + organizationName, null );
+                organization.getName(),
+                "<a href=\"mailto:" + user.getEmail() + "\">" + user.getName() + " (" + user.getEmail()
+                    + ")</a> created a new organization account named " + organizationName, null );
 
             startOrganizationActivationFlow( organization );
         }
@@ -641,13 +610,13 @@ public class ManagementServiceImpl implements ManagementService {
 
     @Override
     public OrganizationInfo createOrganization(String organizationName, UserInfo user, boolean activated)
-            throws Exception {
+        throws Exception {
         return createOrganization( null, organizationName, user, activated );
     }
 
     @Override
     public OrganizationInfo createOrganization(UUID orgUuid, String organizationName, UserInfo user, boolean activated)
-            throws Exception {
+        throws Exception {
 
         if (  organizationName == null ) {
             if (logger.isTraceEnabled()) {
@@ -692,7 +661,7 @@ public class ManagementServiceImpl implements ManagementService {
                 }
                 else {
                     em.addToDictionary( organizationEntity, ORGANIZATION_PROPERTIES_DICTIONARY, entry.getKey(),
-                            entry.getValue() );
+                        entry.getValue() );
                 }
             }
         }
@@ -756,7 +725,7 @@ public class ManagementServiceImpl implements ManagementService {
      */
     private String buildAppName( String applicationName, OrganizationInfo organization ) {
         return org.apache.commons.lang.StringUtils.lowerCase(
-                applicationName.contains( "/" ) ? applicationName : organization.getName() + "/" + applicationName);
+            applicationName.contains( "/" ) ? applicationName : organization.getName() + "/" + applicationName);
     }
 
 
@@ -875,7 +844,7 @@ public class ManagementServiceImpl implements ManagementService {
         properties.put( PROPERTY_OBJECT_NAME, objectName );
 
         sm.newRequest( ServiceAction.POST, parameters( "users", user.getUuid(), "activities" ), payload( properties ) )
-          .execute().getEntity();
+            .execute().getEntity();
     }
 
 
@@ -888,11 +857,11 @@ public class ManagementServiceImpl implements ManagementService {
 
 
     private UserInfo doCreateAdmin( UUID organizationId, User user, CredentialsInfo userPassword, CredentialsInfo mongoPassword )
-            throws Exception {
+        throws Exception {
 
         writeUserToken( smf.getManagementAppId(), user, encryptionService
-                .plainTextCredentials( generateOAuthSecretKey( AuthPrincipalType.ADMIN_USER ), user.getUuid(),
-                        smf.getManagementAppId() ) );
+            .plainTextCredentials( generateOAuthSecretKey( AuthPrincipalType.ADMIN_USER ), user.getUuid(),
+                smf.getManagementAppId() ) );
 
         writeUserPassword( smf.getManagementAppId(), user, userPassword );
 
@@ -905,7 +874,7 @@ public class ManagementServiceImpl implements ManagementService {
 
         // special case for sysadmin and test account only
         if (    !user.getEmail().equals( properties.getProperty( PROPERTIES_SYSADMIN_LOGIN_EMAIL ) )
-             && !user.getEmail().equals( properties .getProperty( PROPERTIES_TEST_ACCOUNT_ADMIN_USER_EMAIL ) ) ) {
+            && !user.getEmail().equals( properties .getProperty( PROPERTIES_TEST_ACCOUNT_ADMIN_USER_EMAIL ) ) ) {
             this.startAdminUserActivationFlow( organizationId, userInfo );
         }
 
@@ -917,10 +886,10 @@ public class ManagementServiceImpl implements ManagementService {
     public UserInfo createAdminFromPrexistingPassword( UUID organizationId, User user, CredentialsInfo ci ) throws Exception {
 
         return doCreateAdmin( organizationId, user, ci,
-                // we can't actually set the mongo password. We never have the plain text in
-                // this path
-                encryptionService.plainTextCredentials( mongoPassword( user.getUsername(), "" ), user.getUuid(),
-                        smf.getManagementAppId() ) );
+            // we can't actually set the mongo password. We never have the plain text in
+            // this path
+            encryptionService.plainTextCredentials( mongoPassword( user.getUsername(), "" ), user.getUuid(),
+                smf.getManagementAppId() ) );
     }
 
 
@@ -974,7 +943,7 @@ public class ManagementServiceImpl implements ManagementService {
 
     private UserInfo createAdminUserInternal( UUID organizationId, String username, String name, String email, String password,
                                               boolean activated, boolean disabled, Map<String, Object> userProperties )
-            throws Exception {
+        throws Exception {
         logger.info( "createAdminUserInternal: {}", username );
 
         if ( isBlank( password ) ) {
@@ -1011,12 +980,12 @@ public class ManagementServiceImpl implements ManagementService {
             return null;
         }
         return new UserInfo( applicationId, entity.getUuid(), ( String ) entity.getProperty( "username" ),
-                entity.getName(), ( String ) entity.getProperty( "email" ),
-                ConversionUtils.getBoolean( entity.getProperty( "confirmed" ) ),
-                ConversionUtils.getBoolean( entity.getProperty( "activated" ) ),
-                ConversionUtils.getBoolean( entity.getProperty( "disabled" ) ),
-                entity.getDynamicProperties(),
-                ConversionUtils.getBoolean( entity.getProperty( "admin" )));
+            entity.getName(), ( String ) entity.getProperty( "email" ),
+            ConversionUtils.getBoolean( entity.getProperty( "confirmed" ) ),
+            ConversionUtils.getBoolean( entity.getProperty( "activated" ) ),
+            ConversionUtils.getBoolean( entity.getProperty( "disabled" ) ),
+            entity.getDynamicProperties(),
+            ConversionUtils.getBoolean( entity.getProperty( "admin" )));
     }
 
 
@@ -1040,8 +1009,8 @@ public class ManagementServiceImpl implements ManagementService {
 
         EntityManager em = emf.getEntityManager(smf.getManagementAppId());
         Results results =
-                em.getCollection(new SimpleEntityRef(Group.ENTITY_TYPE, organizationId), "users", null, 10000,
-                    Level.ALL_PROPERTIES, false);
+            em.getCollection(new SimpleEntityRef(Group.ENTITY_TYPE, organizationId), "users", null, 10000,
+                Level.ALL_PROPERTIES, false);
         for ( Entity entity : results.getEntities() ) {
             users.add( getUserInfo( smf.getManagementAppId(), entity ) );
         }
@@ -1059,7 +1028,7 @@ public class ManagementServiceImpl implements ManagementService {
          * node is trying to set the property do a different value
          */
         Lock usernameLock =
-                getUniqueUpdateLock( lockManager, smf.getManagementAppId(), username, "users", "username" );
+            getUniqueUpdateLock( lockManager, smf.getManagementAppId(), username, "users", "username" );
 
         Lock emailLock = getUniqueUpdateLock( lockManager, smf.getManagementAppId(), email, "users", "email" );
 
@@ -1087,7 +1056,7 @@ public class ManagementServiceImpl implements ManagementService {
                 Map<String, Object> userProperties = user.getProperties();
                 userProperties.putAll( json );
                 Entity entity = em.get( entityRef, User.class);
-                em.updateProperties( entity, userProperties );
+                em.updateProperties( entity, userProperties, null);
             }
 
             user = getAdminUserByUuid( user.getUuid() );
@@ -1180,7 +1149,7 @@ public class ManagementServiceImpl implements ManagementService {
         if ( UUIDUtils.isUUID( identifierString ) ) {
             try {
                 Entity entity = getUserEntityByIdentifier( applicationId,
-                        Identifier.fromUUID( UUID.fromString( identifierString ) ) );
+                    Identifier.fromUUID( UUID.fromString( identifierString ) ) );
                 if ( entity != null ) {
                     user = ( User ) entity.toTypedEntity();
                     if (logger.isTraceEnabled()) {
@@ -1254,7 +1223,7 @@ public class ManagementServiceImpl implements ManagementService {
         User user = em.get( userId, User.class );
 
         CredentialsInfo newCredentials =
-                encryptionService.defaultEncryptedCredentials( newPassword, user.getUuid(), smf.getManagementAppId() );
+            encryptionService.defaultEncryptedCredentials( newPassword, user.getUuid(), smf.getManagementAppId() );
 
         int passwordHistorySize = calculatePasswordHistorySizeForUser( user.getUuid() );
         Map<String, CredentialsInfo> credsMap = cast( em.getDictionaryAsMap( user, CREDENTIALS_HISTORY ) );
@@ -1295,8 +1264,8 @@ public class ManagementServiceImpl implements ManagementService {
 
         writeUserPassword( smf.getManagementAppId(), user, newCredentials );
         writeUserMongoPassword( smf.getManagementAppId(), user, encryptionService
-                .plainTextCredentials( mongoPassword( ( String ) user.getProperty( "username" ), newPassword ),
-                        user.getUuid(), smf.getManagementAppId() ) );
+            .plainTextCredentials( mongoPassword( ( String ) user.getProperty( "username" ), newPassword ),
+                user.getUuid(), smf.getManagementAppId() ) );
 
     }
 
@@ -1311,7 +1280,7 @@ public class ManagementServiceImpl implements ManagementService {
         EntityManager em = emf.getEntityManager( smf.getManagementAppId() );
 
         Results orgResults = em.getCollection( new SimpleEntityRef( User.ENTITY_TYPE, userId ),
-                Schema.COLLECTION_GROUPS, null, 10000, Level.REFS, false );
+            Schema.COLLECTION_GROUPS, null, 10000, Level.REFS, false );
 
         if(logger.isTraceEnabled()){
             logger.trace("    orgResults.size() = {}", orgResults.size());
@@ -1366,7 +1335,7 @@ public class ManagementServiceImpl implements ManagementService {
 
             boolean testUserEnabled = parseBoolean( properties.getProperty( PROPERTIES_SETUP_TEST_ACCOUNT ) );
             boolean userIsTestUser = testUserEnabled && properties.getProperty(PROPERTIES_SYSADMIN_LOGIN_EMAIL)
-                    .equals(userInfo.getEmail());
+                .equals(userInfo.getEmail());
 
             if ( !userIsSuperAdmin && !userIsTestUser ) {
 
@@ -1437,13 +1406,13 @@ public class ManagementServiceImpl implements ManagementService {
         }
 
         return tokens
-                .createToken( token_category, token_type, new AuthPrincipalInfo( principal_type, id, applicationId ),
-                        null, duration, workflowOrgId );
+            .createToken( token_category, token_type, new AuthPrincipalInfo( principal_type, id, applicationId ),
+                null, duration, workflowOrgId );
     }
 
 
     public void revokeTokensForPrincipal( AuthPrincipalType principalType, UUID applicationId, UUID id )
-            throws Exception {
+        throws Exception {
 
         if ( anyNull( applicationId, principalType, id ) ) {
             throw new IllegalArgumentException( "applicationId, principal_type and id are required" );
@@ -1463,7 +1432,7 @@ public class ManagementServiceImpl implements ManagementService {
         } else {
             AuthPrincipalInfo principal = tokenInfo.getPrincipal();
             if (principal == null ||
-                    (expected_principal_type != null && !expected_principal_type.equals(principal.getType()))) {
+                (expected_principal_type != null && !expected_principal_type.equals(principal.getType()))) {
                 success = false;
             }
         }
@@ -1486,7 +1455,7 @@ public class ManagementServiceImpl implements ManagementService {
         TokenInfo tokenInfo = tokens.getTokenInfo( token, updateAccessTime );
 
         return validateTokenAndPrincipalTypes(tokenInfo, expected_token_type, expected_principal_type) ?
-                tokenInfo : null;
+            tokenInfo : null;
     }
 
 
@@ -1504,7 +1473,7 @@ public class ManagementServiceImpl implements ManagementService {
                                             AuthPrincipalType expected_principal_type ) throws Exception {
 
         AuthPrincipalInfo principal =
-                getPrincipalFromAccessToken(token, expected_token_type, expected_principal_type);
+            getPrincipalFromAccessToken(token, expected_token_type, expected_principal_type);
         if ( principal == null ) {
             return null;
         }
@@ -1529,13 +1498,13 @@ public class ManagementServiceImpl implements ManagementService {
     }
 
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see
-   * org.apache.usergrid.management.ManagementService#revokeAccessTokensForAdminUser
-   * (java.util.UUID)
-   */
+    /*
+     * (non-Javadoc)
+     *
+     * @see
+     * org.apache.usergrid.management.ManagementService#revokeAccessTokensForAdminUser
+     * (java.util.UUID)
+     */
     @Override
     public void revokeAccessTokensForAdminUser( UUID userId ) throws Exception {
         revokeTokensForPrincipal(ADMIN_USER, smf.getManagementAppId(), userId);
@@ -1690,7 +1659,7 @@ public class ManagementServiceImpl implements ManagementService {
 
     @Override
     public void addAdminUserToOrganization( UserInfo user, OrganizationInfo organization, boolean email )
-            throws Exception {
+        throws Exception {
 
         if ( ( user == null ) || ( organization == null ) ) {
             return;
@@ -1708,8 +1677,6 @@ public class ManagementServiceImpl implements ManagementService {
 
         em.addToCollection(new SimpleEntityRef(Group.ENTITY_TYPE, organization.getUuid()), "users",
             new SimpleEntityRef(User.ENTITY_TYPE, user.getUuid()));
-
-        invalidateManagementAppAuthCache();
 
         if ( email ) {
             sendAdminUserInvitedEmail( user, organization );
@@ -1734,7 +1701,7 @@ public class ManagementServiceImpl implements ManagementService {
 
         try {
             int size = em.getCollection( new SimpleEntityRef( Group.ENTITY_TYPE, organizationId ),
-                    "users", null, 2, Level.IDS, false ).size();
+                "users", null, 2, Level.IDS, false ).size();
 
             if ( !force && size <= 1 ) {
                 throw new Exception();
@@ -1746,8 +1713,6 @@ public class ManagementServiceImpl implements ManagementService {
 
         em.removeFromCollection(new SimpleEntityRef(Group.ENTITY_TYPE, organizationId), "users",
             new SimpleEntityRef(User.ENTITY_TYPE, userId));
-
-        invalidateManagementAppAuthCache();
     }
 
 
@@ -1808,11 +1773,13 @@ public class ManagementServiceImpl implements ManagementService {
                     + ")</a> created a new application named " + applicationName, null );
         }
 
-        invalidateManagementAppAuthCache();
+        ScopedCache scopedCache = cacheFactory.getScopedCache(
+            new CacheScope( new SimpleId( CpNamingUtils.MANAGEMENT_APPLICATION_ID, "application" )));
+        scopedCache.invalidate();
+        localShiroCache.invalidateAll();
 
         return new ApplicationInfo( applicationId, appInfo.getName() );
     }
-
 
 
     @Override
@@ -1868,7 +1835,10 @@ public class ManagementServiceImpl implements ManagementService {
                     + ")</a> restored an application named " + appInfo.getName(), null );
         }
 
-        invalidateManagementAppAuthCache();
+        ScopedCache scopedCache = cacheFactory.getScopedCache(
+            new CacheScope( new SimpleId( CpNamingUtils.MANAGEMENT_APPLICATION_ID, "application" )));
+        scopedCache.invalidate();
+        localShiroCache.invalidateAll();
 
         return new ApplicationInfo( applicationId, appInfo.getName() );
     }
@@ -1904,8 +1874,8 @@ public class ManagementServiceImpl implements ManagementService {
         final EntityManager em = emf.getEntityManager(smf.getManagementAppId());
 
         Results r = em.getSourceEntities(
-                new SimpleEntityRef(CpNamingUtils.APPLICATION_INFO, applicationInfoId),
-                ORG_APP_RELATIONSHIP, Group.ENTITY_TYPE, Level.ALL_PROPERTIES);
+            new SimpleEntityRef(CpNamingUtils.APPLICATION_INFO, applicationInfoId),
+            ORG_APP_RELATIONSHIP, Group.ENTITY_TYPE, Level.ALL_PROPERTIES);
 
         return r.getEntity();
     }
@@ -1924,8 +1894,8 @@ public class ManagementServiceImpl implements ManagementService {
         Entity entity = getOrganizationEntityForApplication(applicationInfoId);
 
         return entity != null ?
-                new OrganizationInfo( entity.getUuid(), ( String ) entity.getProperty( "path" ) ) :
-                null;
+            new OrganizationInfo( entity.getUuid(), ( String ) entity.getProperty( "path" ) ) :
+            null;
     }
 
 
@@ -2151,7 +2121,7 @@ public class ManagementServiceImpl implements ManagementService {
         String secret = generateOAuthSecretKey( type );
 
         writeUserToken( smf.getManagementAppId(), new SimpleEntityRef( type.getEntityType(), id ),
-                encryptionService.plainTextCredentials( secret, id, smf.getManagementAppId() ) );
+            encryptionService.plainTextCredentials( secret, id, smf.getManagementAppId() ) );
 
         return secret;
     }
@@ -2208,7 +2178,7 @@ public class ManagementServiceImpl implements ManagementService {
     @Override
     public PrincipalCredentialsToken getPrincipalCredentialsTokenForClientCredentials( String clientId,
                                                                                        String clientSecret )
-            throws Exception {
+        throws Exception {
         if ( ( clientId == null ) || ( clientSecret == null ) ) {
             return null;
         }
@@ -2226,12 +2196,12 @@ public class ManagementServiceImpl implements ManagementService {
             if ( type.equals( AuthPrincipalType.APPLICATION ) ) {
                 ApplicationInfo app = getApplicationInfo( uuid );
                 token = new PrincipalCredentialsToken( new ApplicationPrincipal( app ),
-                        new ApplicationClientCredentials( clientId, clientSecret ) );
+                    new ApplicationClientCredentials( clientId, clientSecret ) );
             }
             else if ( type.equals( AuthPrincipalType.ORGANIZATION ) ) {
                 OrganizationInfo organization = getOrganizationByUuid( uuid );
                 token = new PrincipalCredentialsToken( new OrganizationPrincipal( organization ),
-                        new OrganizationClientCredentials( clientId, clientSecret ) );
+                    new OrganizationClientCredentials( clientId, clientSecret ) );
             }
         }
         return token;
@@ -2247,7 +2217,7 @@ public class ManagementServiceImpl implements ManagementService {
     @Override
     public String getPasswordResetTokenForAdminUser( UUID userId, long ttl, UUID organizationId ) throws Exception {
         return getTokenForPrincipal( EMAIL, TOKEN_TYPE_PASSWORD_RESET, smf.getManagementAppId(), ADMIN_USER, userId,
-                ttl, organizationId );
+            ttl, organizationId );
     }
 
 
@@ -2289,14 +2259,14 @@ public class ManagementServiceImpl implements ManagementService {
     @Override
     public String getActivationTokenForAdminUser( UUID userId, long ttl, UUID organizationId ) throws Exception {
         return getTokenForPrincipal( EMAIL, TOKEN_TYPE_ACTIVATION, smf.getManagementAppId(), ADMIN_USER, userId,
-                ttl, organizationId );
+            ttl, organizationId );
     }
 
 
     @Override
     public String getConfirmationTokenForAdminUser( UUID userId, long ttl, UUID organizationId ) throws Exception {
         return getTokenForPrincipal( EMAIL, TOKEN_TYPE_CONFIRM, smf.getManagementAppId(), ADMIN_USER, userId,
-                ttl, organizationId );
+            ttl, organizationId );
     }
 
 
@@ -2304,8 +2274,6 @@ public class ManagementServiceImpl implements ManagementService {
     public void activateAdminUser( UUID userId ) throws Exception {
         EntityManager em = emf.getEntityManager( smf.getManagementAppId() );
         em.setProperty( new SimpleEntityRef( User.ENTITY_TYPE, userId ), "activated", true );
-
-        invalidateManagementAppAuthCache();
     }
 
 
@@ -2317,7 +2285,7 @@ public class ManagementServiceImpl implements ManagementService {
 
         if ( user == null ) {
             throw new ManagementException(
-                    String.format( "User with id %s does not exist in app %s", userId, applicationId ) );
+                String.format( "User with id %s does not exist in app %s", userId, applicationId ) );
         }
 
         user.setActivated( false );
@@ -2398,24 +2366,24 @@ public class ManagementServiceImpl implements ManagementService {
         String token = getPasswordResetTokenForAdminUser( user.getUuid(), 0, organizationId );
 
         OrganizationConfig orgConfig = organizationId != null ?
-                getOrganizationConfigByUuid(organizationId) : getOrganizationConfigForUserInfo(user);
+            getOrganizationConfigByUuid(organizationId) : getOrganizationConfigForUserInfo(user);
         String resetPropertyUrl = orgConfig.getFullUrlTemplate(WorkflowUrl.ADMIN_RESETPW_URL);
         String reset_url = String.format(resetPropertyUrl, user.getUuid().toString())
-                + "?token=" + token;
+            + "?token=" + token;
 
         Map<String, String> pageContext = hashMap( "reset_url", reset_url )
-                .map( "reset_url_base", resetPropertyUrl )
-                .map( "user_uuid", user.getUuid().toString() ).map( "raw_token", token );
+            .map( "reset_url_base", resetPropertyUrl )
+            .map( "user_uuid", user.getUuid().toString() ).map( "raw_token", token );
 
         sendHtmlMail( properties, user.getDisplayEmailAddress(), properties.getProperty( PROPERTIES_MAILER_EMAIL ),
-                "Password Reset", appendEmailFooter( emailMsg( pageContext, PROPERTIES_EMAIL_ADMIN_PASSWORD_RESET ) ) );
+            "Password Reset", appendEmailFooter( emailMsg( pageContext, PROPERTIES_EMAIL_ADMIN_PASSWORD_RESET ) ) );
     }
 
 
     @Override
     public String getActivationTokenForOrganization( UUID organizationId, long ttl ) throws Exception {
         return getTokenForPrincipal( EMAIL, TOKEN_TYPE_ACTIVATION, smf.getManagementAppId(), ORGANIZATION,
-                organizationId, ttl );
+            organizationId, ttl );
     }
 
 
@@ -2429,34 +2397,34 @@ public class ManagementServiceImpl implements ManagementService {
             OrganizationConfig orgConfig = getOrganizationConfigByUuid(organizationId);
             String activationPropertyUrl = orgConfig.getFullUrlTemplate(WorkflowUrl.ORGANIZATION_ACTIVATION_URL);
             String activation_url = String.format(activationPropertyUrl, organizationId.toString())
-                    + "?token=" + token;
+                + "?token=" + token;
 
             List<UserInfo> users = getAdminUsersForOrganization( organizationId );
             String organization_owners = null;
             for ( UserInfo user : users ) {
                 organization_owners = ( organization_owners == null ) ? user.getHTMLDisplayEmailAddress() :
-                                      organization_owners + ", " + user.getHTMLDisplayEmailAddress();
+                    organization_owners + ", " + user.getHTMLDisplayEmailAddress();
             }
             if ( newOrganizationsNeedSysAdminApproval() ) {
                 logger.info( "sending SysAdminApproval confirmation email: {}", organization.getName() );
                 //TODO: org shouldn't approve org activation, right?
                 sendHtmlMail( properties, getOrgSystemEmail(),
-                        properties.getProperty( PROPERTIES_MAILER_EMAIL ),
-                        "Request For Organization Account Activation " + organization.getName(), appendEmailFooter(
+                    properties.getProperty( PROPERTIES_MAILER_EMAIL ),
+                    "Request For Organization Account Activation " + organization.getName(), appendEmailFooter(
                         emailMsg( hashMap( "organization_name", organization.getName() )
                                 .map( "activation_url", activation_url )
                                 .map( "organization_owners", organization_owners ),
-                                PROPERTIES_EMAIL_SYSADMIN_ORGANIZATION_ACTIVATION ) ) );
+                            PROPERTIES_EMAIL_SYSADMIN_ORGANIZATION_ACTIVATION ) ) );
                 sendOrganizationEmail( organization, "Organization Account Confirmed",
-                        emailMsg( hashMap( "organization_name", organization.getName() ),
-                                PROPERTIES_EMAIL_ORGANIZATION_CONFIRMED_AWAITING_ACTIVATION ) );
+                    emailMsg( hashMap( "organization_name", organization.getName() ),
+                        PROPERTIES_EMAIL_ORGANIZATION_CONFIRMED_AWAITING_ACTIVATION ) );
             }
             else if ( properties.newOrganizationsRequireConfirmation() ) {
                 logger.info( "sending account confirmation email: {}", organization.getName() );
                 sendOrganizationEmail( organization, "Organization Account Confirmation", emailMsg(
-                        hashMap( "organization_name", organization.getName() )
-                                .map( "confirmation_url", activation_url ),
-                        PROPERTIES_EMAIL_ORGANIZATION_CONFIRMATION ) );
+                    hashMap( "organization_name", organization.getName() )
+                        .map( "confirmation_url", activation_url ),
+                    PROPERTIES_EMAIL_ORGANIZATION_CONFIRMATION ) );
                 sendSysAdminNewOrganizationActivatedNotificationEmail( organization );
             }
             else {
@@ -2489,26 +2457,26 @@ public class ManagementServiceImpl implements ManagementService {
 
     public void sendOrganizationActivatedEmail( OrganizationInfo organization ) throws Exception {
         sendOrganizationEmail( organization, "Organization Account Activated: " + organization.getName(),
-                emailMsg( hashMap( "organization_name", organization.getName() ),
-                        PROPERTIES_EMAIL_ORGANIZATION_ACTIVATED ) );
+            emailMsg( hashMap( "organization_name", organization.getName() ),
+                PROPERTIES_EMAIL_ORGANIZATION_ACTIVATED ) );
     }
 
 
     public void sendSysAdminNewOrganizationActivatedNotificationEmail( OrganizationInfo organization )
-            throws Exception {
+        throws Exception {
         if ( properties.notifySysAdminOfNewOrganizations() ) {
             List<UserInfo> users = getAdminUsersForOrganization( organization.getUuid() );
             String organization_owners = null;
             for ( UserInfo user : users ) {
                 organization_owners = ( organization_owners == null ) ? user.getHTMLDisplayEmailAddress() :
-                                      organization_owners + ", " + user.getHTMLDisplayEmailAddress();
+                    organization_owners + ", " + user.getHTMLDisplayEmailAddress();
             }
             //TODO: email for org admin or sysadmin?
             sendHtmlMail( properties, getOrgSystemEmail(),
-                    properties.getProperty( PROPERTIES_MAILER_EMAIL ),
-                    "Organization Account Activated " + organization.getName(), appendEmailFooter( emailMsg(
+                properties.getProperty( PROPERTIES_MAILER_EMAIL ),
+                "Organization Account Activated " + organization.getName(), appendEmailFooter( emailMsg(
                     hashMap( "organization_name", organization.getName() )
-                            .map( "organization_owners", organization_owners ),
+                        .map( "organization_owners", organization_owners ),
                     PROPERTIES_EMAIL_SYSADMIN_ORGANIZATION_ACTIVATED ) ) );
         }
     }
@@ -2519,7 +2487,7 @@ public class ManagementServiceImpl implements ManagementService {
         List<UserInfo> users = getAdminUsersForOrganization( organization.getUuid() );
         for ( UserInfo user : users ) {
             sendHtmlMail( properties, user.getDisplayEmailAddress(), properties.getProperty( PROPERTIES_MAILER_EMAIL ),
-                    subject, appendEmailFooter( html ) );
+                subject, appendEmailFooter( html ) );
         }
     }
 
@@ -2618,12 +2586,12 @@ public class ManagementServiceImpl implements ManagementService {
     public void sendAdminUserConfirmationEmail( UUID organizationId, UserInfo user ) throws Exception {
         String token = getConfirmationTokenForAdminUser(user.getUuid(), 0, organizationId);
         OrganizationConfig orgConfig = organizationId != null ?
-                getOrganizationConfigByUuid(organizationId) : getOrganizationConfigForUserInfo(user);
+            getOrganizationConfigByUuid(organizationId) : getOrganizationConfigForUserInfo(user);
         String confirmation_url = orgConfig.getFullUrl(WorkflowUrl.ADMIN_CONFIRMATION_URL, user.getUuid().toString()) +
-                "?token=" + token;
+            "?token=" + token;
         sendAdminUserEmail( user, "User Account Confirmation: " + user.getEmail(),
-                emailMsg( hashMap( "confirm_email", user.getEmail() ).map( "confirmation_url", confirmation_url ),
-                        PROPERTIES_EMAIL_ADMIN_CONFIRMATION ) );
+            emailMsg( hashMap( "confirm_email", user.getEmail() ).map( "confirmation_url", confirmation_url ),
+                PROPERTIES_EMAIL_ADMIN_CONFIRMATION ) );
     }
 
 
@@ -2631,11 +2599,11 @@ public class ManagementServiceImpl implements ManagementService {
         String token = getActivationTokenForAdminUser(user.getUuid(), 0, organizationId);
         //TODO: admin specific email
         OrganizationConfig orgConfig = organizationId != null ?
-                getOrganizationConfigByUuid(organizationId) : getOrganizationConfigForUserInfo(user);
+            getOrganizationConfigByUuid(organizationId) : getOrganizationConfigForUserInfo(user);
         String activation_url = orgConfig.getFullUrl(WorkflowUrl.ADMIN_ACTIVATION_URL, user.getUuid().toString()) +
-                "?token=" + token;
+            "?token=" + token;
         String adminSystemEmail = organizationId != null ? getAdminSystemEmailForOrganization(organizationId) :
-                getAdminSystemEmailForApplication(user.getApplicationId());
+            getAdminSystemEmailForApplication(user.getApplicationId());
         sendHtmlMail(properties, adminSystemEmail, properties.getProperty(PROPERTIES_MAILER_EMAIL),
             "Request For Admin User Account Activation " + user.getEmail(), appendEmailFooter(
                 emailMsg(hashMap("user_email", user.getEmail()).map("activation_url", activation_url),
@@ -2646,9 +2614,9 @@ public class ManagementServiceImpl implements ManagementService {
     public void sendSysAdminNewAdminActivatedNotificationEmail( UUID organizationId, UserInfo user ) throws Exception {
         if ( properties.notifySysAdminOfNewAdminUsers() ) {
             String adminSystemEmail = organizationId != null ? getAdminSystemEmailForOrganization(organizationId) :
-                    getAdminSystemEmailForApplication(user.getApplicationId());
+                getAdminSystemEmailForApplication(user.getApplicationId());
             sendHtmlMail( properties, adminSystemEmail, properties.getProperty( PROPERTIES_MAILER_EMAIL ),
-                    "Admin User Account Activated " + user.getEmail(), appendEmailFooter(
+                "Admin User Account Activated " + user.getEmail(), appendEmailFooter(
                     emailMsg( hashMap( "user_email", user.getEmail() ), PROPERTIES_EMAIL_SYSADMIN_ADMIN_ACTIVATED ) ) );
         }
     }
@@ -2656,22 +2624,22 @@ public class ManagementServiceImpl implements ManagementService {
 
     public void sendAdminUserConfirmedAwaitingActivationEmail( UserInfo user ) throws Exception {
         sendAdminUserEmail(user, "User Account Confirmed",
-                emailMsg( hashMap("confirmed_email",user.getEmail() ),
-                    PROPERTIES_EMAIL_ADMIN_CONFIRMED_AWAITING_ACTIVATION ) );
+            emailMsg( hashMap("confirmed_email",user.getEmail() ),
+                PROPERTIES_EMAIL_ADMIN_CONFIRMED_AWAITING_ACTIVATION ) );
     }
 
 
     public void sendAdminUserActivatedEmail( UserInfo user ) throws Exception {
         if ( properties.notifyAdminOfActivation() ) {
             sendAdminUserEmail( user, "User Account Activated",
-                    properties.getProperty( PROPERTIES_EMAIL_ADMIN_ACTIVATED ) );
+                properties.getProperty( PROPERTIES_EMAIL_ADMIN_ACTIVATED ) );
         }
     }
 
 
     public void sendAdminUserInvitedEmail( UserInfo user, OrganizationInfo organization ) throws Exception {
         sendAdminUserEmail( user, "User Invited To Organization",
-                emailMsg( hashMap( "organization_name", organization.getName() ), PROPERTIES_EMAIL_ADMIN_INVITED ) );
+            emailMsg( hashMap( "organization_name", organization.getName() ), PROPERTIES_EMAIL_ADMIN_INVITED ) );
     }
 
 
@@ -2717,7 +2685,7 @@ public class ManagementServiceImpl implements ManagementService {
     public boolean isOrganizationActivated( UUID organizationId ) throws Exception {
         EntityManager em = emf.getEntityManager( smf.getManagementAppId() );
         return Boolean.TRUE.equals(
-                em.getProperty( new SimpleEntityRef( Group.ENTITY_TYPE, organizationId ), "activated" ) );
+            em.getProperty( new SimpleEntityRef( Group.ENTITY_TYPE, organizationId ), "activated" ) );
     }
 
 
@@ -2739,7 +2707,7 @@ public class ManagementServiceImpl implements ManagementService {
     public boolean isOrganizationEnabled( UUID organizationId ) throws Exception {
         EntityManager em = emf.getEntityManager( smf.getManagementAppId() );
         return !Boolean.TRUE.equals(
-                em.getProperty( new SimpleEntityRef( Group.ENTITY_TYPE, organizationId ), "disabled" ) );
+            em.getProperty( new SimpleEntityRef( Group.ENTITY_TYPE, organizationId ), "disabled" ) );
     }
 
 
@@ -2820,18 +2788,18 @@ public class ManagementServiceImpl implements ManagementService {
         OrganizationConfig orgConfig = getOrganizationConfigForApplication(applicationId);
         String resetPropertyUrl = orgConfig.getFullUrlTemplate(WorkflowUrl.USER_RESETPW_URL);
         String reset_url =
-                buildUserAppUrl( applicationId, resetPropertyUrl, user, token);
+            buildUserAppUrl( applicationId, resetPropertyUrl, user, token);
         Map<String, String> pageContext = hashMap( "reset_url", reset_url )
-                .map( "reset_url_base", resetPropertyUrl )
-                .map( "user_uuid", user.getUuid().toString() ).map( "raw_token", token )
-                .map( "application_id", applicationId.toString() );
+            .map( "reset_url_base", resetPropertyUrl )
+            .map( "user_uuid", user.getUuid().toString() ).map( "raw_token", token )
+            .map( "application_id", applicationId.toString() );
     /*
      * String reset_url = String.format(
      * properties.getProperty(PROPERTIES_USER_RESETPW_URL), oi.getName(),
      * ai.getName(), user.getUuid().toString()) + "?token=" + token;
      */
         sendHtmlMail( properties, user.getDisplayEmailAddress(), properties.getProperty( PROPERTIES_MAILER_EMAIL ),
-                "Password Reset", appendEmailFooter( emailMsg( pageContext, PROPERTIES_EMAIL_USER_PASSWORD_RESET ) ) );
+            "Password Reset", appendEmailFooter( emailMsg( pageContext, PROPERTIES_EMAIL_USER_PASSWORD_RESET ) ) );
     }
 
 
@@ -2839,8 +2807,8 @@ public class ManagementServiceImpl implements ManagementService {
     public boolean newAppUsersNeedAdminApproval( UUID applicationId ) throws Exception {
         EntityManager em = emf.getEntityManager(applicationId);
         Boolean registration_requires_admin_approval = ( Boolean ) em
-                .getProperty( new SimpleEntityRef( Application.ENTITY_TYPE, applicationId ),
-                        REGISTRATION_REQUIRES_ADMIN_APPROVAL );
+            .getProperty( new SimpleEntityRef( Application.ENTITY_TYPE, applicationId ),
+                REGISTRATION_REQUIRES_ADMIN_APPROVAL );
         return registration_requires_admin_approval != null && registration_requires_admin_approval;
     }
 
@@ -2849,8 +2817,8 @@ public class ManagementServiceImpl implements ManagementService {
     public boolean newAppUsersRequireConfirmation( UUID applicationId ) throws Exception {
         EntityManager em = emf.getEntityManager( applicationId );
         Boolean registration_requires_email_confirmation = ( Boolean ) em
-                .getProperty( new SimpleEntityRef( Application.ENTITY_TYPE, applicationId ),
-                        REGISTRATION_REQUIRES_EMAIL_CONFIRMATION );
+            .getProperty( new SimpleEntityRef( Application.ENTITY_TYPE, applicationId ),
+                REGISTRATION_REQUIRES_EMAIL_CONFIRMATION );
         return registration_requires_email_confirmation != null && registration_requires_email_confirmation;
     }
 
@@ -2858,8 +2826,8 @@ public class ManagementServiceImpl implements ManagementService {
     public boolean notifyAdminOfNewAppUsers( UUID applicationId ) throws Exception {
         EntityManager em = emf.getEntityManager( applicationId );
         Boolean notify_admin_of_new_users = ( Boolean ) em
-                .getProperty( new SimpleEntityRef( Application.ENTITY_TYPE, applicationId ),
-                        NOTIFY_ADMIN_OF_NEW_USERS );
+            .getProperty( new SimpleEntityRef( Application.ENTITY_TYPE, applicationId ),
+                NOTIFY_ADMIN_OF_NEW_USERS );
         return notify_admin_of_new_users != null && notify_admin_of_new_users;
     }
 
@@ -2881,7 +2849,7 @@ public class ManagementServiceImpl implements ManagementService {
 
     @Override
     public ActivationState handleConfirmationTokenForAppUser( UUID applicationId, UUID userId, String token )
-            throws Exception {
+        throws Exception {
         AuthPrincipalInfo principal = getPrincipalFromAccessToken( token, TOKEN_TYPE_CONFIRM, APPLICATION_USER );
 
         if ( ( principal != null ) && userId.equals( principal.getUuid() ) ) {
@@ -2908,7 +2876,7 @@ public class ManagementServiceImpl implements ManagementService {
 
     @Override
     public ActivationState handleActivationTokenForAppUser( UUID applicationId, UUID userId, String token )
-            throws Exception {
+        throws Exception {
         AuthPrincipalInfo principal = getPrincipalFromAccessToken( token, TOKEN_TYPE_ACTIVATION, APPLICATION_USER );
         if ( ( principal != null ) && userId.equals( principal.getUuid() ) ) {
             activateAppUser( applicationId, principal.getUuid() );
@@ -2927,7 +2895,7 @@ public class ManagementServiceImpl implements ManagementService {
         OrganizationConfig orgConfig = getOrganizationConfigForApplication(applicationId);
         String confirmationPropertyUrl = orgConfig.getFullUrlTemplate(WorkflowUrl.USER_CONFIRMATION_URL);
         String confirmation_url =
-                buildUserAppUrl( applicationId, confirmationPropertyUrl, user, token);
+            buildUserAppUrl( applicationId, confirmationPropertyUrl, user, token);
 
     /*
      * String confirmation_url = String.format(
@@ -2935,7 +2903,7 @@ public class ManagementServiceImpl implements ManagementService {
      * applicationId.toString(), user.getUuid().toString()) + "?token=" + token;
      */
         sendAppUserEmail( user, "User Account Confirmation: " + user.getEmail(),
-                emailMsg( hashMap( "confirmation_url", confirmation_url ), PROPERTIES_EMAIL_USER_CONFIRMATION ) );
+            emailMsg( hashMap( "confirmation_url", confirmation_url ), PROPERTIES_EMAIL_USER_CONFIRMATION ) );
     }
 
 
@@ -2943,7 +2911,7 @@ public class ManagementServiceImpl implements ManagementService {
         ApplicationInfo ai = getApplicationInfo(applicationId);
         OrganizationInfo oi = getOrganizationForApplication(applicationId);
         return String.format( url, oi.getName(), StringUtils.stringOrSubstringAfterFirst( ai.getName(), '/' ),
-                user.getUuid().toString() ) + "?token=" + token;
+            user.getUuid().toString() ) + "?token=" + token;
     }
 
 
@@ -2953,15 +2921,15 @@ public class ManagementServiceImpl implements ManagementService {
         OrganizationConfig orgConfig = getOrganizationConfigByUuid(organization.getUuid());
         String activationPropertyUrl = orgConfig.getFullUrlTemplate(WorkflowUrl.USER_ACTIVATION_URL);
         String activation_url =
-                buildUserAppUrl(applicationId, activationPropertyUrl, user, token);
+            buildUserAppUrl(applicationId, activationPropertyUrl, user, token);
     /*
      * String activation_url = String.format(
      * properties.getProperty(PROPERTIES_USER_ACTIVATION_URL),
      * applicationId.toString(), user.getUuid().toString()) + "?token=" + token;
      */
         this.sendOrganizationEmail( organization, "Request For User Account Activation " + user.getEmail(), emailMsg(
-                hashMap( "organization_name", organization.getName() ).map( "activation_url", activation_url ),
-                PROPERTIES_EMAIL_ADMIN_USER_ACTIVATION ) );
+            hashMap( "organization_name", organization.getName() ).map( "activation_url", activation_url ),
+            PROPERTIES_EMAIL_ADMIN_USER_ACTIVATION ) );
     }
 
 
@@ -2969,15 +2937,15 @@ public class ManagementServiceImpl implements ManagementService {
         if ( notifyAdminOfNewAppUsers( applicationId ) ) {
             OrganizationInfo organization = this.getOrganizationForApplication( applicationId );
             this.sendOrganizationEmail( organization, "New User Account Activated " + user.getEmail(),
-                    emailMsg( hashMap( "organization_name", organization.getName() ),
-                            PROPERTIES_EMAIL_ADMIN_USER_ACTIVATION ) );
+                emailMsg( hashMap( "organization_name", organization.getName() ),
+                    PROPERTIES_EMAIL_ADMIN_USER_ACTIVATION ) );
         }
     }
 
 
     public void sendAppUserConfirmedAwaitingActivationEmail( UUID applicationId, User user ) throws Exception {
         sendAppUserEmail( user, "User Account Confirmed",
-                properties.getProperty( PROPERTIES_EMAIL_USER_CONFIRMED_AWAITING_ACTIVATION ) );
+            properties.getProperty( PROPERTIES_EMAIL_USER_CONFIRMED_AWAITING_ACTIVATION ) );
     }
 
 
@@ -3015,7 +2983,7 @@ public class ManagementServiceImpl implements ManagementService {
 
     @Override
     public void setAppUserPassword( UUID applicationId, UUID userId, String oldPassword, String newPassword )
-            throws Exception {
+        throws Exception {
         if ( ( userId == null ) ) {
             throw new IllegalArgumentException( "userId is required" );
         }
@@ -3098,7 +3066,7 @@ public class ManagementServiceImpl implements ManagementService {
 
     public void sendAppUserEmail( User user, String subject, String html ) throws Exception {
         sendHtmlMail( properties, user.getDisplayEmailAddress(), properties.getProperty( PROPERTIES_MAILER_EMAIL ),
-                subject, appendEmailFooter( html ) );
+            subject, appendEmailFooter( html ) );
     }
 
 
@@ -3119,7 +3087,7 @@ public class ManagementServiceImpl implements ManagementService {
         }
 
         writeUserPin( applicationId, new SimpleEntityRef( User.ENTITY_TYPE, userId ),
-                encryptionService.plainTextCredentials( newPin, userId, applicationId ) );
+            encryptionService.plainTextCredentials( newPin, userId, applicationId ) );
     }
 
 
@@ -3267,7 +3235,7 @@ public class ManagementServiceImpl implements ManagementService {
 
         @SuppressWarnings("unchecked")
         Set<CredentialsInfo> credInfo =
-                (Set<CredentialsInfo>)em.getDictionaryElementValue(owner, DICTIONARY_CREDENTIALS, USER_PASSWORD_HISTORY);
+            (Set<CredentialsInfo>)em.getDictionaryElementValue(owner, DICTIONARY_CREDENTIALS, USER_PASSWORD_HISTORY);
 
         return credInfo;
     }
@@ -3293,7 +3261,7 @@ public class ManagementServiceImpl implements ManagementService {
 
     private boolean areActivationChecksDisabled() {
         return !( newOrganizationsNeedSysAdminApproval() || properties.newOrganizationsRequireConfirmation()
-                || newAdminUsersNeedSysAdminApproval() || newAdminUsersRequireConfirmation() );
+            || newAdminUsersNeedSysAdminApproval() || newAdminUsersRequireConfirmation() );
     }
 
 
@@ -3383,9 +3351,9 @@ public class ManagementServiceImpl implements ManagementService {
         }
         Map<Object, Object> entityProperties = em.getDictionaryAsMap(entity, ORGANIZATION_CONFIG_DICTIONARY);
         return new OrganizationConfig( orgConfigProperties,
-                (UUID)entity.getProperty(PROPERTY_UUID),
-                (String)entity.getProperty(PROPERTY_PATH),
-                entityProperties, false);
+            (UUID)entity.getProperty(PROPERTY_UUID),
+            (String)entity.getProperty(PROPERTY_PATH),
+            entityProperties, false);
     }
 
 
@@ -3445,7 +3413,7 @@ public class ManagementServiceImpl implements ManagementService {
                     em.removeFromDictionary( organizationEntity, ORGANIZATION_CONFIG_DICTIONARY, entry.getKey() );
                 } else {
                     em.addToDictionary( organizationEntity, ORGANIZATION_CONFIG_DICTIONARY, entry.getKey(),
-                            entry.getValue() );
+                        entry.getValue() );
                 }
             }
 
@@ -3456,10 +3424,39 @@ public class ManagementServiceImpl implements ManagementService {
     }
 
 
-    private void invalidateManagementAppAuthCache() {
-        ScopedCache scopedCache = cacheFactory.getScopedCache(
-            new CacheScope( new SimpleId( CpNamingUtils.MANAGEMENT_APPLICATION_ID, "application" )));
-        scopedCache.invalidate();
-        localShiroCache.invalidateAll();
-    }
+    private LoadingCache<UUID, OrganizationConfig> orgConfigByAppCache =
+        CacheBuilder.newBuilder().maximumSize( 1000 )
+            .expireAfterWrite( Long.valueOf( System.getProperty(ORG_CONFIG_CACHE_PROP, "30000") ) , TimeUnit.MILLISECONDS)
+            .build( new CacheLoader<UUID, OrganizationConfig>() {
+                public OrganizationConfig load( UUID applicationInfoId ) {
+
+                    try {
+
+                        if (applicationInfoId != null && applicationInfoId != CpNamingUtils.MANAGEMENT_APPLICATION_ID) {
+
+                            final EntityManager em = emf.getEntityManager(smf.getManagementAppId());
+
+                            Results r = em.getSourceEntities(
+                                new SimpleEntityRef(CpNamingUtils.APPLICATION_INFO, applicationInfoId),
+                                ORG_APP_RELATIONSHIP, Group.ENTITY_TYPE, Level.ALL_PROPERTIES);
+
+                            Group org = (Group) r.getEntity();
+
+                            if (org != null) {
+                                Map<Object, Object> entityProperties = em.getDictionaryAsMap(org, ORGANIZATION_CONFIG_DICTIONARY);
+                                return new OrganizationConfig(orgConfigProperties, org.getUuid(), org.getPath(), entityProperties, false);
+                            }
+
+                        }
+
+                        return new OrganizationConfig(orgConfigProperties);
+
+                    }catch (Exception e){
+
+                        return new OrganizationConfig(orgConfigProperties);
+
+                    }
+                }}
+            );
+
 }

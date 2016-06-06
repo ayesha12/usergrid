@@ -19,14 +19,13 @@
 package org.apache.usergrid.persistence.collection.mvcc.entity.impl;
 
 
-import java.util.UUID;
-
+import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 import org.apache.usergrid.persistence.collection.MvccEntity;
 import org.apache.usergrid.persistence.model.entity.Entity;
 import org.apache.usergrid.persistence.model.entity.Id;
 
-import com.google.common.base.Optional;
-import com.google.common.base.Preconditions;
+import java.util.UUID;
 
 
 /**
@@ -39,6 +38,7 @@ public class MvccEntityImpl implements MvccEntity {
     private final Optional<Entity> entity;
     private final Status status;
     private long size;
+    private long entity_expries_in;
 
 
     public MvccEntityImpl( final Id entityId, final UUID version, final Status status, final Entity entity ) {
@@ -51,7 +51,7 @@ public class MvccEntityImpl implements MvccEntity {
     }
 
     public MvccEntityImpl(
-            final Id entityId, final UUID version, final Status status, final Optional<Entity> entity, final long size) {
+        final Id entityId, final UUID version, final Status status, final Optional<Entity> entity, final long size) {
         Preconditions.checkNotNull(entityId, "entity id is required");
         Preconditions.checkNotNull(version, "version id is required");
         Preconditions.checkNotNull(status, "status  is required");
@@ -62,6 +62,12 @@ public class MvccEntityImpl implements MvccEntity {
         this.entity = entity;
         this.status = status;
         this.size = size;
+
+        if(entity.isPresent()) {
+            if (entity.get().getField("entity_expiration") != null) {
+                this.entity_expries_in = (long) (entity.get().getField("entity_expiration").getValue());
+            }
+        }
     }
 
 
@@ -102,6 +108,11 @@ public class MvccEntityImpl implements MvccEntity {
     }
 
     @Override
+    public long getEntityExpiration(){
+        return entity_expries_in;
+    }
+
+    @Override
     public boolean equals( final Object o ) {
         if ( this == o ) {
             return true;
@@ -138,9 +149,9 @@ public class MvccEntityImpl implements MvccEntity {
     @Override
     public String toString() {
         return "MvccEntityImpl{" +
-                ", entityId=" + entityId +
-                ", version=" + version +
-                ", entity=" + entity +
-                '}';
+            ", entityId=" + entityId +
+            ", version=" + version +
+            ", entity=" + entity +
+            '}';
     }
 }

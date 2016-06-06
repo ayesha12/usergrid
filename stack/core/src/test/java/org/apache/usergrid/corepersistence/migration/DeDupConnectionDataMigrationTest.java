@@ -18,10 +18,6 @@
 package org.apache.usergrid.corepersistence.migration;
 
 
-import java.util.List;
-
-import org.junit.Test;
-
 import org.apache.usergrid.corepersistence.rx.impl.AllApplicationsObservable;
 import org.apache.usergrid.corepersistence.service.ConnectionScope;
 import org.apache.usergrid.corepersistence.service.ConnectionService;
@@ -30,14 +26,14 @@ import org.apache.usergrid.persistence.core.migration.data.TestProgressObserver;
 import org.apache.usergrid.persistence.core.scope.ApplicationScope;
 import org.apache.usergrid.persistence.core.scope.ApplicationScopeImpl;
 import org.apache.usergrid.persistence.graph.Edge;
-
+import org.junit.Test;
 import rx.Observable;
 import rx.Subscriber;
 
+import java.util.List;
+
 import static org.apache.usergrid.persistence.core.util.IdGenerator.createId;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -127,7 +123,7 @@ public class DeDupConnectionDataMigrationTest {
         public void call( final Subscriber<? super ConnectionScope> subscriber ) {
 
             final ApplicationScope applicationScope = new ApplicationScopeImpl( createId( "application" ) );
-            final Edge edge = CpNamingUtils.createConnectionEdge( createId( "source" ), "test", createId( "target" ) );
+            final Edge edge = CpNamingUtils.createConnectionEdge( createId( "source" ), "test", createId( "target" ), -1L );
 
 
             final ConnectionScope scope = new ConnectionScope( applicationScope, edge );

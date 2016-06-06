@@ -62,13 +62,13 @@ public class InactiveDeviceManager {
                     Query query = Query.fromQL( notifier.getName() + notfierPostFix  + " = '" + entry.getKey() + "'");
                     Results results = entityManager.searchCollection(entityManager.getApplication(), "devices", query);
                     for (Entity e : results.getEntities()) {
-                        entityManager.updateProperties(e, clearPushtokenMap);
+                        entityManager.updateProperties(e, clearPushtokenMap, null);
                     }
                     // uuid
                     query = Query.fromQL( notifier.getName() + notfierPostFix  + " = " + entry.getKey() + "");
                     results = entityManager.searchCollection(entityManager.getApplication(),  "devices", query);
                     for (Entity e : results.getEntities()) {
-                        entityManager.updateProperties(e, clearPushtokenMap);
+                        entityManager.updateProperties(e, clearPushtokenMap, null);
                     }
                 }catch (Exception e){
                     logger.error("failed to remove token",e);

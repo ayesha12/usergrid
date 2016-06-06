@@ -20,16 +20,10 @@
 package org.apache.usergrid.corepersistence.index;
 
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.codahale.metrics.Timer;
+import com.google.common.base.Optional;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import org.apache.usergrid.corepersistence.util.CpNamingUtils;
 import org.apache.usergrid.persistence.Schema;
 import org.apache.usergrid.persistence.core.metrics.MetricsFactory;
@@ -40,14 +34,7 @@ import org.apache.usergrid.persistence.graph.GraphManager;
 import org.apache.usergrid.persistence.graph.GraphManagerFactory;
 import org.apache.usergrid.persistence.graph.impl.SimpleEdge;
 import org.apache.usergrid.persistence.graph.serialization.EdgesObservable;
-import org.apache.usergrid.persistence.index.CandidateResult;
-import org.apache.usergrid.persistence.index.CandidateResults;
-import org.apache.usergrid.persistence.index.EntityIndex;
-import org.apache.usergrid.persistence.index.EntityIndexBatch;
-import org.apache.usergrid.persistence.index.EntityIndexFactory;
-import org.apache.usergrid.persistence.index.IndexEdge;
-import org.apache.usergrid.persistence.index.IndexFig;
-import org.apache.usergrid.persistence.index.SearchEdge;
+import org.apache.usergrid.persistence.index.*;
 import org.apache.usergrid.persistence.index.impl.IndexOperationMessage;
 import org.apache.usergrid.persistence.map.MapManager;
 import org.apache.usergrid.persistence.map.MapManagerFactory;
@@ -56,19 +43,14 @@ import org.apache.usergrid.persistence.model.entity.Entity;
 import org.apache.usergrid.persistence.model.entity.Id;
 import org.apache.usergrid.persistence.model.entity.SimpleId;
 import org.apache.usergrid.utils.InflectionUtils;
-import org.apache.usergrid.utils.JsonUtils;
 import org.apache.usergrid.utils.UUIDUtils;
-
-import com.codahale.metrics.Timer;
-import com.google.common.base.Optional;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rx.Observable;
 
-import static org.apache.usergrid.corepersistence.util.CpNamingUtils.createSearchEdgeFromSource;
-import static org.apache.usergrid.corepersistence.util.CpNamingUtils.generateScopeFromSource;
-import static org.apache.usergrid.corepersistence.util.CpNamingUtils.generateScopeFromTarget;
+import java.util.*;
+
+import static org.apache.usergrid.corepersistence.util.CpNamingUtils.*;
 import static org.apache.usergrid.persistence.Schema.TYPE_APPLICATION;
 
 
@@ -145,7 +127,7 @@ public class IndexServiceImpl implements IndexService {
 
                     batch.index( indexEdge, entity ,fieldsToIndex);
                 } )
-                    //return the future from the batch execution
+                //return the future from the batch execution
                 .map( batch -> batch.build() ) );
 
         return ObservableTimer.time( batches, indexTimer );
@@ -226,9 +208,6 @@ public class IndexServiceImpl implements IndexService {
                 return Optional.absent();
             }
 
-            // never add "none" because it has special meaning, "none" disables indexing for a type
-            fieldsToKeep.remove("none");
-
             defaultProperties.addAll( fieldsToKeep );
         }
         else {
@@ -299,19 +278,19 @@ public class IndexServiceImpl implements IndexService {
         //not actually sure about the timestamp but ah well. works.
         SearchEdge searchEdge = createSearchEdgeFromSource( new SimpleEdge( applicationScope.getApplication(),
             CpNamingUtils.getEdgeTypeFromCollectionName( InflectionUtils.pluralize( entityId.getType() ) ), entityId,
-            timeUUID.timestamp() ) );
+            timeUUID.timestamp() , -1L) ); //// TODO: 4/25/16 : check the edge expiration time.
 
 
         final Observable<IndexOperationMessage>  batches = Observable.from( crs )
-                //collect results into a single batch
-                .collect( () -> ei.createBatch(), ( batch, candidateResult ) -> {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Deindexing on edge {} for entity {} added to batch", searchEdge, entityId);
-                    }
-                    batch.deindex( candidateResult );
-                } )
-                    //return the future from the batch execution
-                .map( batch ->batch.build() );
+            //collect results into a single batch
+            .collect( () -> ei.createBatch(), ( batch, candidateResult ) -> {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Deindexing on edge {} for entity {} added to batch", searchEdge, entityId);
+                }
+                batch.deindex( candidateResult );
+            } )
+            //return the future from the batch execution
+            .map( batch ->batch.build() );
 
         return ObservableTimer.time(batches, indexTimer);
     }

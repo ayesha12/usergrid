@@ -16,20 +16,14 @@
 package org.apache.usergrid.corepersistence;
 
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.UUID;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-
+import com.google.common.base.Optional;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.TypeLiteral;
 import org.apache.commons.lang.StringUtils;
-
 import org.apache.usergrid.corepersistence.asyncevents.AsyncEventService;
 import org.apache.usergrid.corepersistence.index.IndexSchemaCacheFactory;
 import org.apache.usergrid.corepersistence.index.ReIndexRequestBuilder;
@@ -38,15 +32,7 @@ import org.apache.usergrid.corepersistence.service.CollectionService;
 import org.apache.usergrid.corepersistence.service.ConnectionService;
 import org.apache.usergrid.corepersistence.util.CpNamingUtils;
 import org.apache.usergrid.exception.ConflictException;
-import org.apache.usergrid.persistence.AbstractEntity;
-import org.apache.usergrid.persistence.Entity;
-import org.apache.usergrid.persistence.EntityFactory;
-import org.apache.usergrid.persistence.EntityManager;
-import org.apache.usergrid.persistence.EntityManagerFactory;
-import org.apache.usergrid.persistence.EntityRef;
-import org.apache.usergrid.persistence.Query;
-import org.apache.usergrid.persistence.Results;
-import org.apache.usergrid.persistence.SimpleEntityRef;
+import org.apache.usergrid.persistence.*;
 import org.apache.usergrid.persistence.cassandra.CassandraService;
 import org.apache.usergrid.persistence.cassandra.CounterUtils;
 import org.apache.usergrid.persistence.cassandra.Setup;
@@ -61,30 +47,23 @@ import org.apache.usergrid.persistence.entities.Application;
 import org.apache.usergrid.persistence.exceptions.ApplicationAlreadyExistsException;
 import org.apache.usergrid.persistence.exceptions.DuplicateUniquePropertyExistsException;
 import org.apache.usergrid.persistence.exceptions.EntityNotFoundException;
-import org.apache.usergrid.persistence.graph.Edge;
-import org.apache.usergrid.persistence.graph.GraphManager;
-import org.apache.usergrid.persistence.graph.GraphManagerFactory;
-import org.apache.usergrid.persistence.graph.MarkedEdge;
-import org.apache.usergrid.persistence.graph.SearchByEdgeType;
+import org.apache.usergrid.persistence.graph.*;
 import org.apache.usergrid.persistence.graph.impl.SimpleSearchByEdgeType;
 import org.apache.usergrid.persistence.index.EntityIndex;
 import org.apache.usergrid.persistence.model.entity.Id;
 import org.apache.usergrid.persistence.model.entity.SimpleId;
 import org.apache.usergrid.persistence.model.util.UUIDGenerator;
 import org.apache.usergrid.utils.UUIDUtils;
-
-import com.google.common.base.Optional;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.inject.Injector;
-import com.google.inject.Key;
-import com.google.inject.TypeLiteral;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import rx.Observable;
 
-import static java.lang.String.CASE_INSENSITIVE_ORDER;
+import java.util.*;
 
+import static java.lang.String.CASE_INSENSITIVE_ORDER;
 import static org.apache.usergrid.persistence.Schema.PROPERTY_NAME;
 import static org.apache.usergrid.persistence.Schema.TYPE_APPLICATION;
 
@@ -105,10 +84,10 @@ public class CpEntityManagerFactory implements EntityManagerFactory, Application
     // cache of already instantiated entity managers
     private LoadingCache<UUID, EntityManager> entityManagers
         = CacheBuilder.newBuilder().maximumSize(100).build(new CacheLoader<UUID, EntityManager>() {
-            public EntityManager load(UUID appId) { // no checked exception
-                return _getEntityManager(appId);
-            }
-        });
+        public EntityManager load(UUID appId) { // no checked exception
+            return _getEntityManager(appId);
+        }
+    });
 
     private final ApplicationIdCache applicationIdCache;
     //private final IndexSchemaCache indexSchemaCache;
@@ -183,7 +162,7 @@ public class CpEntityManagerFactory implements EntityManagerFactory, Application
 
 
     private Observable<EntityIdScope> getAllEntitiesObservable(){
-      return injector.getInstance( Key.get(new TypeLiteral< MigrationDataProvider<EntityIdScope>>(){})).getData();
+        return injector.getInstance( Key.get(new TypeLiteral< MigrationDataProvider<EntityIdScope>>(){})).getData();
     }
 
 
@@ -271,6 +250,8 @@ public class CpEntityManagerFactory implements EntityManagerFactory, Application
         }
         properties.put( PROPERTY_NAME, appName );
         appEm.create(applicationId, TYPE_APPLICATION, properties);
+        //todo : chaeck metadata properties being passed.
+
 
         // only reset roles if this application isn't being migrated (meaning dictionary and role data already exists)
         if(!forMigration){
@@ -289,6 +270,8 @@ public class CpEntityManagerFactory implements EntityManagerFactory, Application
         Entity appInfo;
         try {
             appInfo = managementEm.create(new SimpleId(applicationId,CpNamingUtils.APPLICATION_INFO), appInfoMap);
+            //todo : chaeck metadata properties being passed.
+
         } catch (DuplicateUniquePropertyExistsException e) {
             throw new ApplicationAlreadyExistsException(appName);
         }
@@ -328,22 +311,22 @@ public class CpEntityManagerFactory implements EntityManagerFactory, Application
         // get the deleted_application_info for the deleted app
         return (Entity) migrateAppInfo( applicationId, CpNamingUtils.DELETED_APPLICATION_INFO,
             CpNamingUtils.APPLICATION_INFOS , CpNamingUtils.APPLICATION_INFO ).lastOrDefault( null )
-             .map( appInfo -> {
+            .map( appInfo -> {
 
-                 //start the index rebuild
-                 final ReIndexRequestBuilder builder = reIndexService.getBuilder().withApplicationId( applicationId );
-                 reIndexService.rebuildIndex( builder );
+                //start the index rebuild
+                final ReIndexRequestBuilder builder = reIndexService.getBuilder().withApplicationId( applicationId );
+                reIndexService.rebuildIndex( builder );
 
-                 //load the entity
-                 final EntityManager managementEm = getEntityManager( getManagementAppId() );
-                 try {
-                     return managementEm.get( new SimpleEntityRef( CpNamingUtils.APPLICATION_INFO, applicationId ) );
-                 }
-                 catch ( Exception e ) {
-                     logger.error( "Failed to get entity", e );
-                     throw new RuntimeException( e );
-                 }
-             } )
+                //load the entity
+                final EntityManager managementEm = getEntityManager( getManagementAppId() );
+                try {
+                    return managementEm.get( new SimpleEntityRef( CpNamingUtils.APPLICATION_INFO, applicationId ) );
+                }
+                catch ( Exception e ) {
+                    logger.error( "Failed to get entity", e );
+                    throw new RuntimeException( e );
+                }
+            } )
             .toBlocking().lastOrDefault(null);
 
     }
@@ -392,6 +375,7 @@ public class CpEntityManagerFactory implements EntityManagerFactory, Application
 
         final Entity newAppEntity =
             managementEm.create( new SimpleId( applicationUUID, createTypeName ), oldAppEntity.getProperties() );
+        //todo : chaeck metadata properties being passed.
 
         // copy its connections too
 
@@ -417,7 +401,7 @@ public class CpEntityManagerFactory implements EntityManagerFactory, Application
         final Id managementAppId = CpNamingUtils.getManagementApplicationId();
         final EntityIndex aei = getManagementIndex();
         final GraphManager managementGraphManager = managerCache.getGraphManager(managementAppScope);
-        final Edge createEdge = CpNamingUtils.createCollectionEdge(managementAppId, createCollectionName, createApplicationId);
+        final Edge createEdge = CpNamingUtils.createCollectionEdge(managementAppId, createCollectionName, createApplicationId, -1L);
 
         final Observable createNodeGraph = managementGraphManager.writeEdge(createEdge);
 
@@ -443,8 +427,8 @@ public class CpEntityManagerFactory implements EntityManagerFactory, Application
 
     @Override
     public UUID importApplication(
-            String organization, UUID applicationId,
-            String name, Map<String, Object> properties) throws Exception {
+        String organization, UUID applicationId,
+        String name, Map<String, Object> properties) throws Exception {
 
         throw new UnsupportedOperationException("Not supported yet.");
     }
@@ -499,22 +483,22 @@ public class CpEntityManagerFactory implements EntityManagerFactory, Application
         } ).buffer( 100 ).flatMap( entityIds -> {
             return ecm.load( entityIds );
         } )
-                    .flatMap( entitySet -> Observable.from( entitySet.getEntities() ) )
+            .flatMap( entitySet -> Observable.from( entitySet.getEntities() ) )
             //collect all the app infos into a single map for return
-                    .collect( () -> new HashMap<String, UUID>(), ( appMap, entity ) -> {
+            .collect( () -> new HashMap<String, UUID>(), ( appMap, entity ) -> {
 
-                            if ( !entity.getEntity().isPresent() ) {
-                                return;
-                            }
+                if ( !entity.getEntity().isPresent() ) {
+                    return;
+                }
 
-                            final org.apache.usergrid.persistence.model.entity.Entity entityData =
-                                entity.getEntity().get();
+                final org.apache.usergrid.persistence.model.entity.Entity entityData =
+                    entity.getEntity().get();
 
-                            final UUID applicationId = entity.getId().getUuid();
-                            final String applicationName = ( String ) entityData.getField( PROPERTY_NAME ).getValue();
+                final UUID applicationId = entity.getId().getUuid();
+                final String applicationName = ( String ) entityData.getField( PROPERTY_NAME ).getValue();
 
-                            appMap.put( applicationName , applicationId );
-                        } ).toBlocking().last();
+                appMap.put( applicationName , applicationId );
+            } ).toBlocking().last();
     }
 
 
@@ -530,11 +514,11 @@ public class CpEntityManagerFactory implements EntityManagerFactory, Application
         // Always make sure the database schema is initialized
         getSetup().initSchema();
 
-        // Roll the new 2.x Migration classes to the latest version supported
-        getSetup().runDataMigration();
-
         // Make sure the management application is created
         initMgmtAppInternal();
+
+        // Roll the new 2.x Migration classes to the latest version supported
+        getSetup().runDataMigration();
 
         // Ensure management app is initialized
         getSetup().initMgmtApp();
@@ -751,7 +735,7 @@ public class CpEntityManagerFactory implements EntityManagerFactory, Application
     @Override
     public Health getIndexHealth() {
 
-       return getManagementIndex().getIndexHealth();
+        return getManagementIndex().getIndexHealth();
     }
 
     @Override

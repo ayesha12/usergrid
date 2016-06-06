@@ -20,28 +20,18 @@
 package org.apache.usergrid.persistence.graph.impl;
 
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.codahale.metrics.Timer;
+import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
+import com.google.inject.Inject;
+import com.netflix.astyanax.MutationBatch;
+import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 import org.apache.usergrid.persistence.core.metrics.MetricsFactory;
 import org.apache.usergrid.persistence.core.metrics.ObservableTimer;
 import org.apache.usergrid.persistence.core.rx.ObservableIterator;
 import org.apache.usergrid.persistence.core.scope.ApplicationScope;
 import org.apache.usergrid.persistence.core.util.ValidationUtils;
-import org.apache.usergrid.persistence.graph.Edge;
-import org.apache.usergrid.persistence.graph.GraphFig;
-import org.apache.usergrid.persistence.graph.GraphManager;
-import org.apache.usergrid.persistence.graph.MarkedEdge;
-import org.apache.usergrid.persistence.graph.SearchByEdge;
-import org.apache.usergrid.persistence.graph.SearchByEdgeType;
-import org.apache.usergrid.persistence.graph.SearchByIdType;
-import org.apache.usergrid.persistence.graph.SearchEdgeType;
-import org.apache.usergrid.persistence.graph.SearchIdType;
+import org.apache.usergrid.persistence.graph.*;
 import org.apache.usergrid.persistence.graph.impl.stage.EdgeDeleteListener;
 import org.apache.usergrid.persistence.graph.impl.stage.NodeDeleteListener;
 import org.apache.usergrid.persistence.graph.serialization.EdgeMetadataSerialization;
@@ -50,15 +40,14 @@ import org.apache.usergrid.persistence.graph.serialization.NodeSerialization;
 import org.apache.usergrid.persistence.graph.serialization.util.GraphValidation;
 import org.apache.usergrid.persistence.model.entity.Id;
 import org.apache.usergrid.persistence.model.util.UUIDGenerator;
-
-import com.codahale.metrics.Timer;
-import com.google.common.base.Optional;
-import com.google.common.base.Preconditions;
-import com.google.inject.Inject;
-import com.netflix.astyanax.MutationBatch;
-import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rx.Observable;
+
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 
 /**
@@ -248,6 +237,7 @@ public class GraphManagerImpl implements GraphManager {
             }
             try {
                 nodeMutation.execute();
+
             }
             catch ( ConnectionException e ) {
                 throw new RuntimeException( "Unable to execute mutation", e );
@@ -274,11 +264,11 @@ public class GraphManagerImpl implements GraphManager {
 
                 //map our delete listener
                 .flatMap( timestamp -> nodeDeleteListener.receive( scope, inputNode, startTime ) )
-                    //set to 0 if nothing is emitted
+                //set to 0 if nothing is emitted
                 .lastOrDefault( 0 )
-                    //log for posterity
+                //log for posterity
                 .doOnNext( count -> logger.trace( "Removed {} edges from node {}", count, inputNode ) )
-                    //return our id
+                //return our id
                 .map( count -> inputNode );
 
         return ObservableTimer.time( nodeObservable, this.deleteNodeTimer );
@@ -295,7 +285,7 @@ public class GraphManagerImpl implements GraphManager {
                     return storageEdgeSerialization.getEdgeVersions( scope, searchByEdge );
                 }
             } ).buffer( graphFig.getScanPageSize() )
-                      .compose( new EdgeBufferFilter( searchByEdge.filterMarked() ) );
+                .compose( new EdgeBufferFilter( searchByEdge.filterMarked() ) );
 
         return ObservableTimer.time( edges, loadEdgesVersionsTimer );
     }
@@ -310,7 +300,7 @@ public class GraphManagerImpl implements GraphManager {
                     return storageEdgeSerialization.getEdgesFromSource( scope, search );
                 }
             } ).buffer( graphFig.getScanPageSize() )
-                      .compose( new EdgeBufferFilter( search.filterMarked() ) );
+                .compose( new EdgeBufferFilter( search.filterMarked() ) );
 
         return ObservableTimer.time( edges, loadEdgesFromSourceTimer );
     }
@@ -325,7 +315,7 @@ public class GraphManagerImpl implements GraphManager {
                     return storageEdgeSerialization.getEdgesToTarget( scope, search );
                 }
             } ).buffer( graphFig.getScanPageSize() )
-                      .compose( new EdgeBufferFilter( search.filterMarked() ) );
+                .compose( new EdgeBufferFilter( search.filterMarked() ) );
 
 
         return ObservableTimer.time( edges, loadEdgesToTargetTimer );
@@ -341,7 +331,7 @@ public class GraphManagerImpl implements GraphManager {
                     return storageEdgeSerialization.getEdgesFromSourceByTargetType( scope, search );
                 }
             } ).buffer( graphFig.getScanPageSize() )
-                      .compose( new EdgeBufferFilter( search.filterMarked() ) );
+                .compose( new EdgeBufferFilter( search.filterMarked() ) );
 
         return ObservableTimer.time( edges, loadEdgesFromSourceByTypeTimer );
     }
@@ -356,7 +346,7 @@ public class GraphManagerImpl implements GraphManager {
                     return storageEdgeSerialization.getEdgesToTargetBySourceType( scope, search );
                 }
             } ).buffer( graphFig.getScanPageSize() )
-                      .compose( new EdgeBufferFilter(  search.filterMarked() ) );
+                .compose( new EdgeBufferFilter(  search.filterMarked() ) );
 
         return ObservableTimer.time( edges, loadEdgesToTargetByTypeTimer );
     }
@@ -366,11 +356,11 @@ public class GraphManagerImpl implements GraphManager {
     public Observable<String> getEdgeTypesFromSource( final SearchEdgeType search ) {
         final Observable<String> edgeTypes =
             Observable.create( new ObservableIterator<String>( "getEdgeTypesFromSource" ) {
-                    @Override
-                    protected Iterator<String> getIterator() {
-                        return edgeMetadataSerialization.getEdgeTypesFromSource( scope, search );
-                    }
-                } );
+                @Override
+                protected Iterator<String> getIterator() {
+                    return edgeMetadataSerialization.getEdgeTypesFromSource( scope, search );
+                }
+            } );
 
         return ObservableTimer.time( edgeTypes, getEdgeTypesFromSourceTimer );
     }
@@ -394,11 +384,11 @@ public class GraphManagerImpl implements GraphManager {
     public Observable<String> getEdgeTypesToTarget( final SearchEdgeType search ) {
         final Observable<String> edgeTypes =
             Observable.create( new ObservableIterator<String>( "getEdgeTypesToTarget" ) {
-                    @Override
-                    protected Iterator<String> getIterator() {
-                        return edgeMetadataSerialization.getEdgeTypesToTarget( scope, search );
-                    }
-                } );
+                @Override
+                protected Iterator<String> getIterator() {
+                    return edgeMetadataSerialization.getEdgeTypesToTarget( scope, search );
+                }
+            } );
 
         return ObservableTimer.time( edgeTypes, getEdgeTypesToTargetTimer );
     }
@@ -407,11 +397,11 @@ public class GraphManagerImpl implements GraphManager {
     @Override
     public Observable<String> getIdTypesToTarget( final SearchIdType search ) {
         final Observable<String> edgeTypes = Observable.create( new ObservableIterator<String>( "getIdTypesToTarget" ) {
-                @Override
-                protected Iterator<String> getIterator() {
-                    return edgeMetadataSerialization.getIdTypesToTarget( scope, search );
-                }
-            } );
+            @Override
+            protected Iterator<String> getIterator() {
+                return edgeMetadataSerialization.getIdTypesToTarget( scope, search );
+            }
+        } );
 
         return ObservableTimer.time( edgeTypes, getIdTypesToTargetTimer );
     }
@@ -474,7 +464,7 @@ public class GraphManagerImpl implements GraphManager {
 
                     //one has been marked for deletion, return it
                     if(isSourceDeleted || isTargetDeleted){
-                        return new SimpleMarkedEdge( edge.getSourceNode(), edge.getType(), edge.getTargetNode(), edge.getTimestamp(), edge.isDeleted(), isSourceDeleted, isTargetDeleted );
+                        return new SimpleMarkedEdge( edge.getSourceNode(), edge.getType(), edge.getTargetNode(), edge.getTimestamp(), edge.isDeleted(), isSourceDeleted, isTargetDeleted, edge.getEdgeExpiration() );
                     }
 
                     return edge;

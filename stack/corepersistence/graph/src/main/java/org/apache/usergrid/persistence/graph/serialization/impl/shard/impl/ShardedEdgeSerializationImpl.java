@@ -21,55 +21,38 @@
 package org.apache.usergrid.persistence.graph.serialization.impl.shard.impl;
 
 
-import java.nio.ByteBuffer;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.UUID;
-
-import javax.annotation.Nullable;
-import javax.inject.Inject;
-
+import com.google.common.base.Function;
 import com.google.common.base.Optional;
+import com.google.inject.Singleton;
+import com.netflix.astyanax.Keyspace;
+import com.netflix.astyanax.MutationBatch;
+import com.netflix.astyanax.Serializer;
+import com.netflix.astyanax.util.RangeBuilder;
 import org.apache.usergrid.persistence.core.astyanax.CassandraConfig;
 import org.apache.usergrid.persistence.core.astyanax.MultiTenantColumnFamily;
 import org.apache.usergrid.persistence.core.astyanax.ScopedRowKey;
 import org.apache.usergrid.persistence.core.consistency.TimeService;
 import org.apache.usergrid.persistence.core.scope.ApplicationScope;
 import org.apache.usergrid.persistence.core.util.ValidationUtils;
-import org.apache.usergrid.persistence.graph.Edge;
-import org.apache.usergrid.persistence.graph.GraphFig;
-import org.apache.usergrid.persistence.graph.MarkedEdge;
-import org.apache.usergrid.persistence.graph.SearchByEdge;
-import org.apache.usergrid.persistence.graph.SearchByEdgeType;
-import org.apache.usergrid.persistence.graph.SearchByIdType;
+import org.apache.usergrid.persistence.graph.*;
 import org.apache.usergrid.persistence.graph.impl.SimpleMarkedEdge;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.DirectedEdge;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.DirectedEdgeMeta;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.EdgeColumnFamilies;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.EdgeRowKey;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.EdgeShardStrategy;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.RowKey;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.RowKeyType;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.Shard;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.ShardedEdgeSerialization;
+import org.apache.usergrid.persistence.graph.serialization.impl.shard.*;
 import org.apache.usergrid.persistence.graph.serialization.impl.shard.impl.comparators.DescendingTimestampComparator;
 import org.apache.usergrid.persistence.graph.serialization.impl.shard.impl.comparators.OrderedComparator;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.impl.comparators
-    .SourceDirectedEdgeDescendingComparator;
-import org.apache.usergrid.persistence.graph.serialization.impl.shard.impl.comparators
-    .TargetDirectedEdgeDescendingComparator;
+import org.apache.usergrid.persistence.graph.serialization.impl.shard.impl.comparators.SourceDirectedEdgeDescendingComparator;
+import org.apache.usergrid.persistence.graph.serialization.impl.shard.impl.comparators.TargetDirectedEdgeDescendingComparator;
 import org.apache.usergrid.persistence.graph.serialization.impl.shard.impl.serialize.EdgeSerializer;
 import org.apache.usergrid.persistence.graph.serialization.util.GraphValidation;
 import org.apache.usergrid.persistence.model.entity.Id;
-
-import com.google.common.base.Function;
-import com.google.inject.Singleton;
-import com.netflix.astyanax.Keyspace;
-import com.netflix.astyanax.MutationBatch;
-import com.netflix.astyanax.Serializer;
-import com.netflix.astyanax.util.RangeBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import javax.inject.Inject;
+import java.nio.ByteBuffer;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.UUID;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -80,7 +63,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @Singleton
 public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
 
-    private static final Logger logger = LoggerFactory.getLogger( ShardedEdgeSerializationImpl.class );
+    private static final Logger logger = LoggerFactory.getLogger(ShardedEdgeSerializationImpl.class);
 
 
     protected final Keyspace keyspace;
@@ -91,16 +74,16 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
 
 
     @Inject
-    public ShardedEdgeSerializationImpl( final Keyspace keyspace, final CassandraConfig cassandraConfig,
-                                         final GraphFig graphFig, final EdgeShardStrategy writeEdgeShardStrategy,
-                                         final TimeService timeService ) {
+    public ShardedEdgeSerializationImpl(final Keyspace keyspace, final CassandraConfig cassandraConfig,
+                                        final GraphFig graphFig, final EdgeShardStrategy writeEdgeShardStrategy,
+                                        final TimeService timeService) {
 
 
-        checkNotNull( "keyspace required", keyspace );
-        checkNotNull( "cassandraConfig required", cassandraConfig );
-        checkNotNull( "consistencyFig required", graphFig );
-        checkNotNull( "writeEdgeShardStrategy required", writeEdgeShardStrategy );
-        checkNotNull( "timeService required", timeService );
+        checkNotNull("keyspace required", keyspace);
+        checkNotNull("cassandraConfig required", cassandraConfig);
+        checkNotNull("consistencyFig required", graphFig);
+        checkNotNull("writeEdgeShardStrategy required", writeEdgeShardStrategy);
+        checkNotNull("timeService required", timeService);
 
 
         this.keyspace = keyspace;
@@ -112,306 +95,303 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
 
 
     @Override
-    public MutationBatch writeEdgeFromSource( final EdgeColumnFamilies columnFamilies, final ApplicationScope scope,
-                                              final MarkedEdge markedEdge, final Collection<Shard> shards,
-                                              final DirectedEdgeMeta directedEdgeMeta, final UUID timestamp ) {
-        ValidationUtils.validateApplicationScope( scope );
-        GraphValidation.validateEdge( markedEdge );
-        ValidationUtils.verifyTimeUuid( timestamp, "timestamp" );
-
-        return new SourceWriteOp( columnFamilies, markedEdge ) {
-
-            @Override
-            void writeEdge( final MutationBatch batch,
-                            final MultiTenantColumnFamily<ScopedRowKey<RowKey>, DirectedEdge> columnFamily,
-                            final ApplicationScope scope, final RowKey rowKey, final DirectedEdge edge,
-                            final Shard shard, final boolean isDeleted ) {
-
-                batch.withRow( columnFamily, ScopedRowKey.fromKey( scope.getApplication(), rowKey ) ).putColumn( edge, isDeleted );
-            }
-        }.createBatch( scope, shards, timestamp );
-    }
-
-
-    @Override
-    public MutationBatch writeEdgeFromSourceWithTargetType( final EdgeColumnFamilies columnFamilies,
-                                                            final ApplicationScope scope, final MarkedEdge markedEdge,
-                                                            final Collection<Shard> shards,
-                                                            final DirectedEdgeMeta directedEdgeMeta,
-                                                            final UUID timestamp ) {
-        ValidationUtils.validateApplicationScope( scope );
-        GraphValidation.validateEdge( markedEdge );
-        ValidationUtils.verifyTimeUuid( timestamp, "timestamp" );
-
-
-        return new SourceTargetTypeWriteOp( columnFamilies, markedEdge ) {
-
-            @Override
-            void writeEdge( final MutationBatch batch,
-                            final MultiTenantColumnFamily<ScopedRowKey<RowKeyType>, DirectedEdge> columnFamily,
-                            final ApplicationScope scope, final RowKeyType rowKey, final DirectedEdge edge,
-                            final Shard shard, final boolean isDeleted ) {
-
-
-                batch.withRow( columnFamily, ScopedRowKey.fromKey( scope.getApplication(), rowKey ) ).putColumn( edge, isDeleted );
-            }
-        }.createBatch( scope, shards, timestamp );
-    }
-
-
-    @Override
-    public MutationBatch writeEdgeToTarget( final EdgeColumnFamilies columnFamilies, final ApplicationScope scope,
-                                            final MarkedEdge markedEdge, final Collection<Shard> shards,
-                                            final DirectedEdgeMeta targetEdgeMeta, final UUID timestamp ) {
-        ValidationUtils.validateApplicationScope( scope );
-        GraphValidation.validateEdge( markedEdge );
-        ValidationUtils.verifyTimeUuid( timestamp, "timestamp" );
-
-
-        return new TargetWriteOp( columnFamilies, markedEdge ) {
-
-            @Override
-            void writeEdge( final MutationBatch batch,
-                            final MultiTenantColumnFamily<ScopedRowKey<RowKey>, DirectedEdge> columnFamily,
-                            final ApplicationScope scope, final RowKey rowKey, final DirectedEdge edge,
-                            final Shard shard, final boolean isDeleted ) {
-
-                batch.withRow( columnFamily, ScopedRowKey.fromKey( scope.getApplication(), rowKey ) ).putColumn( edge, isDeleted );
-
-            }
-        }.createBatch( scope, shards, timestamp );
-    }
-
-
-    @Override
-    public MutationBatch writeEdgeToTargetWithSourceType( final EdgeColumnFamilies columnFamilies,
-                                                          final ApplicationScope scope, final MarkedEdge markedEdge,
-                                                          final Collection<Shard> shards,
-                                                          final DirectedEdgeMeta directedEdgeMeta,
-                                                          final UUID timestamp ) {
-        ValidationUtils.validateApplicationScope( scope );
-        GraphValidation.validateEdge( markedEdge );
-        ValidationUtils.verifyTimeUuid( timestamp, "timestamp" );
-
-
-        return new TargetSourceTypeWriteOp( columnFamilies, markedEdge ) {
-
-            @Override
-            void writeEdge( final MutationBatch batch,
-                            final MultiTenantColumnFamily<ScopedRowKey<RowKeyType>, DirectedEdge> columnFamily,
-                            final ApplicationScope scope, final RowKeyType rowKey, final DirectedEdge edge,
-                            final Shard shard, final boolean isDeleted ) {
-
-                batch.withRow( columnFamilies.getTargetNodeSourceTypeCfName(), ScopedRowKey.fromKey( scope.getApplication(), rowKey ) )
-                     .putColumn( edge, isDeleted );
-            }
-        }.createBatch( scope, shards, timestamp );
-    }
-
-
-    @Override
-    public MutationBatch writeEdgeVersions( final EdgeColumnFamilies columnFamilies, final ApplicationScope scope,
-                                            final MarkedEdge markedEdge, final Collection<Shard> shards,
-                                            final DirectedEdgeMeta directedEdgeMeta, final UUID timestamp ) {
-
-        ValidationUtils.validateApplicationScope( scope );
-        GraphValidation.validateEdge( markedEdge );
-        ValidationUtils.verifyTimeUuid( timestamp, "timestamp" );
-
-
-        return new EdgeVersions( columnFamilies, markedEdge ) {
-
-            @Override
-            void writeEdge( final MutationBatch batch,
-                            final MultiTenantColumnFamily<ScopedRowKey<EdgeRowKey>, Long> columnFamily,
-                            final ApplicationScope scope, final EdgeRowKey rowKey, final Long column, final Shard shard,
-                            final boolean isDeleted ) {
-                batch.withRow( columnFamilies.getGraphEdgeVersions(), ScopedRowKey.fromKey( scope.getApplication(), rowKey ) )
-                     .putColumn( column, isDeleted );
-            }
-        }.createBatch( scope, shards, timestamp );
-    }
-
-
-    @Override
-    public MutationBatch deleteEdgeFromSource( final EdgeColumnFamilies columnFamilies, final ApplicationScope scope,
-                                               final MarkedEdge markedEdge, final Collection<Shard> shards,
-                                               final DirectedEdgeMeta directedEdgeMeta, final UUID timestamp ) {
-
-        return new SourceWriteOp( columnFamilies, markedEdge ) {
-
-            @Override
-            void writeEdge( final MutationBatch batch,
-                            final MultiTenantColumnFamily<ScopedRowKey<RowKey>, DirectedEdge> columnFamily,
-                            final ApplicationScope scope, final RowKey rowKey, final DirectedEdge edge,
-                            final Shard shard, final boolean isDeleted ) {
-
-                batch.withRow( columnFamily, ScopedRowKey.fromKey( scope.getApplication(), rowKey ) ).deleteColumn( edge );
-            }
-        }.createBatch( scope, shards, timestamp );
-    }
-
-
-    @Override
-    public MutationBatch deleteEdgeFromSourceWithTargetType( final EdgeColumnFamilies columnFamilies,
-                                                             final ApplicationScope scope, final MarkedEdge markedEdge,
-                                                             final Collection<Shard> shards,
-                                                             final DirectedEdgeMeta directedEdgeMeta,
-                                                             final UUID timestamp ) {
-        return new SourceTargetTypeWriteOp( columnFamilies, markedEdge ) {
-
-            @Override
-            void writeEdge( final MutationBatch batch,
-                            final MultiTenantColumnFamily<ScopedRowKey<RowKeyType>, DirectedEdge> columnFamily,
-                            final ApplicationScope scope, final RowKeyType rowKey, final DirectedEdge edge,
-                            final Shard shard, final boolean isDeleted ) {
-
-
-                batch.withRow( columnFamilies.getSourceNodeTargetTypeCfName(), ScopedRowKey.fromKey( scope.getApplication(), rowKey ) )
-                     .deleteColumn( edge );
-            }
-        }.createBatch( scope, shards, timestamp );
-    }
-
-
-    @Override
-    public MutationBatch deleteEdgeToTarget( final EdgeColumnFamilies columnFamilies, final ApplicationScope scope,
+    public MutationBatch writeEdgeFromSource(final EdgeColumnFamilies columnFamilies, final ApplicationScope scope,
                                              final MarkedEdge markedEdge, final Collection<Shard> shards,
-                                             final DirectedEdgeMeta directedEdgeMeta, final UUID timestamp ) {
+                                             final DirectedEdgeMeta directedEdgeMeta, final UUID timestamp) {
+        ValidationUtils.validateApplicationScope(scope);
+        GraphValidation.validateEdge(markedEdge);
+        ValidationUtils.verifyTimeUuid(timestamp, "timestamp");
 
-        return new TargetWriteOp( columnFamilies, markedEdge ) {
+        return new SourceWriteOp(columnFamilies, markedEdge) {
 
             @Override
-            void writeEdge( final MutationBatch batch,
-                            final MultiTenantColumnFamily<ScopedRowKey<RowKey>, DirectedEdge> columnFamily,
-                            final ApplicationScope scope, final RowKey rowKey, final DirectedEdge edge,
-                            final Shard shard, final boolean isDeleted ) {
+            void writeEdge(final MutationBatch batch,
+                           final MultiTenantColumnFamily<ScopedRowKey<RowKey>, DirectedEdge> columnFamily,
+                           final ApplicationScope scope, final RowKey rowKey, final DirectedEdge edge,
+                           final Shard shard, final boolean isDeleted, final int edge_ttl) {
 
-                batch.withRow( columnFamily, ScopedRowKey.fromKey( scope.getApplication(), rowKey ) ).deleteColumn( edge );
+                batch.withRow(columnFamily, ScopedRowKey.fromKey(scope.getApplication(), rowKey)).putColumn(edge, isDeleted, edge_ttl);
             }
-        }.createBatch( scope, shards, timestamp );
+        }.createBatch(scope, shards, timestamp);
     }
 
 
     @Override
-    public MutationBatch deleteEdgeToTargetWithSourceType( final EdgeColumnFamilies columnFamilies,
+    public MutationBatch writeEdgeFromSourceWithTargetType(final EdgeColumnFamilies columnFamilies,
                                                            final ApplicationScope scope, final MarkedEdge markedEdge,
                                                            final Collection<Shard> shards,
                                                            final DirectedEdgeMeta directedEdgeMeta,
-                                                           final UUID timestamp ) {
+                                                           final UUID timestamp) {
+        ValidationUtils.validateApplicationScope(scope);
+        GraphValidation.validateEdge(markedEdge);
+        ValidationUtils.verifyTimeUuid(timestamp, "timestamp");
 
-        return new TargetSourceTypeWriteOp( columnFamilies, markedEdge ) {
+
+        return new SourceTargetTypeWriteOp(columnFamilies, markedEdge) {
 
             @Override
-            void writeEdge( final MutationBatch batch,
-                            final MultiTenantColumnFamily<ScopedRowKey<RowKeyType>, DirectedEdge> columnFamily,
-                            final ApplicationScope scope, final RowKeyType rowKey, final DirectedEdge edge,
-                            final Shard shard, final boolean isDeleted ) {
+            void writeEdge(final MutationBatch batch,
+                           final MultiTenantColumnFamily<ScopedRowKey<RowKeyType>, DirectedEdge> columnFamily,
+                           final ApplicationScope scope, final RowKeyType rowKey, final DirectedEdge edge,
+                           final Shard shard, final boolean isDeleted, final int edge_ttl) {
 
-                batch.withRow( columnFamilies.getTargetNodeSourceTypeCfName(), ScopedRowKey.fromKey( scope.getApplication(), rowKey ) )
-                     .deleteColumn( edge );
+
+                batch.withRow(columnFamily, ScopedRowKey.fromKey(scope.getApplication(), rowKey)).putColumn(edge, isDeleted, edge_ttl);
             }
-        }.createBatch( scope, shards, timestamp );
+        }.createBatch(scope, shards, timestamp);
     }
 
 
     @Override
-    public MutationBatch deleteEdgeVersions( final EdgeColumnFamilies columnFamilies, final ApplicationScope scope,
-                                             final MarkedEdge markedEdge, final Collection<Shard> shards,
-                                             final DirectedEdgeMeta directedEdgeMeta, final UUID timestamp ) {
+    public MutationBatch writeEdgeToTarget(final EdgeColumnFamilies columnFamilies, final ApplicationScope scope,
+                                           final MarkedEdge markedEdge, final Collection<Shard> shards,
+                                           final DirectedEdgeMeta targetEdgeMeta, final UUID timestamp) {
+        ValidationUtils.validateApplicationScope(scope);
+        GraphValidation.validateEdge(markedEdge);
+        ValidationUtils.verifyTimeUuid(timestamp, "timestamp");
 
-        return new EdgeVersions( columnFamilies, markedEdge ) {
+
+        return new TargetWriteOp(columnFamilies, markedEdge) {
 
             @Override
-            void writeEdge( final MutationBatch batch,
-                            final MultiTenantColumnFamily<ScopedRowKey<EdgeRowKey>, Long> columnFamily,
-                            final ApplicationScope scope, final EdgeRowKey rowKey, final Long column, final Shard shard,
-                            final boolean isDeleted ) {
-                batch.withRow( columnFamilies.getGraphEdgeVersions(), ScopedRowKey.fromKey( scope.getApplication(), rowKey ) )
-                     .deleteColumn( column );
+            void writeEdge(final MutationBatch batch,
+                           final MultiTenantColumnFamily<ScopedRowKey<RowKey>, DirectedEdge> columnFamily,
+                           final ApplicationScope scope, final RowKey rowKey, final DirectedEdge edge,
+                           final Shard shard, final boolean isDeleted, final int edge_ttl) {
+
+                batch.withRow(columnFamily, ScopedRowKey.fromKey(scope.getApplication(), rowKey)).putColumn(edge, isDeleted, edge_ttl);
+
             }
-        }.createBatch( scope, shards, timestamp );
+        }.createBatch(scope, shards, timestamp);
     }
 
 
     @Override
-    public Iterator<MarkedEdge> getEdgeVersions( final EdgeColumnFamilies columnFamilies, final ApplicationScope scope,
-                                                 final SearchByEdge search, final Collection<Shard> shards ) {
-        ValidationUtils.validateApplicationScope( scope );
-        GraphValidation.validateSearchByEdge( search );
+    public MutationBatch writeEdgeToTargetWithSourceType(final EdgeColumnFamilies columnFamilies,
+                                                         final ApplicationScope scope, final MarkedEdge markedEdge,
+                                                         final Collection<Shard> shards,
+                                                         final DirectedEdgeMeta directedEdgeMeta,
+                                                         final UUID timestamp) {
+        ValidationUtils.validateApplicationScope(scope);
+        GraphValidation.validateEdge(markedEdge);
+        ValidationUtils.verifyTimeUuid(timestamp, "timestamp");
+
+
+        return new TargetSourceTypeWriteOp(columnFamilies, markedEdge) {
+
+            @Override
+            void writeEdge(final MutationBatch batch,
+                           final MultiTenantColumnFamily<ScopedRowKey<RowKeyType>, DirectedEdge> columnFamily,
+                           final ApplicationScope scope, final RowKeyType rowKey, final DirectedEdge edge,
+                           final Shard shard, final boolean isDeleted, final int edge_ttl) {
+
+                batch.withRow(columnFamilies.getTargetNodeSourceTypeCfName(), ScopedRowKey.fromKey(scope.getApplication(), rowKey))
+                    .putColumn(edge, isDeleted, edge_ttl);
+            }
+        }.createBatch(scope, shards, timestamp);
+    }
+
+
+    @Override
+    public MutationBatch writeEdgeVersions(final EdgeColumnFamilies columnFamilies, final ApplicationScope scope,
+                                           final MarkedEdge markedEdge, final Collection<Shard> shards,
+                                           final DirectedEdgeMeta directedEdgeMeta, final UUID timestamp) {
+
+        ValidationUtils.validateApplicationScope(scope);
+        GraphValidation.validateEdge(markedEdge);
+        ValidationUtils.verifyTimeUuid(timestamp, "timestamp");
+
+
+        return new EdgeVersions(columnFamilies, markedEdge) {
+
+            @Override
+            void writeEdge(final MutationBatch batch,
+                           final MultiTenantColumnFamily<ScopedRowKey<EdgeRowKey>, Long> columnFamily,
+                           final ApplicationScope scope, final EdgeRowKey rowKey, final Long column, final Shard shard,
+                           final boolean isDeleted, final int edge_ttl) {
+                batch.withRow(columnFamilies.getGraphEdgeVersions(), ScopedRowKey.fromKey(scope.getApplication(), rowKey))
+                    .putColumn(column, isDeleted, edge_ttl); //todo: check if the ttl is correct?
+            }
+        }.createBatch(scope, shards, timestamp);
+    }
+
+
+    @Override
+    public MutationBatch deleteEdgeFromSource(final EdgeColumnFamilies columnFamilies, final ApplicationScope scope,
+                                              final MarkedEdge markedEdge, final Collection<Shard> shards,
+                                              final DirectedEdgeMeta directedEdgeMeta, final UUID timestamp) {
+
+        return new SourceWriteOp(columnFamilies, markedEdge) {
+
+            @Override
+            void writeEdge(final MutationBatch batch,
+                           final MultiTenantColumnFamily<ScopedRowKey<RowKey>, DirectedEdge> columnFamily,
+                           final ApplicationScope scope, final RowKey rowKey, final DirectedEdge edge,
+                           final Shard shard, final boolean isDeleted, final int edge_ttl) {
+
+                batch.withRow(columnFamily, ScopedRowKey.fromKey(scope.getApplication(), rowKey)).deleteColumn(edge);
+            }
+        }.createBatch(scope, shards, timestamp);
+    }
+
+
+    @Override
+    public MutationBatch deleteEdgeFromSourceWithTargetType(final EdgeColumnFamilies columnFamilies,
+                                                            final ApplicationScope scope, final MarkedEdge markedEdge,
+                                                            final Collection<Shard> shards,
+                                                            final DirectedEdgeMeta directedEdgeMeta,
+                                                            final UUID timestamp) {
+        return new SourceTargetTypeWriteOp(columnFamilies, markedEdge) {
+
+            @Override
+            void writeEdge(final MutationBatch batch,
+                           final MultiTenantColumnFamily<ScopedRowKey<RowKeyType>, DirectedEdge> columnFamily,
+                           final ApplicationScope scope, final RowKeyType rowKey, final DirectedEdge edge,
+                           final Shard shard, final boolean isDeleted, final int edge_ttl) {
+
+
+                batch.withRow(columnFamilies.getSourceNodeTargetTypeCfName(), ScopedRowKey.fromKey(scope.getApplication(), rowKey))
+                    .deleteColumn(edge);
+            }
+        }.createBatch(scope, shards, timestamp);
+    }
+
+
+    @Override
+    public MutationBatch deleteEdgeToTarget(final EdgeColumnFamilies columnFamilies, final ApplicationScope scope,
+                                            final MarkedEdge markedEdge, final Collection<Shard> shards,
+                                            final DirectedEdgeMeta directedEdgeMeta, final UUID timestamp) {
+
+        return new TargetWriteOp(columnFamilies, markedEdge) {
+
+            @Override
+            void writeEdge(final MutationBatch batch,
+                           final MultiTenantColumnFamily<ScopedRowKey<RowKey>, DirectedEdge> columnFamily,
+                           final ApplicationScope scope, final RowKey rowKey, final DirectedEdge edge,
+                           final Shard shard, final boolean isDeleted, final int edge_ttl) {
+
+                batch.withRow(columnFamily, ScopedRowKey.fromKey(scope.getApplication(), rowKey)).deleteColumn(edge);
+            }
+        }.createBatch(scope, shards, timestamp);
+    }
+
+
+    @Override
+    public MutationBatch deleteEdgeToTargetWithSourceType(final EdgeColumnFamilies columnFamilies,
+                                                          final ApplicationScope scope, final MarkedEdge markedEdge,
+                                                          final Collection<Shard> shards,
+                                                          final DirectedEdgeMeta directedEdgeMeta,
+                                                          final UUID timestamp) {
+
+        return new TargetSourceTypeWriteOp(columnFamilies, markedEdge) {
+
+            @Override
+            void writeEdge(final MutationBatch batch,
+                           final MultiTenantColumnFamily<ScopedRowKey<RowKeyType>, DirectedEdge> columnFamily,
+                           final ApplicationScope scope, final RowKeyType rowKey, final DirectedEdge edge,
+                           final Shard shard, final boolean isDeleted, final int edge_ttl) {
+
+                batch.withRow(columnFamilies.getTargetNodeSourceTypeCfName(), ScopedRowKey.fromKey(scope.getApplication(), rowKey))
+                    .deleteColumn(edge);
+            }
+        }.createBatch(scope, shards, timestamp);
+    }
+
+
+    @Override
+    public MutationBatch deleteEdgeVersions(final EdgeColumnFamilies columnFamilies, final ApplicationScope scope,
+                                            final MarkedEdge markedEdge, final Collection<Shard> shards,
+                                            final DirectedEdgeMeta directedEdgeMeta, final UUID timestamp) {
+
+        return new EdgeVersions(columnFamilies, markedEdge) {
+
+            @Override
+            void writeEdge(final MutationBatch batch,
+                           final MultiTenantColumnFamily<ScopedRowKey<EdgeRowKey>, Long> columnFamily,
+                           final ApplicationScope scope, final EdgeRowKey rowKey, final Long column, final Shard shard,
+                           final boolean isDeleted, final int edge_ttl) {
+                batch.withRow(columnFamilies.getGraphEdgeVersions(), ScopedRowKey.fromKey(scope.getApplication(), rowKey))
+                    .deleteColumn(column);
+            }
+        }.createBatch(scope, shards, timestamp);
+    }
+
+
+    @Override
+    public Iterator<MarkedEdge> getEdgeVersions(final EdgeColumnFamilies columnFamilies, final ApplicationScope scope,
+                                                final SearchByEdge search, final Collection<Shard> shards) {
+        ValidationUtils.validateApplicationScope(scope);
+        GraphValidation.validateSearchByEdge(search);
 
         final Id targetId = search.targetNode();
         final Id sourceId = search.sourceNode();
         final String type = search.getType();
         final long maxTimestamp = search.getMaxTimestamp();
         final MultiTenantColumnFamily<ScopedRowKey<EdgeRowKey>, Long> columnFamily =
-                columnFamilies.getGraphEdgeVersions();
+            columnFamilies.getGraphEdgeVersions();
         final Serializer<Long> serializer = columnFamily.getColumnSerializer();
 
 
-        final OrderedComparator<MarkedEdge> comparator = new OrderedComparator<>( DescendingTimestampComparator.INSTANCE, search.getOrder());
+        final OrderedComparator<MarkedEdge> comparator = new OrderedComparator<>(DescendingTimestampComparator.INSTANCE, search.getOrder());
 
         Optional<Long> lastTimestamp = Optional.absent();
-        if(search.last().isPresent()){
+        if (search.last().isPresent()) {
             lastTimestamp = Optional.of(search.last().get().getTimestamp());
         }
 
 
-
         final EdgeSearcher<EdgeRowKey, Long, MarkedEdge> searcher =
-                new EdgeSearcher<EdgeRowKey, Long, MarkedEdge>( scope, shards, search.getOrder(),  comparator, maxTimestamp,
-                        search.last().transform( TRANSFORM ), lastTimestamp ) {
+            new EdgeSearcher<EdgeRowKey, Long, MarkedEdge>(scope, shards, search.getOrder(), comparator, maxTimestamp,
+                search.last().transform(TRANSFORM), lastTimestamp) {
 
 
-                    @Override
-                    protected Serializer<Long> getSerializer() {
-                        return serializer;
-                    }
+                @Override
+                protected Serializer<Long> getSerializer() {
+                    return serializer;
+                }
 
 
-
-                    @Override
-                    protected EdgeRowKey generateRowKey( long shard ) {
-                        return new EdgeRowKey( sourceId, type, targetId, shard );
-                    }
-
-
-                    @Override
-                    protected Long createColumn( final MarkedEdge last ) {
-                        return last.getTimestamp();
-                    }
+                @Override
+                protected EdgeRowKey generateRowKey(long shard) {
+                    return new EdgeRowKey(sourceId, type, targetId, shard);
+                }
 
 
-                    @Override
-                    protected void setTimeScan( final RangeBuilder rangeBuilder ) {
-                          //start seeking at a value < our max version
-                        rangeBuilder.setStart( maxTimestamp );
-                    }
+                @Override
+                protected Long createColumn(final MarkedEdge last) {
+                    return last.getTimestamp();
+                }
 
 
-                    @Override
-                    protected MarkedEdge createEdge( final Long column, final boolean marked ) {
-                        return new SimpleMarkedEdge( sourceId, type, targetId, column.longValue(), marked );
-                    }
+                @Override
+                protected void setTimeScan(final RangeBuilder rangeBuilder) {
+                    //start seeking at a value < our max version
+                    rangeBuilder.setStart(maxTimestamp);
+                }
 
 
+                @Override
+                protected MarkedEdge createEdge(final Long column, final boolean marked) {
+                    return new SimpleMarkedEdge(sourceId, type, targetId, column.longValue(), marked, -1L);
+                }
 
-                };
 
-        return new ShardsColumnIterator<>( searcher, columnFamily, keyspace, cassandraConfig.getReadCL(),
-                graphFig.getScanPageSize(), graphFig.getSmartShardSeekEnabled() );
+            };
+
+        return new ShardsColumnIterator<>(searcher, columnFamily, keyspace, cassandraConfig.getReadCL(),
+            graphFig.getScanPageSize(), graphFig.getSmartShardSeekEnabled());
     }
 
 
     @Override
-    public Iterator<MarkedEdge> getEdgesFromSource( final EdgeColumnFamilies columnFamilies,
-                                                    final ApplicationScope scope, final SearchByEdgeType search,
-                                                    final Collection<Shard> shards ) {
+    public Iterator<MarkedEdge> getEdgesFromSource(final EdgeColumnFamilies columnFamilies,
+                                                   final ApplicationScope scope, final SearchByEdgeType search,
+                                                   final Collection<Shard> shards) {
 
-        ValidationUtils.validateApplicationScope( scope );
-        GraphValidation.validateSearchByEdgeType( search );
+        ValidationUtils.validateApplicationScope(scope);
+        GraphValidation.validateSearchByEdgeType(search);
 
-        if(logger.isTraceEnabled()){
+        if (logger.isTraceEnabled()) {
             logger.trace("getEdgesFromSource shards: {}", shards);
         }
 
@@ -419,252 +399,249 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
         final String type = search.getType();
         final long maxTimestamp = search.getMaxTimestamp();
         final MultiTenantColumnFamily<ScopedRowKey<RowKey>, DirectedEdge> columnFamily =
-                columnFamilies.getSourceNodeCfName();
+            columnFamilies.getSourceNodeCfName();
         final Serializer<DirectedEdge> serializer = columnFamily.getColumnSerializer();
 
 
-        final OrderedComparator<MarkedEdge> comparator = new OrderedComparator<>( TargetDirectedEdgeDescendingComparator.INSTANCE, search.getOrder());
+        final OrderedComparator<MarkedEdge> comparator = new OrderedComparator<>(TargetDirectedEdgeDescendingComparator.INSTANCE, search.getOrder());
 
         Optional<Long> lastTimestamp = Optional.absent();
-        if(search.last().isPresent()){
+        if (search.last().isPresent()) {
             lastTimestamp = Optional.of(search.last().get().getTimestamp());
         }
 
 
         final EdgeSearcher<RowKey, DirectedEdge, MarkedEdge> searcher =
-                new EdgeSearcher<RowKey, DirectedEdge, MarkedEdge>( scope, shards, search.getOrder(), comparator, maxTimestamp,
-                        search.last().transform( TRANSFORM ), lastTimestamp ) {
+            new EdgeSearcher<RowKey, DirectedEdge, MarkedEdge>(scope, shards, search.getOrder(), comparator, maxTimestamp,
+                search.last().transform(TRANSFORM), lastTimestamp) {
 
 
-                    @Override
-                    protected Serializer<DirectedEdge> getSerializer() {
-                        return serializer;
-                    }
+                @Override
+                protected Serializer<DirectedEdge> getSerializer() {
+                    return serializer;
+                }
 
 
-                    @Override
-                    protected RowKey generateRowKey( long shard ) {
-                        return new RowKey( sourceId, type, shard );
-                    }
+                @Override
+                protected RowKey generateRowKey(long shard) {
+                    return new RowKey(sourceId, type, shard);
+                }
 
 
-                    @Override
-                    protected DirectedEdge createColumn( final MarkedEdge last ) {
-                        return new DirectedEdge( last.getTargetNode(), last.getTimestamp() );
-                    }
+                @Override
+                protected DirectedEdge createColumn(final MarkedEdge last) {
+                    return new DirectedEdge(last.getTargetNode(), last.getTimestamp());
+                }
 
 
-                    @Override
-                    protected void setTimeScan( final RangeBuilder rangeBuilder ) {
-                        final ByteBuffer buffer = EdgeSerializer.INSTANCE.fromTimeRange( maxTimestamp );
+                @Override
+                protected void setTimeScan(final RangeBuilder rangeBuilder) {
+                    final ByteBuffer buffer = EdgeSerializer.INSTANCE.fromTimeRange(maxTimestamp);
 
-                        rangeBuilder.setStart( buffer );
-                    }
-
-
-                    @Override
-                    protected MarkedEdge createEdge( final DirectedEdge edge, final boolean marked ) {
-                        return new SimpleMarkedEdge( sourceId, type, edge.id, edge.timestamp, marked );
-                    }
-                };
+                    rangeBuilder.setStart(buffer);
+                }
 
 
-        return new ShardsColumnIterator<>( searcher, columnFamily, keyspace, cassandraConfig.getReadCL(),
-                graphFig.getScanPageSize(), graphFig.getSmartShardSeekEnabled() );
+                @Override
+                protected MarkedEdge createEdge(final DirectedEdge edge, final boolean marked) {
+                    return new SimpleMarkedEdge(sourceId, type, edge.id, edge.timestamp, marked, -1L);
+                }
+            };
+
+
+        return new ShardsColumnIterator<>(searcher, columnFamily, keyspace, cassandraConfig.getReadCL(),
+            graphFig.getScanPageSize(), graphFig.getSmartShardSeekEnabled());
     }
 
 
     @Override
-    public Iterator<MarkedEdge> getEdgesFromSourceByTargetType( final EdgeColumnFamilies columnFamilies,
-                                                                final ApplicationScope scope,
-                                                                final SearchByIdType search,
-                                                                final Collection<Shard> shards ) {
+    public Iterator<MarkedEdge> getEdgesFromSourceByTargetType(final EdgeColumnFamilies columnFamilies,
+                                                               final ApplicationScope scope,
+                                                               final SearchByIdType search,
+                                                               final Collection<Shard> shards) {
 
-        ValidationUtils.validateApplicationScope( scope );
-        GraphValidation.validateSearchByEdgeType( search );
+        ValidationUtils.validateApplicationScope(scope);
+        GraphValidation.validateSearchByEdgeType(search);
 
         final Id targetId = search.getNode();
         final String type = search.getType();
         final String targetType = search.getIdType();
         final long maxTimestamp = search.getMaxTimestamp();
         final MultiTenantColumnFamily<ScopedRowKey<RowKeyType>, DirectedEdge> columnFamily =
-                columnFamilies.getSourceNodeTargetTypeCfName();
+            columnFamilies.getSourceNodeTargetTypeCfName();
         final Serializer<DirectedEdge> serializer = columnFamily.getColumnSerializer();
 
-        final OrderedComparator<MarkedEdge> comparator = new OrderedComparator<>( TargetDirectedEdgeDescendingComparator.INSTANCE, search.getOrder());
+        final OrderedComparator<MarkedEdge> comparator = new OrderedComparator<>(TargetDirectedEdgeDescendingComparator.INSTANCE, search.getOrder());
 
         Optional<Long> lastTimestamp = Optional.absent();
-        if(search.last().isPresent()){
+        if (search.last().isPresent()) {
             lastTimestamp = Optional.of(search.last().get().getTimestamp());
         }
 
         final EdgeSearcher<RowKeyType, DirectedEdge, MarkedEdge> searcher =
-                new EdgeSearcher<RowKeyType, DirectedEdge, MarkedEdge>( scope, shards, search.getOrder(), comparator, maxTimestamp,
-                        search.last().transform( TRANSFORM ), lastTimestamp ) {
+            new EdgeSearcher<RowKeyType, DirectedEdge, MarkedEdge>(scope, shards, search.getOrder(), comparator, maxTimestamp,
+                search.last().transform(TRANSFORM), lastTimestamp) {
 
-                    @Override
-                    protected Serializer<DirectedEdge> getSerializer() {
-                        return serializer;
-                    }
-
-
-                    @Override
-                    protected RowKeyType generateRowKey( long shard ) {
-                        return new RowKeyType( targetId, type, targetType, shard );
-                    }
+                @Override
+                protected Serializer<DirectedEdge> getSerializer() {
+                    return serializer;
+                }
 
 
-                    @Override
-                    protected DirectedEdge createColumn( final MarkedEdge last ) {
-                        return new DirectedEdge( last.getTargetNode(), last.getTimestamp() );
-                    }
+                @Override
+                protected RowKeyType generateRowKey(long shard) {
+                    return new RowKeyType(targetId, type, targetType, shard);
+                }
 
 
-                    @Override
-                    protected void setTimeScan( final RangeBuilder rangeBuilder ) {
-                        final ByteBuffer buffer = EdgeSerializer.INSTANCE.fromTimeRange( maxTimestamp );
-
-                        rangeBuilder.setStart( buffer );
-                    }
+                @Override
+                protected DirectedEdge createColumn(final MarkedEdge last) {
+                    return new DirectedEdge(last.getTargetNode(), last.getTimestamp());
+                }
 
 
-                    @Override
-                    protected MarkedEdge createEdge( final DirectedEdge edge, final boolean marked ) {
-                        return new SimpleMarkedEdge( targetId, type, edge.id, edge.timestamp, marked );
-                    }
-                };
+                @Override
+                protected void setTimeScan(final RangeBuilder rangeBuilder) {
+                    final ByteBuffer buffer = EdgeSerializer.INSTANCE.fromTimeRange(maxTimestamp);
 
-        return new ShardsColumnIterator( searcher, columnFamily, keyspace, cassandraConfig.getReadCL(),
-                graphFig.getScanPageSize(), graphFig.getSmartShardSeekEnabled() );
+                    rangeBuilder.setStart(buffer);
+                }
+
+
+                @Override
+                protected MarkedEdge createEdge(final DirectedEdge edge, final boolean marked) {
+                    return new SimpleMarkedEdge(targetId, type, edge.id, edge.timestamp, marked, -1L);
+                }
+            };
+
+        return new ShardsColumnIterator(searcher, columnFamily, keyspace, cassandraConfig.getReadCL(),
+            graphFig.getScanPageSize(), graphFig.getSmartShardSeekEnabled());
     }
 
 
     @Override
-    public Iterator<MarkedEdge> getEdgesToTarget( final EdgeColumnFamilies columnFamilies, final ApplicationScope scope,
-                                                  final SearchByEdgeType search, final Collection<Shard> shards ) {
-        ValidationUtils.validateApplicationScope( scope );
-        GraphValidation.validateSearchByEdgeType( search );
+    public Iterator<MarkedEdge> getEdgesToTarget(final EdgeColumnFamilies columnFamilies, final ApplicationScope scope,
+                                                 final SearchByEdgeType search, final Collection<Shard> shards) {
+        ValidationUtils.validateApplicationScope(scope);
+        GraphValidation.validateSearchByEdgeType(search);
 
         final Id targetId = search.getNode();
         final String type = search.getType();
         final long maxTimestamp = search.getMaxTimestamp();
         final MultiTenantColumnFamily<ScopedRowKey<RowKey>, DirectedEdge> columnFamily =
-                columnFamilies.getTargetNodeCfName();
+            columnFamilies.getTargetNodeCfName();
         final Serializer<DirectedEdge> serializer = columnFamily.getColumnSerializer();
 
-        final OrderedComparator<MarkedEdge> comparator = new OrderedComparator<>( SourceDirectedEdgeDescendingComparator.INSTANCE, search.getOrder());
+        final OrderedComparator<MarkedEdge> comparator = new OrderedComparator<>(SourceDirectedEdgeDescendingComparator.INSTANCE, search.getOrder());
 
         Optional<Long> lastTimestamp = Optional.absent();
-        if(search.last().isPresent()){
+        if (search.last().isPresent()) {
             lastTimestamp = Optional.of(search.last().get().getTimestamp());
         }
 
         final EdgeSearcher<RowKey, DirectedEdge, MarkedEdge> searcher =
-                new EdgeSearcher<RowKey, DirectedEdge, MarkedEdge>( scope, shards, search.getOrder(),comparator,  maxTimestamp,
-                        search.last().transform( TRANSFORM ), lastTimestamp ) {
+            new EdgeSearcher<RowKey, DirectedEdge, MarkedEdge>(scope, shards, search.getOrder(), comparator, maxTimestamp,
+                search.last().transform(TRANSFORM), lastTimestamp) {
 
-                    @Override
-                    protected Serializer<DirectedEdge> getSerializer() {
-                        return serializer;
-                    }
-
-
-                    @Override
-                    protected RowKey generateRowKey( long shard ) {
-                        return new RowKey( targetId, type, shard );
-                    }
+                @Override
+                protected Serializer<DirectedEdge> getSerializer() {
+                    return serializer;
+                }
 
 
-                    @Override
-                    protected DirectedEdge createColumn( final MarkedEdge last ) {
-                        return new DirectedEdge( last.getSourceNode(), last.getTimestamp() );
-                    }
+                @Override
+                protected RowKey generateRowKey(long shard) {
+                    return new RowKey(targetId, type, shard);
+                }
 
 
-                    @Override
-                    protected void setTimeScan( final RangeBuilder rangeBuilder ) {
-                        final ByteBuffer buffer = EdgeSerializer.INSTANCE.fromTimeRange( maxTimestamp );
-
-                        rangeBuilder.setStart( buffer );
-                    }
+                @Override
+                protected DirectedEdge createColumn(final MarkedEdge last) {
+                    return new DirectedEdge(last.getSourceNode(), last.getTimestamp());
+                }
 
 
-                    @Override
-                    protected MarkedEdge createEdge( final DirectedEdge edge, final boolean marked ) {
-                        return new SimpleMarkedEdge( edge.id, type, targetId, edge.timestamp, marked );
-                    }
-                };
+                @Override
+                protected void setTimeScan(final RangeBuilder rangeBuilder) {
+                    final ByteBuffer buffer = EdgeSerializer.INSTANCE.fromTimeRange(maxTimestamp);
+
+                    rangeBuilder.setStart(buffer);
+                }
 
 
-        return new ShardsColumnIterator<>( searcher, columnFamily, keyspace, cassandraConfig.getReadCL(),
-                graphFig.getScanPageSize(), graphFig.getSmartShardSeekEnabled() );
+                @Override
+                protected MarkedEdge createEdge(final DirectedEdge edge, final boolean marked) {
+                    return new SimpleMarkedEdge(edge.id, type, targetId, edge.timestamp, marked, edge.timestamp - 1L);
+                }
+            };
+
+
+        return new ShardsColumnIterator<>(searcher, columnFamily, keyspace, cassandraConfig.getReadCL(),
+            graphFig.getScanPageSize(), graphFig.getSmartShardSeekEnabled());
     }
 
 
     @Override
-    public Iterator<MarkedEdge> getEdgesToTargetBySourceType( final EdgeColumnFamilies columnFamilies,
-                                                              final ApplicationScope scope,
-                                                              final SearchByIdType search,
-                                                              final Collection<Shard> shards ) {
+    public Iterator<MarkedEdge> getEdgesToTargetBySourceType(final EdgeColumnFamilies columnFamilies,
+                                                             final ApplicationScope scope,
+                                                             final SearchByIdType search,
+                                                             final Collection<Shard> shards) {
 
-        ValidationUtils.validateApplicationScope( scope );
-        GraphValidation.validateSearchByEdgeType( search );
+        ValidationUtils.validateApplicationScope(scope);
+        GraphValidation.validateSearchByEdgeType(search);
 
         final Id targetId = search.getNode();
         final String sourceType = search.getIdType();
         final String type = search.getType();
         final long maxTimestamp = search.getMaxTimestamp();
         final MultiTenantColumnFamily<ScopedRowKey<RowKeyType>, DirectedEdge> columnFamily =
-                columnFamilies.getTargetNodeSourceTypeCfName();
+            columnFamilies.getTargetNodeSourceTypeCfName();
         final Serializer<DirectedEdge> serializer = columnFamily.getColumnSerializer();
 
-        final OrderedComparator<MarkedEdge> comparator = new OrderedComparator<>( SourceDirectedEdgeDescendingComparator.INSTANCE, search.getOrder());
+        final OrderedComparator<MarkedEdge> comparator = new OrderedComparator<>(SourceDirectedEdgeDescendingComparator.INSTANCE, search.getOrder());
 
         Optional<Long> lastTimestamp = Optional.absent();
-        if(search.last().isPresent()){
+        if (search.last().isPresent()) {
             lastTimestamp = Optional.of(search.last().get().getTimestamp());
         }
 
         final EdgeSearcher<RowKeyType, DirectedEdge, MarkedEdge> searcher =
-                new EdgeSearcher<RowKeyType, DirectedEdge, MarkedEdge>( scope, shards, search.getOrder(), comparator, maxTimestamp,
-                        search.last().transform( TRANSFORM ), lastTimestamp ) {
-                    @Override
-                    protected Serializer<DirectedEdge> getSerializer() {
-                        return serializer;
-                    }
+            new EdgeSearcher<RowKeyType, DirectedEdge, MarkedEdge>(scope, shards, search.getOrder(), comparator, maxTimestamp,
+                search.last().transform(TRANSFORM), lastTimestamp) {
+                @Override
+                protected Serializer<DirectedEdge> getSerializer() {
+                    return serializer;
+                }
 
 
-                    @Override
-                    protected RowKeyType generateRowKey( final long shard ) {
-                        return new RowKeyType( targetId, type, sourceType, shard );
-                    }
+                @Override
+                protected RowKeyType generateRowKey(final long shard) {
+                    return new RowKeyType(targetId, type, sourceType, shard);
+                }
 
 
-                    @Override
-                    protected DirectedEdge createColumn( final MarkedEdge last ) {
-                        return new DirectedEdge( last.getTargetNode(), last.getTimestamp() );
-                    }
+                @Override
+                protected DirectedEdge createColumn(final MarkedEdge last) {
+                    return new DirectedEdge(last.getTargetNode(), last.getTimestamp());
+                }
 
 
-                    @Override
-                    protected void setTimeScan( final RangeBuilder rangeBuilder ) {
-                        final ByteBuffer buffer = EdgeSerializer.INSTANCE.fromTimeRange( maxTimestamp );
+                @Override
+                protected void setTimeScan(final RangeBuilder rangeBuilder) {
+                    final ByteBuffer buffer = EdgeSerializer.INSTANCE.fromTimeRange(maxTimestamp);
 
-                        rangeBuilder.setStart( buffer );
-                    }
+                    rangeBuilder.setStart(buffer);
+                }
 
-                    @Override
-                    protected MarkedEdge createEdge( final DirectedEdge edge, final boolean marked ) {
-                        return new SimpleMarkedEdge( edge.id, type, targetId, edge.timestamp, marked );
-                    }
-                };
+                @Override
+                protected MarkedEdge createEdge(final DirectedEdge edge, final boolean marked) {
+                    return new SimpleMarkedEdge(edge.id, type, targetId, edge.timestamp, marked, -1L);
+                }
+            };
 
-        return new ShardsColumnIterator<>( searcher, columnFamily, keyspace, cassandraConfig.getReadCL(),
-                graphFig.getScanPageSize(), graphFig.getSmartShardSeekEnabled() );
+        return new ShardsColumnIterator<>(searcher, columnFamily, keyspace, cassandraConfig.getReadCL(),
+            graphFig.getScanPageSize(), graphFig.getSmartShardSeekEnabled());
     }
-
-
-
 
 
     /**
@@ -684,7 +661,7 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
         /**
          * Get the row key
          */
-        public abstract R getRowKey( final Shard shard );
+        public abstract R getRowKey(final Shard shard);
 
         /**
          * Get the column family value
@@ -696,35 +673,45 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
          */
         protected abstract boolean isDeleted();
 
+        /**
+         * get edge_expires_in
+         */
+        protected abstract long getEdgeExpiresIn();
+
 
         /**
          * Write the edge with the given data
          */
-        abstract void writeEdge( final MutationBatch batch,
-                                 final MultiTenantColumnFamily<ScopedRowKey<R>, C> columnFamily,
-                                 final ApplicationScope scope, final R rowKey, final C column, final Shard shard,
-                                 final boolean isDeleted );
+        abstract void writeEdge(final MutationBatch batch,
+                                final MultiTenantColumnFamily<ScopedRowKey<R>, C> columnFamily,
+                                final ApplicationScope scope, final R rowKey, final C column, final Shard shard,
+                                final boolean isDeleted, final int edge_ttl);
 
 
         /**
          * Create a mutation batch
          */
-        public MutationBatch createBatch( final ApplicationScope scope, final Collection<Shard> shards,
-                                          final UUID opTimestamp ) {
+        public MutationBatch createBatch(final ApplicationScope scope, final Collection<Shard> shards,
+                                         final UUID opTimestamp) {
 
             final MutationBatch batch =
-                    keyspace.prepareMutationBatch().withConsistencyLevel( cassandraConfig.getWriteCL() )
-                            .withTimestamp( opTimestamp.timestamp() );
+                keyspace.prepareMutationBatch().withConsistencyLevel(cassandraConfig.getWriteCL())
+                    .withTimestamp(opTimestamp.timestamp());
 
 
             final C column = getDirectedEdge();
             final MultiTenantColumnFamily<ScopedRowKey<R>, C> columnFamily = getColumnFamily();
             final boolean isDeleted = isDeleted();
 
+            int edge_ttl = -1;
+            if(getEdgeExpiresIn() != -1L){
 
-            for ( Shard shard : shards ) {
-                final R rowKey = getRowKey( shard );
-                writeEdge( batch, columnFamily, scope, rowKey, column, shard, isDeleted );
+                edge_ttl = (int) (getEdgeExpiresIn() - System.currentTimeMillis()) / 1000;
+            }
+
+            for (Shard shard : shards) {
+                final R rowKey = getRowKey(shard);
+                writeEdge(batch, columnFamily, scope, rowKey, column, shard, isDeleted, edge_ttl);
             }
 
 
@@ -745,12 +732,13 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
         private final String type;
         private final boolean isDeleted;
         private final DirectedEdge directedEdge;
+        private final long edge_expires_in;
 
 
         /**
          * Write the source write operation
          */
-        private SourceWriteOp( final EdgeColumnFamilies edgeColumnFamilies, final MarkedEdge markedEdge ) {
+        private SourceWriteOp(final EdgeColumnFamilies edgeColumnFamilies, final MarkedEdge markedEdge) {
             this.columnFamily = edgeColumnFamilies.getSourceNodeCfName();
 
             this.sourceNodeId = markedEdge.getSourceNode();
@@ -758,7 +746,8 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
             this.type = markedEdge.getType();
             this.isDeleted = markedEdge.isDeleted();
 
-            this.directedEdge = new DirectedEdge( markedEdge.getTargetNode(), markedEdge.getTimestamp() );
+            this.directedEdge = new DirectedEdge(markedEdge.getTargetNode(), markedEdge.getTimestamp());
+            this.edge_expires_in = markedEdge.edgeExpiresIn();
         }
 
 
@@ -769,8 +758,8 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
 
 
         @Override
-        public RowKey getRowKey( final Shard shard ) {
-            return new RowKey( sourceNodeId, type, shard.getShardIndex() );
+        public RowKey getRowKey(final Shard shard) {
+            return new RowKey(sourceNodeId, type, shard.getShardIndex());
         }
 
 
@@ -784,6 +773,12 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
         protected boolean isDeleted() {
             return isDeleted;
         }
+
+        @Override
+        protected long getEdgeExpiresIn() {
+            return edge_expires_in;
+        }
+
     }
 
 
@@ -798,12 +793,13 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
         private Id targetId;
         private final boolean isDeleted;
         private final DirectedEdge directedEdge;
+        private final long edge_expires_in;
 
 
         /**
          * Write the source write operation
          */
-        private SourceTargetTypeWriteOp( final EdgeColumnFamilies edgeColumnFamilies, final MarkedEdge markedEdge ) {
+        private SourceTargetTypeWriteOp(final EdgeColumnFamilies edgeColumnFamilies, final MarkedEdge markedEdge) {
             this.columnFamily = edgeColumnFamilies.getSourceNodeTargetTypeCfName();
 
             this.sourceNodeId = markedEdge.getSourceNode();
@@ -812,7 +808,8 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
             this.targetId = markedEdge.getTargetNode();
             this.isDeleted = markedEdge.isDeleted();
 
-            this.directedEdge = new DirectedEdge( targetId, markedEdge.getTimestamp() );
+            this.directedEdge = new DirectedEdge(targetId, markedEdge.getTimestamp());
+            this.edge_expires_in = markedEdge.edgeExpiresIn();
         }
 
 
@@ -823,8 +820,8 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
 
 
         @Override
-        public RowKeyType getRowKey( final Shard shard ) {
-            return new RowKeyType( sourceNodeId, type, targetId, shard.getShardIndex() );
+        public RowKeyType getRowKey(final Shard shard) {
+            return new RowKeyType(sourceNodeId, type, targetId, shard.getShardIndex());
         }
 
 
@@ -838,6 +835,12 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
         protected boolean isDeleted() {
             return isDeleted;
         }
+
+        @Override
+        protected long getEdgeExpiresIn() {
+            return edge_expires_in;
+        }
+
     }
 
 
@@ -853,12 +856,12 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
         private final String type;
         private final boolean isDeleted;
         private final DirectedEdge directedEdge;
-
+        private final long edge_expires_in;
 
         /**
          * Write the source write operation
          */
-        private TargetWriteOp( final EdgeColumnFamilies edgeColumnFamilies, final MarkedEdge markedEdge ) {
+        private TargetWriteOp(final EdgeColumnFamilies edgeColumnFamilies, final MarkedEdge markedEdge) {
             this.columnFamily = edgeColumnFamilies.getTargetNodeCfName();
 
             this.targetNode = markedEdge.getTargetNode();
@@ -866,7 +869,8 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
             this.type = markedEdge.getType();
             this.isDeleted = markedEdge.isDeleted();
 
-            this.directedEdge = new DirectedEdge( markedEdge.getSourceNode(), markedEdge.getTimestamp() );
+            this.directedEdge = new DirectedEdge(markedEdge.getSourceNode(), markedEdge.getTimestamp());
+            this.edge_expires_in = markedEdge.edgeExpiresIn();
         }
 
 
@@ -877,8 +881,8 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
 
 
         @Override
-        public RowKey getRowKey( final Shard shard ) {
-            return new RowKey( targetNode, type, shard.getShardIndex() );
+        public RowKey getRowKey(final Shard shard) {
+            return new RowKey(targetNode, type, shard.getShardIndex());
         }
 
 
@@ -892,6 +896,12 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
         protected boolean isDeleted() {
             return isDeleted;
         }
+
+        @Override
+        protected long getEdgeExpiresIn() {
+            return edge_expires_in;
+        }
+
     }
 
 
@@ -909,12 +919,13 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
 
         final boolean isDeleted;
         final DirectedEdge directedEdge;
+        private final long edge_expires_in;
 
 
         /**
          * Write the source write operation
          */
-        private TargetSourceTypeWriteOp( final EdgeColumnFamilies edgeColumnFamilies, final MarkedEdge markedEdge ) {
+        private TargetSourceTypeWriteOp(final EdgeColumnFamilies edgeColumnFamilies, final MarkedEdge markedEdge) {
             this.columnFamily = edgeColumnFamilies.getSourceNodeTargetTypeCfName();
 
             this.targetNode = markedEdge.getTargetNode();
@@ -923,7 +934,8 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
             this.type = markedEdge.getType();
             this.isDeleted = markedEdge.isDeleted();
 
-            this.directedEdge = new DirectedEdge( sourceNode, markedEdge.getTimestamp() );
+            this.directedEdge = new DirectedEdge(sourceNode, markedEdge.getTimestamp());
+            this.edge_expires_in = markedEdge.edgeExpiresIn();
         }
 
 
@@ -934,8 +946,8 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
 
 
         @Override
-        public RowKeyType getRowKey( final Shard shard ) {
-            return new RowKeyType( targetNode, type, sourceNode, shard.getShardIndex() );
+        public RowKeyType getRowKey(final Shard shard) {
+            return new RowKeyType(targetNode, type, sourceNode, shard.getShardIndex());
         }
 
 
@@ -948,6 +960,11 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
         @Override
         protected boolean isDeleted() {
             return isDeleted;
+        }
+
+        @Override
+        protected long getEdgeExpiresIn() {
+            return edge_expires_in;
         }
     }
 
@@ -966,12 +983,13 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
 
         final boolean isDeleted;
         final Long edgeVersion;
+        private final long edge_expires_in;
 
 
         /**
          * Write the source write operation
          */
-        private EdgeVersions( final EdgeColumnFamilies edgeColumnFamilies, final MarkedEdge markedEdge ) {
+        private EdgeVersions(final EdgeColumnFamilies edgeColumnFamilies, final MarkedEdge markedEdge) {
             this.columnFamily = edgeColumnFamilies.getGraphEdgeVersions();
 
             this.targetNode = markedEdge.getTargetNode();
@@ -981,6 +999,7 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
             this.isDeleted = markedEdge.isDeleted();
 
             this.edgeVersion = markedEdge.getTimestamp();
+            this.edge_expires_in = markedEdge.edgeExpiresIn();
         }
 
 
@@ -991,8 +1010,8 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
 
 
         @Override
-        public EdgeRowKey getRowKey( final Shard shard ) {
-            return new EdgeRowKey( sourceNode, type, targetNode, shard.getShardIndex() );
+        public EdgeRowKey getRowKey(final Shard shard) {
+            return new EdgeRowKey(sourceNode, type, targetNode, shard.getShardIndex());
         }
 
 
@@ -1006,28 +1025,29 @@ public class ShardedEdgeSerializationImpl implements ShardedEdgeSerialization {
         protected boolean isDeleted() {
             return isDeleted;
         }
+
+        @Override
+        protected long getEdgeExpiresIn() {
+            return edge_expires_in;
+        }
+
     }
-
-
-
-
-
 
     private static final Function<Edge, MarkedEdge> TRANSFORM = new Function<Edge, MarkedEdge>() {
         @Nullable
         @Override
-        public MarkedEdge apply( @Nullable final Edge input ) {
+        public MarkedEdge apply(@Nullable final Edge input) {
 
-            if ( input == null ) {
+            if (input == null) {
                 return null;
             }
 
-            if ( input instanceof MarkedEdge ) {
-                return ( MarkedEdge ) input;
+            if (input instanceof MarkedEdge) {
+                return (MarkedEdge) input;
             }
 
-            return new SimpleMarkedEdge( input.getSourceNode(), input.getType(), input.getTargetNode(),
-                    input.getTimestamp(), false );
+            return new SimpleMarkedEdge(input.getSourceNode(), input.getType(), input.getTargetNode(),
+                input.getTimestamp(), false, input.getTimestamp() - 1L);
         }
     };
 }

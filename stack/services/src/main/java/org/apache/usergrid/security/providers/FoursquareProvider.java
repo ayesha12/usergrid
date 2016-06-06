@@ -89,8 +89,8 @@ public class FoursquareProvider extends AbstractProvider {
             .queryParam( "oauth_token", externalToken )
             .queryParam( "v", "20120623" )
             .request()
-                .accept( MediaType.APPLICATION_JSON )
-                .get( Map.class );
+            .accept( MediaType.APPLICATION_JSON )
+            .get( Map.class );
 
         Map<String, Object> fq_user = ( Map<String, Object> ) ( ( Map<?, ?> ) body.get( "response" ) ).get( "user" );
 
@@ -102,8 +102,8 @@ public class FoursquareProvider extends AbstractProvider {
 
         // Grab the last check-in so we can store that as the user location
         Map<String, Object> fq_location =
-                ( Map<String, Object> ) ( ( Map<?, ?> ) ( ( Map<?, ?> ) ( ( ArrayList<?> ) ( ( Map<?, ?> ) fq_user
-                        .get( "checkins" ) ).get( "items" ) ).get( 0 ) ).get( "venue" ) ).get( "location" );
+            ( Map<String, Object> ) ( ( Map<?, ?> ) ( ( Map<?, ?> ) ( ( ArrayList<?> ) ( ( Map<?, ?> ) fq_user
+                .get( "checkins" ) ).get( "items" ) ).get( 0 ) ).get( "venue" ) ).get( "location" );
 
         Map<String, Double> location = new LinkedHashMap<String, Double>();
         location.put( "latitude", ( Double ) fq_location.get( "lat" ) );
@@ -155,7 +155,7 @@ public class FoursquareProvider extends AbstractProvider {
                     properties.put( "foursquare", fq_user );
                     properties.put( "picture", "https://is0.4sqi.net/userpix_thumbs" + fq_user_picture );
                     properties.put( "location", location );
-                    entityManager.updateProperties( user, properties );
+                    entityManager.updateProperties( user, properties, null);
 
                     user.setProperty( "foursquare", fq_user );
                     user.setProperty( "picture", "https://is0.4sqi.net/userpix_thumbs" + fq_user_picture );

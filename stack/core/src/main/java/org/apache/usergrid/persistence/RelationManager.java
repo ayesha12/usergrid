@@ -17,15 +17,11 @@
 package org.apache.usergrid.persistence;
 
 
-import java.nio.ByteBuffer;
-import org.apache.usergrid.persistence.Query;
-import java.util.List;
+import org.apache.usergrid.persistence.Query.Level;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import org.apache.usergrid.persistence.Query.Level;
-
-import me.prettyprint.hector.api.mutation.Mutator;
 
 
 public interface RelationManager {
@@ -54,13 +50,13 @@ public interface RelationManager {
 
     public Entity addToCollection( String collectionName, EntityRef itemRef ) throws Exception;
 
-    public Entity createItemInCollection( String collectionName, String itemType, Map<String, Object> properties )
-            throws Exception;
+    public Entity createItemInCollection(String collectionName, String itemType, Map<String, Object> properties)
+        throws Exception;
 
     public void removeFromCollection( String collectionName, EntityRef itemRef ) throws Exception;
 
     public void copyRelationships( String srcRelationName, EntityRef dstEntityRef, String dstRelationName )
-            throws Exception;
+        throws Exception;
 
     public Results searchCollection( String collectionName, Query query ) throws Exception;
 
@@ -105,7 +101,7 @@ public interface RelationManager {
      * @param connectedEntityType The type of
      */
     public Results getTargetEntities(String connectionType, String connectedEntityType, Level resultsLevel)
-            throws Exception;
+        throws Exception;
 
     public Results getSourceEntities(String connectionType, String connectedEntityType,
                                      Level resultsLevel) throws Exception;
@@ -119,7 +115,7 @@ public interface RelationManager {
     public Results getSourceEntities(
         String connectionType, String entityType, Level level, int count) throws Exception;
 
-	public Results searchTargetEntities(Query query) throws Exception;
+    public Results searchTargetEntities(Query query) throws Exception;
 
 
     public Set<String> getConnectionIndexes( String connectionType ) throws Exception;

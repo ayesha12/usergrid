@@ -18,14 +18,8 @@
 package org.apache.usergrid.corepersistence.service;
 
 
-import java.util.List;
-
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.google.common.base.Optional;
+import com.google.inject.Inject;
 import org.apache.usergrid.corepersistence.TestCoreModule;
 import org.apache.usergrid.corepersistence.util.CpNamingUtils;
 import org.apache.usergrid.persistence.core.guice.MigrationManagerRule;
@@ -33,24 +27,20 @@ import org.apache.usergrid.persistence.core.scope.ApplicationScope;
 import org.apache.usergrid.persistence.core.scope.ApplicationScopeImpl;
 import org.apache.usergrid.persistence.core.test.ITRunner;
 import org.apache.usergrid.persistence.core.test.UseModules;
-import org.apache.usergrid.persistence.graph.Edge;
-import org.apache.usergrid.persistence.graph.GraphManager;
-import org.apache.usergrid.persistence.graph.GraphManagerFactory;
-import org.apache.usergrid.persistence.graph.MarkedEdge;
-import org.apache.usergrid.persistence.graph.SearchByEdge;
-import org.apache.usergrid.persistence.graph.SearchByEdgeType;
+import org.apache.usergrid.persistence.graph.*;
 import org.apache.usergrid.persistence.graph.impl.SimpleSearchByEdge;
 import org.apache.usergrid.persistence.model.entity.Id;
 import org.apache.usergrid.persistence.model.entity.SimpleId;
-
-import com.google.common.base.Optional;
-import com.google.inject.Inject;
-
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rx.Observable;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 
 @RunWith( ITRunner.class )
@@ -88,7 +78,7 @@ public class ConnectionServiceImplTest {
 
         final String collectionName = "testCollection";
 
-        final Edge collectionEdge = CpNamingUtils.createCollectionEdge( applicationScope.getApplication(), collectionName, source );
+        final Edge collectionEdge = CpNamingUtils.createCollectionEdge( applicationScope.getApplication(), collectionName, source, -1L );
 
         final Edge writtenCollection = gm.writeEdge( collectionEdge ).toBlocking().last();
 
@@ -101,7 +91,7 @@ public class ConnectionServiceImplTest {
 
         final String connectionType = "testConnection";
 
-        final Edge connectionEdge = CpNamingUtils.createConnectionEdge( source, connectionType, target );
+        final Edge connectionEdge = CpNamingUtils.createConnectionEdge( source, connectionType, target, -1L );
 
         final Edge writtenConnection = gm.writeEdge( connectionEdge ).toBlocking().last();
 
@@ -145,7 +135,7 @@ public class ConnectionServiceImplTest {
 
         final String collectionName = "testCollection";
 
-        final Edge collectionEdge = CpNamingUtils.createCollectionEdge( applicationScope.getApplication(), collectionName, source );
+        final Edge collectionEdge = CpNamingUtils.createCollectionEdge( applicationScope.getApplication(), collectionName, source, -1L );
 
         final Edge writtenCollection = gm.writeEdge( collectionEdge ).toBlocking().last();
 
@@ -161,7 +151,7 @@ public class ConnectionServiceImplTest {
 
 
         //write our first connection
-        final Edge connection1 = CpNamingUtils.createConnectionEdge( source, connectionType, target );
+        final Edge connection1 = CpNamingUtils.createConnectionEdge( source, connectionType, target, -1L );
 
         final Edge written1 = gm.writeEdge( connection1 ).toBlocking().last();
 
@@ -169,7 +159,7 @@ public class ConnectionServiceImplTest {
 
 
         //write the second
-        final Edge connection2 = CpNamingUtils.createConnectionEdge( source, connectionType, target );
+        final Edge connection2 = CpNamingUtils.createConnectionEdge( source, connectionType, target, -1L );
 
         final Edge written2 = gm.writeEdge( connection2 ).toBlocking().last();
 
@@ -177,7 +167,7 @@ public class ConnectionServiceImplTest {
 
 
         //write the 3rd
-        final Edge connection3 = CpNamingUtils.createConnectionEdge( source, connectionType, target );
+        final Edge connection3 = CpNamingUtils.createConnectionEdge( source, connectionType, target, -1L );
 
         final Edge written3 = gm.writeEdge( connection3 ).toBlocking().last();
 

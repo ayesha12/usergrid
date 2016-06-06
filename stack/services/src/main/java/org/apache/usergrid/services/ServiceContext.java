@@ -17,14 +17,15 @@
 package org.apache.usergrid.services;
 
 
+import org.apache.usergrid.persistence.EntityRef;
+import org.apache.usergrid.persistence.Query;
+import org.apache.usergrid.services.exceptions.ServiceResourceNotFoundException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.usergrid.persistence.EntityRef;
-import org.apache.usergrid.persistence.Query;
-import org.apache.usergrid.services.exceptions.ServiceResourceNotFoundException;
 import static org.apache.usergrid.services.ServiceInfo.normalizeServicePattern;
 import static org.apache.usergrid.utils.ListUtils.dequeueCopy;
 import static org.apache.usergrid.utils.ListUtils.isEmpty;
@@ -43,6 +44,8 @@ public class ServiceContext {
     String serviceMetadata;
     String collectionName;
     String serviceCommand;
+    Map<String, Object> metadataRequestQueryParams;
+    Map<String,Object> contextProperties;
 
 
     public ServiceContext() {
@@ -51,7 +54,8 @@ public class ServiceContext {
 
     public ServiceContext( Service service, ServiceAction action, ServiceRequest request,
                            ServiceResults previousResults, EntityRef owner, String collectionName, Query query,
-                           List<ServiceParameter> parameters, ServicePayload payload ) {
+                           List<ServiceParameter> parameters, ServicePayload payload,
+                           Map<String, Object> metadataRequestQueryParams) {
         this.service = service;
         this.action = action;
         this.request = request;
@@ -61,12 +65,14 @@ public class ServiceContext {
         this.query = query;
         this.parameters = parameters;
         this.payload = payload;
+        this.metadataRequestQueryParams = metadataRequestQueryParams;
     }
 
 
     public ServiceContext( Service service, ServiceAction action, ServiceRequest request,
                            ServiceResults previousResults, EntityRef owner, String collectionName,
-                           List<ServiceParameter> parameters, ServicePayload payload ) {
+                           List<ServiceParameter> parameters, ServicePayload payload,
+                           Map<String, Object> metadataRequestQueryParams) {
         this.service = service;
         this.action = action;
         this.request = request;
@@ -75,6 +81,7 @@ public class ServiceContext {
         this.collectionName = collectionName;
         this.parameters = parameters;
         this.payload = payload;
+        this.metadataRequestQueryParams = metadataRequestQueryParams;
     }
 
 
@@ -438,8 +445,8 @@ public class ServiceContext {
             requests = new ArrayList<ServiceRequest>();
             for ( EntityRef ref : refs ) {
                 ServiceRequest req =
-                        new ServiceRequest( request, ref, request.getPath() + "/" + ref.getUuid() + "/" + name, name,
-                                next_service, parameters );
+                    new ServiceRequest( request, ref, request.getPath() + "/" + ref.getUuid() + "/" + name, name,
+                        next_service, parameters );
                 requests.add( req );
             }
         }

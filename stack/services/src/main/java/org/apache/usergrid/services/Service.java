@@ -17,10 +17,11 @@
 package org.apache.usergrid.services;
 
 
-import java.util.UUID;
-
 import org.apache.usergrid.persistence.Entity;
 import org.apache.usergrid.persistence.EntityRef;
+
+import java.util.Map;
+import java.util.UUID;
 
 
 public interface Service {
@@ -36,7 +37,7 @@ public interface Service {
     public boolean isRootService();
 
     public ServiceResults invoke( ServiceAction action, ServiceRequest request, ServiceResults previousResults,
-                                  ServicePayload payload ) throws Exception;
+                                  ServicePayload payload,Map<String, Object> metadataRequestQueryParams ) throws Exception;
 
     public Entity getEntity( ServiceRequest request, UUID uuid ) throws Exception;
 
@@ -49,5 +50,7 @@ public interface Service {
     public Entity updateEntity( ServiceRequest request, EntityRef ref, ServicePayload payload ) throws Exception;
 
     ServiceContext getContext( ServiceAction action, ServiceRequest request, ServiceResults previousResults,
-                               ServicePayload payload ) throws Exception;
+                               ServicePayload payload, Map<String, Object> metadataRequestQueryParams ) throws Exception;
+    public Entity updateEntity( ServiceRequest request, EntityRef ref, ServicePayload payload,
+                                Map<String, Object> metadataRequestQueryParams ) throws Exception;
 }

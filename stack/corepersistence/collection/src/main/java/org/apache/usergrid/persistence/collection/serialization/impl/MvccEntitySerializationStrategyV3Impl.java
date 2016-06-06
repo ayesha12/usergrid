@@ -1,51 +1,13 @@
 package org.apache.usergrid.persistence.collection.serialization.impl;
 
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.UUID;
-
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.netflix.astyanax.serializers.StringSerializer;
-import org.apache.usergrid.persistence.core.metrics.MetricsFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.apache.cassandra.db.marshal.BooleanType;
-import org.apache.cassandra.db.marshal.BytesType;
-
-import org.apache.usergrid.persistence.collection.EntitySet;
-import org.apache.usergrid.persistence.collection.MvccEntity;
-import org.apache.usergrid.persistence.collection.exception.CollectionRuntimeException;
-import org.apache.usergrid.persistence.collection.exception.DataCorruptionException;
-import org.apache.usergrid.persistence.collection.exception.EntityTooLargeException;
-import org.apache.usergrid.persistence.collection.mvcc.entity.impl.MvccEntityImpl;
-import org.apache.usergrid.persistence.collection.serialization.MvccEntitySerializationStrategy;
-import org.apache.usergrid.persistence.collection.serialization.SerializationFig;
-import org.apache.usergrid.persistence.core.astyanax.CassandraFig;
-import org.apache.usergrid.persistence.core.astyanax.ColumnParser;
-import org.apache.usergrid.persistence.core.astyanax.IdRowCompositeSerializer;
-import org.apache.usergrid.persistence.core.astyanax.MultiTenantColumnFamily;
-import org.apache.usergrid.persistence.core.astyanax.MultiTenantColumnFamilyDefinition;
-import org.apache.usergrid.persistence.core.astyanax.ScopedRowKey;
-import org.apache.usergrid.persistence.core.astyanax.ScopedRowKeySerializer;
-import org.apache.usergrid.persistence.core.scope.ApplicationScope;
-import org.apache.usergrid.persistence.model.entity.Entity;
-import org.apache.usergrid.persistence.model.entity.EntityMap;
-import org.apache.usergrid.persistence.model.entity.Id;
-import org.apache.usergrid.persistence.model.util.EntityUtils;
-import org.apache.usergrid.persistence.model.util.UUIDGenerator;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -58,10 +20,33 @@ import com.netflix.astyanax.model.ColumnList;
 import com.netflix.astyanax.model.Row;
 import com.netflix.astyanax.serializers.AbstractSerializer;
 import com.netflix.astyanax.serializers.BooleanSerializer;
-
+import com.netflix.astyanax.serializers.StringSerializer;
+import org.apache.cassandra.db.marshal.BooleanType;
+import org.apache.cassandra.db.marshal.BytesType;
+import org.apache.usergrid.persistence.collection.EntitySet;
+import org.apache.usergrid.persistence.collection.MvccEntity;
+import org.apache.usergrid.persistence.collection.exception.CollectionRuntimeException;
+import org.apache.usergrid.persistence.collection.exception.DataCorruptionException;
+import org.apache.usergrid.persistence.collection.exception.EntityTooLargeException;
+import org.apache.usergrid.persistence.collection.mvcc.entity.impl.MvccEntityImpl;
+import org.apache.usergrid.persistence.collection.serialization.MvccEntitySerializationStrategy;
+import org.apache.usergrid.persistence.collection.serialization.SerializationFig;
+import org.apache.usergrid.persistence.core.astyanax.*;
+import org.apache.usergrid.persistence.core.metrics.MetricsFactory;
+import org.apache.usergrid.persistence.core.scope.ApplicationScope;
+import org.apache.usergrid.persistence.model.entity.Entity;
+import org.apache.usergrid.persistence.model.entity.EntityMap;
+import org.apache.usergrid.persistence.model.entity.Id;
+import org.apache.usergrid.persistence.model.util.EntityUtils;
+import org.apache.usergrid.persistence.model.util.UUIDGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.Scheduler;
 import rx.schedulers.Schedulers;
+
+import java.nio.ByteBuffer;
+import java.util.*;
 
 
 /**
@@ -76,7 +61,7 @@ public class MvccEntitySerializationStrategyV3Impl implements MvccEntitySerializ
 
 
     private static final MultiTenantColumnFamily<ScopedRowKey<Id>, Boolean> CF_ENTITY_DATA =
-            new MultiTenantColumnFamily<>( "Entity_Version_Data_V3", ROW_KEY_SER, BooleanSerializer.get() );
+        new MultiTenantColumnFamily<>( "Entity_Version_Data_V3", ROW_KEY_SER, BooleanSerializer.get() );
 
 
     private static final Boolean COL_VALUE = Boolean.TRUE;
@@ -109,6 +94,8 @@ public class MvccEntitySerializationStrategyV3Impl implements MvccEntitySerializ
 
         final Id entityId = entity.getId();
         final UUID version = entity.getVersion();
+        final long entity_expiration = entity.getEntityExpiration();
+
 
         Optional<EntityMap> map =  EntityMap.fromEntity(entity.getEntity());
         ByteBuffer byteBuffer = entitySerializer.toByteBuffer(
@@ -116,8 +103,13 @@ public class MvccEntitySerializationStrategyV3Impl implements MvccEntitySerializ
         );
 
         entity.setSize(byteBuffer.array().length);
-
-        return doWrite( applicationScope, entityId, version, colMutation -> colMutation.putColumn( COL_VALUE, byteBuffer ) );
+        if(entity_expiration == -1L){
+            return doWrite( applicationScope, entityId, version, colMutation -> colMutation.putColumn( COL_VALUE, byteBuffer));
+        }
+        else{
+            int entity_ttl = (int ) (entity_expiration -  System.currentTimeMillis()) / 1000 ;
+            return doWrite( applicationScope, entityId, version, colMutation -> colMutation.putColumn( COL_VALUE, byteBuffer, entity_ttl ));
+        }
     }
 
 
@@ -134,7 +126,7 @@ public class MvccEntitySerializationStrategyV3Impl implements MvccEntitySerializ
 
         if ( entityIds.size() > serializationFig.getMaxLoadSize() ) {
             throw new IllegalArgumentException(
-                    "requested load size cannot be over configured maximum of " + serializationFig.getMaxLoadSize() );
+                "requested load size cannot be over configured maximum of " + serializationFig.getMaxLoadSize() );
         }
 
 
@@ -146,7 +138,7 @@ public class MvccEntitySerializationStrategyV3Impl implements MvccEntitySerializ
         for ( final Id entityId : entityIds ) {
 
             final ScopedRowKey<Id> rowKey =
-                    ScopedRowKey.fromKey( applicationId, entityId );
+                ScopedRowKey.fromKey( applicationId, entityId );
 
 
             rowKeys.add( rowKey );
@@ -217,10 +209,9 @@ public class MvccEntitySerializationStrategyV3Impl implements MvccEntitySerializ
                     final MvccEntity parsedEntity =
                         new MvccColumnParser( entityId, entitySerializer ).parseColumn( column );
 
-
                     entitySet.addEntity( parsedEntity );
                 }
-               } ) ).toBlocking().last();
+            } ) ).toBlocking().last();
 
 
 
@@ -272,9 +263,9 @@ public class MvccEntitySerializationStrategyV3Impl implements MvccEntitySerializ
 
 
         return doWrite(applicationScope, entityId, version, colMutation ->
-                colMutation.putColumn(COL_VALUE,
-                    entitySerializer.toByteBuffer(new EntityWrapper(entityId, version, MvccEntity.Status.DELETED, null, 0))
-                )
+            colMutation.putColumn(COL_VALUE,
+                entitySerializer.toByteBuffer(new EntityWrapper(entityId, version, MvccEntity.Status.DELETED, null, 0))
+            )
         );
     }
 
@@ -296,9 +287,9 @@ public class MvccEntitySerializationStrategyV3Impl implements MvccEntitySerializ
         //create the CF entity data.  We want it reversed b/c we want the most recent version at the top of the
         //row for fast seeks
         MultiTenantColumnFamilyDefinition cf =
-                new MultiTenantColumnFamilyDefinition( CF_ENTITY_DATA, BytesType.class.getSimpleName(),
-                        BooleanType.class.getSimpleName() ,
-                        BytesType.class.getSimpleName(), MultiTenantColumnFamilyDefinition.CacheOption.KEYS );
+            new MultiTenantColumnFamilyDefinition( CF_ENTITY_DATA, BytesType.class.getSimpleName(),
+                BooleanType.class.getSimpleName() ,
+                BytesType.class.getSimpleName(), MultiTenantColumnFamilyDefinition.CacheOption.KEYS );
 
 
         return Collections.singleton( cf );
@@ -314,7 +305,7 @@ public class MvccEntitySerializationStrategyV3Impl implements MvccEntitySerializ
         final Id applicationId = applicationScope.getApplication();
 
         final ScopedRowKey<Id> rowKey =
-                ScopedRowKey.fromKey( applicationId, entityId );
+            ScopedRowKey.fromKey( applicationId, entityId );
 
         final long timestamp = version.timestamp();
 
@@ -355,8 +346,8 @@ public class MvccEntitySerializationStrategyV3Impl implements MvccEntitySerializ
             }
             catch ( DataCorruptionException e ) {
                 log.error(
-                        "DATA CORRUPTION DETECTED when de-serializing entity with Id {}.  This means the"
-                                + " write was truncated.", id, e );
+                    "DATA CORRUPTION DETECTED when de-serializing entity with Id {}.  This means the"
+                        + " write was truncated.", id, e );
                 //return an empty entity, we can never load this one, and we don't want it to bring the system
                 //to a grinding halt
                 //TODO fix this
@@ -489,6 +480,7 @@ public class MvccEntitySerializationStrategyV3Impl implements MvccEntitySerializ
         private UUID version;
         private EntityMap entityMap;
         private long size;
+        private long entity_expires_in;
 
 
         public EntityWrapper( ) {

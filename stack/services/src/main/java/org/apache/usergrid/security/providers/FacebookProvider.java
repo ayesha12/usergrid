@@ -17,21 +17,20 @@
 package org.apache.usergrid.security.providers;
 
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
-import javax.ws.rs.core.MediaType;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.usergrid.management.ManagementService;
 import org.apache.usergrid.persistence.EntityManager;
-import org.apache.usergrid.persistence.index.query.Identifier;
 import org.apache.usergrid.persistence.Query;
 import org.apache.usergrid.persistence.Results;
 import org.apache.usergrid.persistence.entities.User;
+import org.apache.usergrid.persistence.index.query.Identifier;
 import org.apache.usergrid.security.tokens.exceptions.BadTokenException;
 import org.apache.usergrid.utils.JsonUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.ws.rs.core.MediaType;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static org.apache.usergrid.persistence.Schema.PROPERTY_MODIFIED;
 import static org.apache.usergrid.utils.ListUtils.anyNull;
@@ -96,8 +95,8 @@ public class FacebookProvider extends AbstractProvider {
         return client.target( apiUrl )
             .queryParam( "access_token", externalToken )
             .request()
-                .accept( MediaType.APPLICATION_JSON )
-                .get( Map.class );
+            .accept( MediaType.APPLICATION_JSON )
+            .get( Map.class );
     }
 
 
@@ -143,11 +142,11 @@ public class FacebookProvider extends AbstractProvider {
                 if ( fb_user_email != null ) {
                     try {
                         user = managementService.getAppUserByIdentifier( entityManager.getApplication().getUuid(),
-                                Identifier.fromEmail( fb_user_email ) );
+                            Identifier.fromEmail( fb_user_email ) );
                     }
                     catch ( Exception ex ) {
                         throw new BadTokenException(
-                                "Could not find existing user for this applicaiton for email: " + fb_user_email, ex );
+                            "Could not find existing user for this applicaiton for email: " + fb_user_email, ex );
                     }
                     // if we found the user by email, unbind the properties from above
                     // that will conflict
@@ -156,7 +155,7 @@ public class FacebookProvider extends AbstractProvider {
                         properties.remove( "username" );
                         properties.remove( "name" );
                         try {
-                            entityManager.updateProperties( user, properties );
+                            entityManager.updateProperties( user, properties, null);
                         }
                         catch ( Exception ex ) {
                             throw new BadTokenException( "Could not update user with new credentials", ex );
@@ -184,7 +183,7 @@ public class FacebookProvider extends AbstractProvider {
                 properties.put( "facebook", fb_user );
                 properties.put( "picture", String.format( pictureUrl, fb_user_id ) );
                 try {
-                    entityManager.updateProperties( user, properties );
+                    entityManager.updateProperties( user, properties, null);
                     user.setProperty( PROPERTY_MODIFIED, properties.get( PROPERTY_MODIFIED ) );
                     user.setProperty( "facebook", fb_user );
                     user.setProperty( "picture", String.format( pictureUrl, fb_user_id ) );

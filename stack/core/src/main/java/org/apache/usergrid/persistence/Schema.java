@@ -17,54 +17,6 @@
 package org.apache.usergrid.persistence;
 
 
-import java.beans.PropertyDescriptor;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.nio.ByteBuffer;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-
-import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-
-import org.apache.usergrid.persistence.model.collection.SchemaManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
-import org.springframework.core.type.filter.AssignableTypeFilter;
-
-import org.apache.commons.beanutils.PropertyUtils;
-import org.apache.commons.lang.reflect.FieldUtils;
-
-import org.apache.usergrid.persistence.annotations.EntityCollection;
-import org.apache.usergrid.persistence.annotations.EntityDictionary;
-import org.apache.usergrid.persistence.annotations.EntityProperty;
-import org.apache.usergrid.persistence.cassandra.CassandraPersistenceUtils;
-import org.apache.usergrid.persistence.entities.Application;
-import org.apache.usergrid.persistence.exceptions.PropertyTypeConversionException;
-import org.apache.usergrid.persistence.schema.CollectionInfo;
-import org.apache.usergrid.persistence.schema.DictionaryInfo;
-import org.apache.usergrid.persistence.schema.EntityInfo;
-import org.apache.usergrid.persistence.schema.PropertyInfo;
-import org.apache.usergrid.utils.InflectionUtils;
-import org.apache.usergrid.utils.JsonUtils;
-import org.apache.usergrid.utils.MapUtils;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -74,15 +26,48 @@ import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-
 import me.prettyprint.hector.api.beans.ColumnSlice;
 import me.prettyprint.hector.api.beans.HColumn;
 import me.prettyprint.hector.api.beans.Row;
+import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.lang.reflect.FieldUtils;
+import org.apache.usergrid.persistence.annotations.EntityCollection;
+import org.apache.usergrid.persistence.annotations.EntityDictionary;
+import org.apache.usergrid.persistence.annotations.EntityProperty;
+import org.apache.usergrid.persistence.cassandra.CassandraPersistenceUtils;
+import org.apache.usergrid.persistence.entities.Application;
+import org.apache.usergrid.persistence.exceptions.PropertyTypeConversionException;
+import org.apache.usergrid.persistence.model.collection.SchemaManager;
+import org.apache.usergrid.persistence.schema.CollectionInfo;
+import org.apache.usergrid.persistence.schema.DictionaryInfo;
+import org.apache.usergrid.persistence.schema.EntityInfo;
+import org.apache.usergrid.persistence.schema.PropertyInfo;
+import org.apache.usergrid.utils.InflectionUtils;
+import org.apache.usergrid.utils.JsonUtils;
+import org.apache.usergrid.utils.MapUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
+import org.springframework.core.type.filter.AssignableTypeFilter;
+
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.beans.PropertyDescriptor;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
+import java.security.SecureRandom;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import static org.apache.commons.lang.StringUtils.isNotBlank;
-import static org.apache.usergrid.utils.ConversionUtils.bytebuffer;
-import static org.apache.usergrid.utils.ConversionUtils.string;
-import static org.apache.usergrid.utils.ConversionUtils.uuid;
+import static org.apache.usergrid.utils.ConversionUtils.*;
 import static org.apache.usergrid.utils.InflectionUtils.pluralize;
 import static org.apache.usergrid.utils.InflectionUtils.singularize;
 import static org.apache.usergrid.utils.JsonUtils.toJsonNode;
@@ -134,6 +119,7 @@ public class Schema implements SchemaManager {
     public static final String PROPERTY_URI = "uri";
     public static final String PROPERTY_USERNAME = "username";
     public static final String PROPERTY_INACTIVITY = "inactivity";
+    public static final String PROPERTY_TTL = "ttl";
 
     public static final String PROPERTY_CONNECTION = "connection";
     public static final String PROPERTY_ASSOCIATED = "associated";
@@ -169,38 +155,38 @@ public class Schema implements SchemaManager {
 
     @SuppressWarnings("rawtypes")
     public static Map<String, Class> DEFAULT_DICTIONARIES =
-            hashMap( DICTIONARY_PROPERTIES, ( Class ) String.class ).map( DICTIONARY_SETS, String.class )
-                    .map( DICTIONARY_INDEXES, String.class ).map( DICTIONARY_COLLECTIONS, String.class )
-                    .map( DICTIONARY_CONNECTIONS, String.class ).map( DICTIONARY_CONNECTING_TYPES, String.class )
-                    .map( DICTIONARY_CONNECTING_ENTITIES, String.class ).map( DICTIONARY_CONNECTED_TYPES, String.class )
-                    .map( DICTIONARY_CONNECTED_ENTITIES, String.class )
-                    .map( DICTIONARY_CONTAINER_ENTITIES, String.class )
-                    .map( DICTIONARY_CREDENTIALS, CredentialsInfo.class ).map( DICTIONARY_ROLENAMES, String.class )
-                    .map( DICTIONARY_ROLETIMES, Long.class ).map( DICTIONARY_PERMISSIONS, String.class )
-                    .map( DICTIONARY_ID_SETS, String.class );
+        hashMap( DICTIONARY_PROPERTIES, ( Class ) String.class ).map( DICTIONARY_SETS, String.class )
+            .map( DICTIONARY_INDEXES, String.class ).map( DICTIONARY_COLLECTIONS, String.class )
+            .map( DICTIONARY_CONNECTIONS, String.class ).map( DICTIONARY_CONNECTING_TYPES, String.class )
+            .map( DICTIONARY_CONNECTING_ENTITIES, String.class ).map( DICTIONARY_CONNECTED_TYPES, String.class )
+            .map( DICTIONARY_CONNECTED_ENTITIES, String.class )
+            .map( DICTIONARY_CONTAINER_ENTITIES, String.class )
+            .map( DICTIONARY_CREDENTIALS, CredentialsInfo.class ).map( DICTIONARY_ROLENAMES, String.class )
+            .map( DICTIONARY_ROLETIMES, Long.class ).map( DICTIONARY_PERMISSIONS, String.class )
+            .map( DICTIONARY_ID_SETS, String.class );
 
     private static LoadingCache<String, String> baseEntityTypes =
-            CacheBuilder.newBuilder().expireAfterAccess( 10, TimeUnit.MINUTES )
-                        .build( new CacheLoader<String, String>() {
-                            public String load( String key ) { // no checked exception
-                                return createNormalizedEntityType( key, true );
-                            }
-                        } );
-
-    private static LoadingCache<String, String> nonbaseEntityTypes =
-            CacheBuilder.newBuilder().expireAfterAccess( 10, TimeUnit.MINUTES )
-                        .build( new CacheLoader<String, String>() {
-                            public String load( String key ) { // no checked exception
-                                return createNormalizedEntityType( key, false );
-                            }
-                        } );
-
-    private static LoadingCache<String, String> collectionNameCache =
-            CacheBuilder.newBuilder().maximumSize( 1000 ).build( new CacheLoader<String, String>() {
+        CacheBuilder.newBuilder().expireAfterAccess( 10, TimeUnit.MINUTES )
+            .build( new CacheLoader<String, String>() {
                 public String load( String key ) { // no checked exception
-                    return _defaultCollectionName( key );
+                    return createNormalizedEntityType( key, true );
                 }
             } );
+
+    private static LoadingCache<String, String> nonbaseEntityTypes =
+        CacheBuilder.newBuilder().expireAfterAccess( 10, TimeUnit.MINUTES )
+            .build( new CacheLoader<String, String>() {
+                public String load( String key ) { // no checked exception
+                    return createNormalizedEntityType( key, false );
+                }
+            } );
+
+    private static LoadingCache<String, String> collectionNameCache =
+        CacheBuilder.newBuilder().maximumSize( 1000 ).build( new CacheLoader<String, String>() {
+            public String load( String key ) { // no checked exception
+                return _defaultCollectionName( key );
+            }
+        } );
 
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -208,34 +194,34 @@ public class Schema implements SchemaManager {
     private final SmileFactory smile = new SmileFactory();
 
     private final Map<String, Class<? extends Entity>> typeToEntityClass =
-            new ConcurrentHashMap<String, Class<? extends Entity>>();
+        new ConcurrentHashMap<String, Class<? extends Entity>>();
 
     private final Map<Class<? extends Entity>, String> entityClassToType =
-            new ConcurrentHashMap<Class<? extends Entity>, String>();
+        new ConcurrentHashMap<Class<? extends Entity>, String>();
 
     private final Map<Class<? extends Entity>, Map<String, PropertyDescriptor>> entityClassPropertyToDescriptor =
-            new ConcurrentHashMap<Class<? extends Entity>, Map<String, PropertyDescriptor>>();
+        new ConcurrentHashMap<Class<? extends Entity>, Map<String, PropertyDescriptor>>();
 
     private final Map<Class<? extends Entity>, EntityInfo> registeredEntityClasses =
-            new ConcurrentHashMap<Class<? extends Entity>, EntityInfo>();
+        new ConcurrentHashMap<Class<? extends Entity>, EntityInfo>();
 
     Map<String, EntityInfo> entityMap = new TreeMap<String, EntityInfo>( String.CASE_INSENSITIVE_ORDER );
 
     Map<String, Map<String, Set<CollectionInfo>>> entityContainerCollections =
-            new TreeMap<String, Map<String, Set<CollectionInfo>>>( String.CASE_INSENSITIVE_ORDER );
+        new TreeMap<String, Map<String, Set<CollectionInfo>>>( String.CASE_INSENSITIVE_ORDER );
 
     Map<String, Map<String, Set<CollectionInfo>>> entityContainerCollectionsIndexingProperties =
-            new TreeMap<String, Map<String, Set<CollectionInfo>>>( String.CASE_INSENSITIVE_ORDER );
+        new TreeMap<String, Map<String, Set<CollectionInfo>>>( String.CASE_INSENSITIVE_ORDER );
     Map<String, Map<String, Set<CollectionInfo>>> entityContainerCollectionsIndexingDictionaries =
-            new TreeMap<String, Map<String, Set<CollectionInfo>>>( String.CASE_INSENSITIVE_ORDER );
+        new TreeMap<String, Map<String, Set<CollectionInfo>>>( String.CASE_INSENSITIVE_ORDER );
     Map<String, Map<String, Set<CollectionInfo>>> entityContainerCollectionsIndexingDynamicDictionaries =
-            new TreeMap<String, Map<String, Set<CollectionInfo>>>( String.CASE_INSENSITIVE_ORDER );
+        new TreeMap<String, Map<String, Set<CollectionInfo>>>( String.CASE_INSENSITIVE_ORDER );
 
     Map<String, Map<String, Map<String, Set<CollectionInfo>>>> entityPropertyContainerCollectionsIndexingProperty =
-            new TreeMap<String, Map<String, Map<String, Set<CollectionInfo>>>>( String.CASE_INSENSITIVE_ORDER );
+        new TreeMap<String, Map<String, Map<String, Set<CollectionInfo>>>>( String.CASE_INSENSITIVE_ORDER );
 
     Map<String, Map<String, Map<String, Set<CollectionInfo>>>> entityDictionaryContainerCollectionsIndexingDictionary =
-            new TreeMap<String, Map<String, Map<String, Set<CollectionInfo>>>>( String.CASE_INSENSITIVE_ORDER );
+        new TreeMap<String, Map<String, Map<String, Set<CollectionInfo>>>>( String.CASE_INSENSITIVE_ORDER );
 
     Map<String, PropertyInfo> allIndexedProperties = new TreeMap<String, PropertyInfo>( String.CASE_INSENSITIVE_ORDER );
 
@@ -287,25 +273,25 @@ public class Schema implements SchemaManager {
 
         if ( !collection.getPropertiesIndexed().isEmpty() ) {
             MapUtils.addMapMapSet( entityContainerCollectionsIndexingProperties, true, entityType, containerType,
-                    collection );
+                collection );
             for ( String propertyName : collection.getPropertiesIndexed() ) {
                 MapUtils.addMapMapMapSet( entityPropertyContainerCollectionsIndexingProperty, true, entityType,
-                        propertyName, containerType, collection );
+                    propertyName, containerType, collection );
             }
         }
 
         if ( !collection.getDictionariesIndexed().isEmpty() ) {
             MapUtils.addMapMapSet( entityContainerCollectionsIndexingDictionaries, true, entityType, containerType,
-                    collection );
+                collection );
             for ( String dictionaryName : collection.getDictionariesIndexed() ) {
                 MapUtils.addMapMapMapSet( entityDictionaryContainerCollectionsIndexingDictionary, true, entityType,
-                        dictionaryName, containerType, collection );
+                    dictionaryName, containerType, collection );
             }
         }
 
         if ( collection.isIndexingDynamicDictionaries() ) {
             MapUtils.addMapMapSet( entityContainerCollectionsIndexingDynamicDictionaries, true, entityType,
-                    containerType, collection );
+                containerType, collection );
         }
     }
 
@@ -314,11 +300,11 @@ public class Schema implements SchemaManager {
                                                     Class<T> annotationClass ) {
         try {
             if ( ( descriptor.getReadMethod() != null ) && descriptor.getReadMethod()
-                                                                     .isAnnotationPresent( annotationClass ) ) {
+                .isAnnotationPresent( annotationClass ) ) {
                 return descriptor.getReadMethod().getAnnotation( annotationClass );
             }
             if ( ( descriptor.getWriteMethod() != null ) && descriptor.getWriteMethod()
-                                                                      .isAnnotationPresent( annotationClass ) ) {
+                .isAnnotationPresent( annotationClass ) ) {
                 return descriptor.getWriteMethod().getAnnotation( annotationClass );
             }
             Field field = FieldUtils.getField( entityClass, descriptor.getName(), true );
@@ -351,7 +337,7 @@ public class Schema implements SchemaManager {
             propertyDescriptors = new LinkedHashMap<String, PropertyDescriptor>();
             Map<String, PropertyInfo> properties = new TreeMap<String, PropertyInfo>( String.CASE_INSENSITIVE_ORDER );
             Map<String, CollectionInfo> collections =
-                    new TreeMap<String, CollectionInfo>( String.CASE_INSENSITIVE_ORDER );
+                new TreeMap<String, CollectionInfo>( String.CASE_INSENSITIVE_ORDER );
             Map<String, DictionaryInfo> sets = new TreeMap<String, DictionaryInfo>( String.CASE_INSENSITIVE_ORDER );
 
             PropertyDescriptor[] descriptors = PropertyUtils.getPropertyDescriptors( entityClass );
@@ -375,7 +361,7 @@ public class Schema implements SchemaManager {
                 }
 
                 EntityCollection collectionAnnotation =
-                        getAnnotation( entityClass, descriptor, EntityCollection.class );
+                    getAnnotation( entityClass, descriptor, EntityCollection.class );
                 if ( collectionAnnotation != null ) {
                     CollectionInfo collectionInfo = new CollectionInfo( collectionAnnotation );
                     collectionInfo.setName( name );
@@ -435,7 +421,7 @@ public class Schema implements SchemaManager {
         synchronized ( entitiesScanPath ) {
             for ( String path : entitiesScanPath ) {
                 ClassPathScanningCandidateComponentProvider provider =
-                        new ClassPathScanningCandidateComponentProvider( true );
+                    new ClassPathScanningCandidateComponentProvider( true );
                 provider.addIncludeFilter( new AssignableTypeFilter( TypedEntity.class ) );
 
                 Set<BeanDefinition> components = provider.findCandidateComponents( path );
@@ -1031,10 +1017,10 @@ public class Schema implements SchemaManager {
 
 
     private Map<String, Set<CollectionInfo>> addDynamicApplicationCollectionAsContainer(
-            Map<String, Set<CollectionInfo>> containers, String entityType ) {
+        Map<String, Set<CollectionInfo>> containers, String entityType ) {
 
         Map<String, Set<CollectionInfo>> copy =
-                new TreeMap<String, Set<CollectionInfo>>( String.CASE_INSENSITIVE_ORDER );
+            new TreeMap<String, Set<CollectionInfo>>( String.CASE_INSENSITIVE_ORDER );
         if ( containers != null ) {
             copy.putAll( containers );
         }
@@ -1042,7 +1028,7 @@ public class Schema implements SchemaManager {
 
         if ( !containers.containsKey( Application.ENTITY_TYPE ) ) {
             MapUtils.addMapSet( containers, true, Application.ENTITY_TYPE,
-                    getCollection( Application.ENTITY_TYPE, defaultCollectionName( entityType ) ) );
+                getCollection( Application.ENTITY_TYPE, defaultCollectionName( entityType ) ) );
         }
 
         return containers;
@@ -1084,7 +1070,7 @@ public class Schema implements SchemaManager {
         // Add the application as a container indexing some properties by
         // default
         return addDynamicApplicationCollectionAsContainer(
-                entityContainerCollectionsIndexingProperties.get( entityType ), entityType );
+            entityContainerCollectionsIndexingProperties.get( entityType ), entityType );
     }
 
 
@@ -1114,13 +1100,13 @@ public class Schema implements SchemaManager {
         entityType = normalizeEntityType( entityType );
 
         Map<String, Map<String, Set<CollectionInfo>>> propertyContainerCollectionsIndexingPropertyInfo =
-                entityPropertyContainerCollectionsIndexingProperty.get( entityType );
+            entityPropertyContainerCollectionsIndexingProperty.get( entityType );
 
         // Application indexes name property by default
         if ( propertyName.equalsIgnoreCase( PROPERTY_NAME ) || propertyName.equalsIgnoreCase( PROPERTY_CREATED )
-                || propertyName.equalsIgnoreCase( PROPERTY_MODIFIED ) ) {
+            || propertyName.equalsIgnoreCase( PROPERTY_MODIFIED ) ) {
             return addDynamicApplicationCollectionAsContainer(
-                    propertyContainerCollectionsIndexingPropertyInfo != null ?
+                propertyContainerCollectionsIndexingPropertyInfo != null ?
                     propertyContainerCollectionsIndexingPropertyInfo.get( propertyName ) : null, entityType );
         }
 
@@ -1143,7 +1129,7 @@ public class Schema implements SchemaManager {
          */
 
         Map<String, Map<String, Set<CollectionInfo>>> dictionaryContainerCollectionsIndexingDictionary =
-                entityDictionaryContainerCollectionsIndexingDictionary.get( entityType );
+            entityDictionaryContainerCollectionsIndexingDictionary.get( entityType );
 
         if ( dictionaryContainerCollectionsIndexingDictionary == null ) {
             return null;
@@ -1260,6 +1246,15 @@ public class Schema implements SchemaManager {
         properties.put( PROPERTY_NAME, property );
 
         property = new PropertyInfo();
+        property.setName( PROPERTY_TTL );
+        property.setRequired( true );
+        property.setType( Integer.class );
+        property.setMutable( false );
+        property.setIndexed( true );
+        properties.put( PROPERTY_TTL, property );
+
+
+        property = new PropertyInfo();
         property.setName( PROPERTY_CREATED );
         property.setRequired( true );
         property.setType( Long.class );
@@ -1358,7 +1353,7 @@ public class Schema implements SchemaManager {
 
 
     public Object validateEntityPropertyValue( String entityType, String propertyName, Object propertyValue )
-            throws PropertyTypeConversionException {
+        throws PropertyTypeConversionException {
 
         entityType = normalizeEntityType( entityType );
 
@@ -1608,7 +1603,7 @@ public class Schema implements SchemaManager {
 
                     if ( !columns.containsKey( property_name ) ) {
                         logger.error( "Entity ({}) missing required property: {}", entityType, property_name,
-                                new Throwable() );
+                            new Throwable() );
                         return null;
                     }
                 }
@@ -1692,9 +1687,9 @@ public class Schema implements SchemaManager {
 
 
     private static final byte[] DEFAULT_ENCRYPTION_SEED =
-            "oWyWX?I2kZAhkKb_jQ8SZvjmgkiF4eGSjsfIkhnRetD4Dvtx2J".getBytes();
+        "oWyWX?I2kZAhkKb_jQ8SZvjmgkiF4eGSjsfIkhnRetD4Dvtx2J".getBytes();
     private static byte[] encryptionSeed =
-            ( System.getProperty( "encryptionSeed" ) != null ) ? System.getProperty( "encryptionSeed" ).getBytes() :
+        ( System.getProperty( "encryptionSeed" ) != null ) ? System.getProperty( "encryptionSeed" ).getBytes() :
             DEFAULT_ENCRYPTION_SEED;
 
 

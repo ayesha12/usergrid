@@ -35,6 +35,7 @@ public class SimpleEdge implements Edge {
     protected String type;
     protected Id targetNode;
     protected long timestamp;
+    protected long edge_expries_in;
 
 
     /**
@@ -45,11 +46,12 @@ public class SimpleEdge implements Edge {
 
     }
 
-    public SimpleEdge( final Id sourceNode, final String type, final Id targetNode, final long timestamp ) {
+    public SimpleEdge( final Id sourceNode, final String type, final Id targetNode, final long timestamp, final long edge_expiration ) {
         this.sourceNode = sourceNode;
         this.type = type;
         this.targetNode = targetNode;
         this.timestamp = timestamp;
+        this.edge_expries_in = edge_expiration;
 
         GraphValidation.validateEdge( this );
     }
@@ -77,6 +79,9 @@ public class SimpleEdge implements Edge {
         return timestamp;
     }
 
+    public long getEdgeExpiration() {
+        return edge_expries_in;
+    }
 
     @Override
     public boolean equals( final Object o ) {
@@ -119,10 +124,10 @@ public class SimpleEdge implements Edge {
     @Override
     public String toString() {
         return "SimpleEdge{" +
-                "sourceNode=" + sourceNode +
-                ", type='" + type + '\'' +
-                ", targetNode=" + targetNode +
-                ", timestamp=" + timestamp +
-                '}';
+            "sourceNode=" + sourceNode +
+            ", type='" + type + '\'' +
+            ", targetNode=" + targetNode +
+            ", timestamp=" + timestamp +
+            '}';
     }
 }

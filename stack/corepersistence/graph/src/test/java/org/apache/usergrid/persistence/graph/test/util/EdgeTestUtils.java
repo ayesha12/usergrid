@@ -20,24 +20,13 @@
 package org.apache.usergrid.persistence.graph.test.util;
 
 
-import java.util.Random;
-
+import com.google.common.base.Optional;
 import org.apache.usergrid.persistence.core.util.IdGenerator;
-import org.apache.usergrid.persistence.graph.Edge;
-import org.apache.usergrid.persistence.graph.MarkedEdge;
-import org.apache.usergrid.persistence.graph.SearchByEdge;
-import org.apache.usergrid.persistence.graph.SearchByEdgeType;
-import org.apache.usergrid.persistence.graph.SearchByIdType;
-import org.apache.usergrid.persistence.graph.SearchEdgeType;
-import org.apache.usergrid.persistence.graph.impl.SimpleMarkedEdge;
-import org.apache.usergrid.persistence.graph.impl.SimpleSearchByEdge;
-import org.apache.usergrid.persistence.graph.impl.SimpleSearchByEdgeType;
-import org.apache.usergrid.persistence.graph.impl.SimpleSearchByIdType;
-import org.apache.usergrid.persistence.graph.impl.SimpleSearchEdgeType;
-import org.apache.usergrid.persistence.graph.impl.SimpleSearchIdType;
+import org.apache.usergrid.persistence.graph.*;
+import org.apache.usergrid.persistence.graph.impl.*;
 import org.apache.usergrid.persistence.model.entity.Id;
 
-import com.google.common.base.Optional;
+import java.util.Random;
 
 
 /**
@@ -135,7 +124,7 @@ public class EdgeTestUtils {
      */
     public static MarkedEdge createEdge( final Id sourceId, final String edgeType, final Id targetId,
                                          final long timestamp, final boolean deleted ) {
-        return new SimpleMarkedEdge( sourceId, edgeType, targetId, timestamp, deleted );
+        return new SimpleMarkedEdge( sourceId, edgeType, targetId, timestamp, deleted, -1L );
     }
 
 
