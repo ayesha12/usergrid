@@ -223,6 +223,9 @@ public class Query {
 
         for ( Entry<String, List<String>> param : params.entrySet() ) {
             Identifier identifier = Identifier.from( param.getKey() );
+            if(identifier == null) {
+                throw new IllegalArgumentException("Invalid url identifer.");
+            }
             if ( ( param.getValue() == null ) || ( param.getValue().size() == 0 ) || identifier.isUUID() ) {
                 if ( identifier != null ) {
                     if ( identifiers == null ) {
